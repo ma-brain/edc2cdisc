@@ -21,3 +21,14 @@ EX has one record per dosing interval per visit, so the raw field is
 joined onto the built EX by (USUBJID, VISITNUM) to recover the derived
 EXSEQ - the EX equivalent of the AESPID trick in \code{\link[=map_suppae]{map_suppae()}}.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-suppx")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm  <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+ex  <- map_ex(forms$EX, spec_synth01, subject_ref(dm))
+suppex <- map_suppex(forms$EX, ex, spec_synth01)
+head(suppex[, c("USUBJID", "IDVARVAL", "QNAM", "QVAL")])
+}

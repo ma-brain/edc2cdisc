@@ -47,6 +47,15 @@ supp_qnams <- function(spec, rdomain) {
 #' @param dm Raw DM clinical view
 #' @param spec A `study_spec`
 #' @return The labelled SUPPDM tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-suppdm")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' suppdm <- map_suppdm(forms$DM, spec_synth01)
+#' head(suppdm[, c("USUBJID", "QNAM", "QVAL")])
 #' @export
 map_suppdm <- function(dm, spec) {
   make_supp(
@@ -67,6 +76,16 @@ map_suppdm <- function(dm, spec) {
 #' @param ae_built The mapped AE dataset (see [map_ae()])
 #' @param spec A `study_spec`
 #' @return The labelled SUPPAE tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-suppae")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' ae <- map_ae(forms$AE, spec_synth01, subject_ref(dm))
+#' suppae <- map_suppae(forms$AE, ae, spec_synth01)
+#' head(suppae[, c("USUBJID", "IDVARVAL", "QNAM", "QVAL")])
 #' @export
 map_suppae <- function(ae, ae_built, spec) {
   parent <- supp_parent(ae, spec, "AE") |>
@@ -100,6 +119,16 @@ map_suppae <- function(ae, ae_built, spec) {
 #' @param ex_built The mapped EX dataset (see [map_ex()])
 #' @param spec A `study_spec`
 #' @return The labelled SUPPEX tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-suppx")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm  <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' ex  <- map_ex(forms$EX, spec_synth01, subject_ref(dm))
+#' suppex <- map_suppex(forms$EX, ex, spec_synth01)
+#' head(suppex[, c("USUBJID", "IDVARVAL", "QNAM", "QVAL")])
 #' @export
 map_suppex <- function(ex, ex_built, spec) {
   scheduled_visits <- spec$visits |> select(Folder, VISITNUM)

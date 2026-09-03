@@ -16,6 +16,15 @@
 #' @param spec A `study_spec`
 #' @param refs Subject reference dates from [subject_ref()]
 #' @return The labelled SDTM SV tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-sv")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm   <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' sv   <- map_sv(forms, spec_synth01, subject_ref(dm))
+#' head(sv[, c("USUBJID", "VISITNUM", "VISIT", "SVSTDTC")])
 #' @export
 map_sv <- function(forms, spec, refs) {
   scheduled <- spec$forms$form_oid[spec$forms$scheduled]

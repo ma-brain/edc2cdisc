@@ -71,13 +71,13 @@ build_all <- function(extract_dir, spec = spec_synth01,
   # ---- ADaM --------------------------------------------------------------
   adsl <- derive_adsl(dm, ex, ds)
   adae <- derive_adae(ae, suppae, adsl)
-  advs <- derive_advs(vs, adsl)
-  adlb <- derive_adlb(lb, adsl)
+  advs <- derive_advs(vs, adsl, spec)
+  adlb <- derive_adlb(lb, adsl, spec)
 
   adam <- list(ADSL = adsl, ADAE = adae, ADVS = advs, ADLB = adlb)
 
   issues <- validate_adam(adsl, adae, advs, adlb,
-                          dm, ds, ae, vs, lb, suppae)
+                          dm, ds, ae, vs, lb, suppae, spec)
   stop_on_error(issues, "ADaM validation")
   if (nrow(issues) > 0) {
     message("build_all: ADaM validation warnings: ", nrow(issues))

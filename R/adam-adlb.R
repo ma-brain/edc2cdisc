@@ -18,12 +18,24 @@
 #'
 #' @param lb The mapped SDTM LB dataset
 #' @param adsl The ADSL dataset (see [derive_adsl()])
-#' @param param_order Deterministic PARAMN ordering (chemistry panel first,
-#'   matching the lab). Defaults to the SYNTH01 panel order.
+#' @param spec A `study_spec`; the ADLB rows of `spec$bds` declare the
+#'   deterministic PARAMN ordering (chemistry panel first, matching the lab)
 #' @return The labelled ADLB tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-adlb")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' built <- build_all(ext)
+#' adlb <- derive_adlb(built$sdtm$LB, built$adam$ADSL, spec_synth01)
+#' head(adlb[, c("USUBJID", "PARAMCD", "AVAL", "BASE", "BNRIND")])
 #' @export
-derive_adlb <- function(lb, adsl,
-                        param_order = c("GLUC", "CREAT", "HGB", "K", "ALT")) {
+derive_adlb <- function(lb, adsl, spec = spec_synth01) {
+  param_order <- filter(spec$bds, domain == "ADLB") |>
+    arrange(paramn) |>
+    pull(paramcd)
+
   adsl_trtsdt <- adsl |> select(USUBJID, TRTSDT)
   lb_analysis <- lb |>
     # Analysis records are performed panels. The NOT DONE row documents a

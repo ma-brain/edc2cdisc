@@ -18,6 +18,15 @@
 #' @param spec A `study_spec`
 #' @param refs Subject reference dates from [subject_ref()]
 #' @return The labelled SDTM LB tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-lb")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' lb <- map_lb(forms$LB, spec_synth01, subject_ref(dm))
+#' head(lb[, c("USUBJID", "LBTESTCD", "LBORRES", "LBSTRESN", "LBNRIND")])
 #' @export
 map_lb <- function(lb, spec, refs) {
   lb_spec <- filter(spec$tests, domain == "LB")

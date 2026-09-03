@@ -19,6 +19,17 @@
 #' @param ex The mapped SDTM EX dataset
 #' @param ds The mapped SDTM DS dataset
 #' @return The labelled ADSL tibble, one row per subject.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-adsl")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' ex <- map_ex(forms$EX, spec_synth01, subject_ref(dm))
+#' ds <- map_ds(forms$DS, spec_synth01, subject_ref(dm))
+#' adsl <- derive_adsl(dm, ex, ds)
+#' head(adsl[, c("USUBJID", "AGE", "ITTFL", "SAFFL", "TRT01P")])
 #' @export
 derive_adsl <- function(dm, ex, ds) {
   # Treatment dates: first dose start / last dose end off the EX records

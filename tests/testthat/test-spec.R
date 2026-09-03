@@ -24,6 +24,8 @@ test_that("new_study_spec validates its tables", {
     forms = tibble(form_oid = "DM", type = "event", scheduled = TRUE),
     tests = tibble(domain = "VS", field = "F", testcd = "T", test = "t",
                    cat = NA, specimen = NA),
+    bds = tibble(domain = "ADVS", paramcd = "SYSBP", paramn = 1,
+                 anrlo = 90, anrhi = 140),
     variables = tibble(domain = "DM", variable = "DOMAIN", crf_field = NA,
                        transform = "constant", ref = NA, value = "DM",
                        aux = NA, default = NA)

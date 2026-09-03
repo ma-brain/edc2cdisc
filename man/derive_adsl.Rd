@@ -22,3 +22,15 @@ is "randomized" (has a planned arm) and SAFFL is "dosed" (has a treatment
 start). Analysis dates are imputed per \code{\link[=impute_dtc]{impute_dtc()}} and flagged; AGE
 follows the imputed birth date, so a birth year alone is enough.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-adsl")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+ex <- map_ex(forms$EX, spec_synth01, subject_ref(dm))
+ds <- map_ds(forms$DS, spec_synth01, subject_ref(dm))
+adsl <- derive_adsl(dm, ex, ds)
+head(adsl[, c("USUBJID", "AGE", "ITTFL", "SAFFL", "TRT01P")])
+}

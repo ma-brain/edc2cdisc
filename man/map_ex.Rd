@@ -21,3 +21,13 @@ Only administrations that actually occurred (EXOCCUR == "1") become EX
 records. Visits come from the spec by Folder; study days are anchored on
 the RFSTDTC threaded through \code{refs} from the DM build.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-ex")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm   <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+ex   <- map_ex(forms$EX, spec_synth01, subject_ref(dm))
+head(ex[, c("USUBJID", "EXSEQ", "EXTRT", "EXDOSE", "VISIT")])
+}

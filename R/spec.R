@@ -40,6 +40,9 @@
 #'   contribute an SV visit?)
 #' * `tests`     - per-test pivot specs for the findings domains VS/LB:
 #'   `domain`, `field` (raw field OID), `testcd`, `test`, `cat`, `specimen`
+#' * `bds`       - ADaM BDS parameter configuration: `domain` (ADVS / ADLB),
+#'   `paramcd`, `paramn` (order), `anrlo`, `anrhi` (declared reference
+#'   ranges; NA where a parameter has no absolute range)
 #' * `variables` - the mapping table proper, one row per SDTM variable per
 #'   domain: `domain`, `variable`, `crf_field`, `transform`, `ref`,
 #'   `value` (for constants), `aux` (auxiliary raw column, e.g. the time
@@ -47,12 +50,12 @@
 #'   names a member of the fixed vocabulary; `derivation` rows name a
 #'   registered derivation in `ref`.
 #'
-#' @param study,sites,arms,visits,codelists,supp,units,forms,tests,variables
+#' @param study,sites,arms,visits,codelists,supp,units,forms,tests,bds,variables
 #'   Tibbles as described above.
 #' @return A `study_spec` object (a validated named list).
 #' @export
 new_study_spec <- function(study, sites, arms, visits, codelists,
-                           supp, units, forms, tests, variables) {
+                           supp, units, forms, tests, bds, variables) {
   spec <- list(
     study     = study,
     sites     = sites,
@@ -63,6 +66,7 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
     units     = units,
     forms     = forms,
     tests     = tests,
+    bds       = bds,
     variables = variables
   )
 
@@ -78,6 +82,7 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
     units     = c("testcd", "conv_from", "conv_to", "conv_factor"),
     forms     = c("form_oid", "type", "scheduled"),
     tests     = c("domain", "field", "testcd", "test", "cat", "specimen"),
+    bds       = c("domain", "paramcd", "paramn", "anrlo", "anrhi"),
     variables = c("domain", "variable", "crf_field", "transform", "ref",
                   "value", "aux", "default")
   )
@@ -116,6 +121,10 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
   dup_qnam <- spec$supp |> count(rdomain, qnam) |> filter(n > 1)
   if (nrow(dup_qnam) > 0) {
     stop("study spec: duplicate SUPP qnam entries", call. = FALSE)
+  }
+  dup_bds <- spec$bds |> count(domain, paramcd) |> filter(n > 1)
+  if (nrow(dup_bds) > 0) {
+    stop("study spec: duplicate BDS parameter entries", call. = FALSE)
   }
 
   class(spec) <- c("study_spec", "list")

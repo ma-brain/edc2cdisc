@@ -24,3 +24,16 @@ their --SEQ keys. A link is a claim about the data, so both halves are
 checked loudly: every stamped CM must resolve to a real AE log line, and
 the CM's indication must be the event it points at.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-relrec")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+refs <- subject_ref(dm)
+ae <- map_ae(forms$AE, spec_synth01, refs)
+cm <- map_cm(forms$CM, spec_synth01, refs)
+relrec <- map_relrec(ae, cm, spec_synth01)
+head(relrec[, c("USUBJID", "RDOMAIN", "IDVARVAL", "RELID")])
+}

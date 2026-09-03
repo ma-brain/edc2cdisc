@@ -14,11 +14,12 @@ new_study_spec(
   units,
   forms,
   tests,
+  bds,
   variables
 )
 }
 \arguments{
-\item{study, sites, arms, visits, codelists, supp, units, forms, tests, variables}{Tibbles as described above.}
+\item{study, sites, arms, visits, codelists, supp, units, forms, tests, bds, variables}{Tibbles as described above.}
 }
 \value{
 A \code{study_spec} object (a validated named list).
@@ -49,6 +50,9 @@ derive QVAL from \code{src}), \code{qorig}, \code{qeval}
 contribute an SV visit?)
 \item \code{tests}     - per-test pivot specs for the findings domains VS/LB:
 \code{domain}, \code{field} (raw field OID), \code{testcd}, \code{test}, \code{cat}, \code{specimen}
+\item \code{bds}       - ADaM BDS parameter configuration: \code{domain} (ADVS / ADLB),
+\code{paramcd}, \code{paramn} (order), \code{anrlo}, \code{anrhi} (declared reference
+ranges; NA where a parameter has no absolute range)
 \item \code{variables} - the mapping table proper, one row per SDTM variable per
 domain: \code{domain}, \code{variable}, \code{crf_field}, \code{transform}, \code{ref},
 \code{value} (for constants), \code{aux} (auxiliary raw column, e.g. the time

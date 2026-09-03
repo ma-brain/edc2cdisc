@@ -10,28 +10,33 @@
 
 #' Derive ADVS, the vital signs analysis dataset (BDS)
 #'
-#' Parameter order and reference ranges come from the declared `param_spec`:
-#' VS carries no reference ranges at all, so ANRIND needs a declared table -
-#' this is the SAP stand-in, in one place, arguable by construction. Weight
-#' and height have no absolute adult range: their ANRIND stays missing by
-#' design, not by oversight.
+#' Parameter order and reference ranges come from `spec$bds`: VS carries no
+#' reference ranges at all, so ANRIND needs a declared table - this is the
+#' SAP stand-in, in one place, arguable by construction, and the same table
+#' the validator checks the build against. Weight and height have no
+#' absolute adult range: their ANRIND stays missing by design, not by
+#' oversight.
 #'
 #' @param vs The mapped SDTM VS dataset
 #' @param adsl The ADSL dataset (see [derive_adsl()])
-#' @param param_spec Parameter table: PARAMCD, PARAMN, ANRLO, ANRHI.
-#'   Defaults to the SYNTH01 SAP stand-in.
+#' @param spec A `study_spec`; the ADVS rows of `spec$bds` declare the
+#'   parameter order and reference ranges
 #' @return The labelled ADVS tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-advs")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' built <- build_all(ext)
+#' advs <- derive_advs(built$sdtm$VS, built$adam$ADSL, spec_synth01)
+#' head(advs[, c("USUBJID", "PARAMCD", "AVAL", "BASE", "CHG", "ANRIND")])
 #' @export
-derive_advs <- function(vs, adsl,
-                        param_spec = tribble(
-                          ~PARAMCD, ~PARAMN, ~ANRLO, ~ANRHI,
-                          "SYSBP",  1,        90,     140,
-                          "DIABP",  2,        50,     90,
-                          "PULSE",  3,        50,     120,
-                          "TEMP",   4,        35,     37.5,
-                          "WEIGHT", 5,        NA,     NA,
-                          "HEIGHT", 6,        NA,     NA
-                        )) {
+derive_advs <- function(vs, adsl, spec = spec_synth01) {
+  param_spec <- filter(spec$bds, domain == "ADVS") |>
+    select(PARAMCD = paramcd, PARAMN = paramn,
+           ANRLO = anrlo, ANRHI = anrhi)
+
   adsl_trtsdt <- adsl |> select(USUBJID, TRTSDT)
   vs_analysis <- vs |>
     # Analysis records are performed measurements. The NOT DONE row

@@ -134,6 +134,25 @@ spec_synth01 <- new_study_spec(
     "LB",     "ALT",    "ALT",    "Alanine Aminotransferase",   "CHEMISTRY",  "SERUM"
   ),
 
+  bds = tribble(
+    ~domain, ~paramcd, ~paramn, ~anrlo, ~anrhi,
+    # ADVS: the SAP stand-in ranges. Weight and height have no absolute
+    # adult range - their ANRIND stays missing by design, not oversight.
+    "ADVS", "SYSBP",  1,  90,   140,
+    "ADVS", "DIABP",  2,  50,   90,
+    "ADVS", "PULSE",  3,  50,   120,
+    "ADVS", "TEMP",   4,  35,   37.5,
+    "ADVS", "WEIGHT", 5,  NA,   NA,
+    "ADVS", "HEIGHT", 6,  NA,   NA,
+    # ADLB: ranges arrive with each record (sex-specific, central lab), so
+    # the spec carries only the deterministic PARAMN ordering.
+    "ADLB", "GLUC",   1,  NA,   NA,
+    "ADLB", "CREAT",  2,  NA,   NA,
+    "ADLB", "HGB",    3,  NA,   NA,
+    "ADLB", "K",      4,  NA,   NA,
+    "ADLB", "ALT",    5,  NA,   NA
+  ),
+
   variables = tribble(
     ~domain, ~variable, ~crf_field,        ~transform,    ~ref,      ~value,     ~aux,     ~default,
     # ---- DM (output order matters: DM has no trailing select) ----

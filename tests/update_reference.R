@@ -38,8 +38,11 @@ for (layer in c("sdtm", "adam")) {
   dir.create(to, recursive = TRUE, showWarnings = FALSE)
   for (nm in names(datasets)) {
     # write_rds (not saveRDS) so the refresh is byte-stable against the
-    # committed baselines: only real value changes show up as a diff
-    readr::write_rds(datasets[[nm]], file.path(to, paste0(tolower(nm), ".rds")))
+    # committed baselines: only real value changes show up as a diff.
+    # version is pinned because the serialization format, and therefore
+    # the bytes, can change between versions.
+    readr::write_rds(datasets[[nm]], file.path(to, paste0(tolower(nm), ".rds")),
+                     version = 2)
   }
   message(sprintf("update_reference: %d %s dataset(s) written",
                   length(datasets), layer))

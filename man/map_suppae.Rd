@@ -21,3 +21,14 @@ IDVAR = "AESEQ": every SUPP row points at exactly one AE record. AESEQ is
 a derived key, so the raw CRF fields are joined onto the built AE by
 AESPID (the log-line number the AE mapper carries for this purpose).
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-suppae")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+ae <- map_ae(forms$AE, spec_synth01, subject_ref(dm))
+suppae <- map_suppae(forms$AE, ae, spec_synth01)
+head(suppae[, c("USUBJID", "IDVARVAL", "QNAM", "QVAL")])
+}

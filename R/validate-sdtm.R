@@ -56,7 +56,8 @@
 #' formats, no study day 0, baseline-flag uniqueness, LBNRIND coherence, SV
 #' visit uniqueness, VISITNUM reconciliation against SV, screen-failure
 #' study-day leaks, SUPP/CO related-record structure, death coherence across
-#' AE/DS/DM, MH onset before first dose, and RELREC pair integrity.
+#' AE/DS/DM, MH onset before first dose, RELREC pair integrity and - when a
+#' spec is supplied - controlled-terminology values against `spec$codelists`.
 #'
 #' @param domains A named list of mapped SDTM datasets, as built by
 #'   [build_all()] (DM, EX, VS, AE, CM, DS, SV, LB, MH, SUPPDM, SUPPAE,
@@ -305,6 +306,37 @@ validate_sdtm <- function(domains, spec = NULL) {
       )
       if (length(bad_orig) > 0) {
         add(rel, "ERROR", "qorig-bad-value", str_flatten_comma(bad_orig))
+      }
+    }
+  }
+
+  # Controlled terminology consistency: for every codelist the spec maps
+  # through a decode transform, the built data must contain only
+  # spec-declared CDISC terms (plus any decode default, e.g. SEX's "U").
+  # The mappers already enforce this at map time via check_ct(); reading
+  # the spec a second time here means a drifted spec cannot satisfy both
+  # readers. Derivation-mapped variables (DSDECOD's reclassification) are
+  # skipped: their full output vocabulary lives in the derivation, not the
+  # codelist.
+  if (!is.null(spec)) {
+    decode_cts <- spec$variables |>
+      filter(transform == "decode", !is.na(ref)) |>
+      pull(ref) |>
+      unique()
+    for (ct in intersect(decode_cts, unique(spec$codelists$ct))) {
+      allowed <- spec$codelists$cdisc_term[spec$codelists$ct == ct]
+      defaults <- spec$variables$default[spec$variables$transform == "decode" &
+                                           spec$variables$ref == ct]
+      allowed <- c(allowed, defaults)
+      for (d in names(domains)) {
+        df <- domains[[d]]
+        if (!ct %in% names(df)) next
+        bad <- setdiff(unique(na.omit(df[[ct]])), allowed)
+        if (length(bad) > 0) {
+          add(d, "ERROR", "ct-value-not-in-spec",
+              sprintf("%s: value(s) not declared in the spec: %s", ct,
+                      str_flatten_comma(bad)))
+        }
       }
     }
   }

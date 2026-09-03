@@ -22,3 +22,13 @@ Which forms contribute a visit is spec-driven: every form marked
 \code{scheduled} in \code{spec$forms} (the event forms on real folders). Log forms
 live on Folder = "LOG" and never contribute.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-sv")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm   <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+sv   <- map_sv(forms, spec_synth01, subject_ref(dm))
+head(sv[, c("USUBJID", "VISITNUM", "VISIT", "SVSTDTC")])
+}

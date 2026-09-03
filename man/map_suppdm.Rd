@@ -20,3 +20,13 @@ qualifier is linked to its parent by USUBJID alone. Subject initials are
 collected for everyone, childbearing potential for women only, the
 "Other, specify" race text only when RACE is OTHER.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-suppdm")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+suppdm <- map_suppdm(forms$DM, spec_synth01)
+head(suppdm[, c("USUBJID", "QNAM", "QVAL")])
+}

@@ -15,8 +15,7 @@ validate_adam(
   vs,
   lb,
   suppae,
-  param_spec = tribble(~PARAMCD, ~ANRLO, ~ANRHI, "SYSBP", 90, 140, "DIABP", 50, 90,
-    "PULSE", 50, 120, "TEMP", 35, 37.5, "WEIGHT", NA, NA, "HEIGHT", NA, NA)
+  spec = spec_synth01
 )
 }
 \arguments{
@@ -25,10 +24,11 @@ validate_adam(
 \item{dm, ds, ae, vs, lb, suppae}{The SDTM source datasets the ADaM layer was
 built from}
 
-\item{param_spec}{The declared reference ranges for ADVS (PARAMCD, ANRLO,
-ANRHI). Defaults to an independent copy of the SYNTH01 SAP stand-in -
-deliberately a second declaration, so a silent change on either side
-(here or in \code{\link[=derive_advs]{derive_advs()}}) trips the range-drift check.}
+\item{spec}{A \code{study_spec}; the ADVS rows of \code{spec$bds} declare the
+reference ranges the built ADVS is checked against - a silent change
+on either side (in \code{spec$bds} or in \code{\link[=derive_advs]{derive_advs()}}) trips the
+range-drift check, and a parameter missing from \code{spec$bds} trips the
+coverage check}
 }
 \value{
 An issue tibble: domain, severity ("ERROR" / "WARN"), check,
@@ -50,6 +50,6 @@ built <- build_all(ext)
 issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADVS,
                         built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
                         built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
-                        built$sdtm$SUPPAE)
+                        built$sdtm$SUPPAE, spec_synth01)
 issues                                  # empty: the build is clean
 }

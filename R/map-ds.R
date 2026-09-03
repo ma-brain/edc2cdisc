@@ -13,6 +13,15 @@
 #' @param spec A `study_spec`
 #' @param refs Subject reference dates from [subject_ref()]
 #' @return The labelled SDTM DS tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-ds")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' ds <- map_ds(forms$DS, spec_synth01, subject_ref(dm))
+#' head(ds[, c("USUBJID", "DSSEQ", "DSDECOD", "DSCAT")])
 #' @export
 map_ds <- function(ds, spec, refs) {
   out <- map_variables(ds, spec, filter(spec$variables, domain == "DS"))

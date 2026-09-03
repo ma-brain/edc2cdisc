@@ -17,6 +17,15 @@
 #' @param suppae The mapped SDTM SUPPAE dataset
 #' @param adsl The ADSL dataset (see [derive_adsl()])
 #' @return The labelled ADAE tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-adae")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' built <- build_all(ext)
+#' adae <- derive_adae(built$sdtm$AE, built$sdtm$SUPPAE, built$adam$ADSL)
+#' head(adae[, c("USUBJID", "ASEQ", "ASTDT", "TRTEMFL")])
 #' @export
 derive_adae <- function(ae, suppae, adsl) {
   adsl_trt <- adsl |> select(USUBJID, TRTSDT, TRTEDT, SAFFL)

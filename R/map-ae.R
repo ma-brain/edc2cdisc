@@ -13,6 +13,15 @@
 #' @param spec A `study_spec`
 #' @param refs Subject reference dates from [subject_ref()]
 #' @return The labelled SDTM AE tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-ae")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' ae <- map_ae(forms$AE, spec_synth01, subject_ref(dm))
+#' head(ae[, c("USUBJID", "AESEQ", "AETERM", "AESEV", "AESTDY")])
 #' @export
 map_ae <- function(ae, spec, refs) {
   out <- map_variables(ae, spec, filter(spec$variables, domain == "AE"))

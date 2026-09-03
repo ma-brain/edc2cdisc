@@ -4,15 +4,15 @@
 \alias{derive_adlb}
 \title{Derive ADLB, the laboratory test results analysis dataset (BDS)}
 \usage{
-derive_adlb(lb, adsl, param_order = c("GLUC", "CREAT", "HGB", "K", "ALT"))
+derive_adlb(lb, adsl, spec = spec_synth01)
 }
 \arguments{
 \item{lb}{The mapped SDTM LB dataset}
 
 \item{adsl}{The ADSL dataset (see \code{\link[=derive_adsl]{derive_adsl()}})}
 
-\item{param_order}{Deterministic PARAMN ordering (chemistry panel first,
-matching the lab). Defaults to the SYNTH01 panel order.}
+\item{spec}{A \code{study_spec}; the ADLB rows of \code{spec$bds} declare the
+deterministic PARAMN ordering (chemistry panel first, matching the lab)}
 }
 \value{
 The labelled ADLB tibble.
@@ -23,4 +23,14 @@ row's own limits (LBSTNRLO/LBSTNRHI, standardised by the same factor as
 the result). Screen failures have no baseline record, so their
 BASE/BNRIND/CHG stay missing while ANRIND still computes - the record's
 own range needs no study-day anchor.
+}
+\examples{
+ext <- file.path(tempdir(), "ex-adlb")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+built <- build_all(ext)
+adlb <- derive_adlb(built$sdtm$LB, built$adam$ADSL, spec_synth01)
+head(adlb[, c("USUBJID", "PARAMCD", "AVAL", "BASE", "BNRIND")])
 }

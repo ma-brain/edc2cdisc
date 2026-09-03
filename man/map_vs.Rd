@@ -23,3 +23,13 @@ the collected _STD columns where the EDC system converted, with
 non-missing standard result on or before first dose, per subject per
 test - screen failures get none because RFSTDTC is the anchor.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-vs")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm   <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+vs   <- map_vs(forms$VS, spec_synth01, subject_ref(dm))
+head(vs[, c("USUBJID", "VSTESTCD", "VSORRES", "VSSTRESN", "VSBLFL")])
+}

@@ -22,3 +22,13 @@ to the last dose. No grace window - no SAP defines one, so the window is
 stated here where it can be argued with. Events with no classifiable
 onset, or for undosed subjects, stay blank.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-adae")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+built <- build_all(ext)
+adae <- derive_adae(built$sdtm$AE, built$sdtm$SUPPAE, built$adam$ADSL)
+head(adae[, c("USUBJID", "ASEQ", "ASTDT", "TRTEMFL")])
+}

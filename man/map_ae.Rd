@@ -22,3 +22,13 @@ taken, outcome) so an unmapped collected value breaks the run loudly.
 Treatment-emergent status is deliberately NOT derived here: TRTEMFL is an
 ADaM variable - SDTM keeps the collected facts, ADAE applies the rule.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-ae")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+ae <- map_ae(forms$AE, spec_synth01, subject_ref(dm))
+head(ae[, c("USUBJID", "AESEQ", "AETERM", "AESEV", "AESTDY")])
+}

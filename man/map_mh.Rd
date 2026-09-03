@@ -19,3 +19,13 @@ The labelled SDTM MH tibble.
 \description{
 Map the Medical History domain
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-mh")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+mh <- map_mh(forms$MH, spec_synth01, subject_ref(dm))
+head(mh[, c("USUBJID", "MHSEQ", "MHTERM", "MHSTDY")])
+}

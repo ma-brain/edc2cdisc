@@ -24,7 +24,8 @@ referential integrity against DM, unique --SEQ keys, ISO 8601 --DTC
 formats, no study day 0, baseline-flag uniqueness, LBNRIND coherence, SV
 visit uniqueness, VISITNUM reconciliation against SV, screen-failure
 study-day leaks, SUPP/CO related-record structure, death coherence across
-AE/DS/DM, MH onset before first dose, and RELREC pair integrity.
+AE/DS/DM, MH onset before first dose, RELREC pair integrity and - when a
+spec is supplied - controlled-terminology values against \code{spec$codelists}.
 }
 \examples{
 ext <- file.path(tempdir(), "extract-val")

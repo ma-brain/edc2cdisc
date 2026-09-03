@@ -19,3 +19,13 @@ The labelled SDTM CM tibble.
 \description{
 Map the Concomitant Medications domain
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-cm")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+cm <- map_cm(forms$CM, spec_synth01, subject_ref(dm))
+head(cm[, c("USUBJID", "CMSEQ", "CMTRT", "CMDOSE", "CMROUTE")])
+}

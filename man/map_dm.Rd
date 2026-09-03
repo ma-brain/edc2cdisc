@@ -25,3 +25,12 @@ computed at first dose (screen failures are aged at informed consent);
 partial birth dates stay missing rather than being silently imputed -
 that rule belongs to the analysis layer (see \code{\link[=derive_adsl]{derive_adsl()}}).
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-dm")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+head(dm[, c("USUBJID", "SITEID", "AGE", "SEX", "ARM")])
+}

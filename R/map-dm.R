@@ -27,6 +27,14 @@ subject_ref <- function(dm) {
 #' @param ds Raw DS clinical view (end of participation)
 #' @param spec A `study_spec`
 #' @return The labelled SDTM DM tibble, one row per subject.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-dm")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' head(dm[, c("USUBJID", "SITEID", "AGE", "SEX", "ARM")])
 #' @export
 map_dm <- function(dm, ex, ds, spec) {
   # Reference dates -----------------------------------------------------------

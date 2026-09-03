@@ -22,3 +22,13 @@ run) and then through the screen-failure reclassification derivation:
 this EDC build records a screen failure on the protocol-deviation code,
 and DS must carry the fact.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-ds")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+ds <- map_ds(forms$DS, spec_synth01, subject_ref(dm))
+head(ds[, c("USUBJID", "DSSEQ", "DSDECOD", "DSCAT")])
+}

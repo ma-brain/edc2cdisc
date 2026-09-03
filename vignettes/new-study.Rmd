@@ -108,6 +108,21 @@ spec5$tests <- rbind(
 )
 ```
 
+If the parameter should reach ADVS, declare its analysis configuration in
+`spec$bds` — order and reference ranges. A parameter built into ADVS
+without a `spec$bds` row is caught by the validator's coverage check, so
+the CRF addition cannot silently skip the analysis layer:
+
+```{r, eval = FALSE}
+spec5$bds <- rbind(
+  spec5$bds,
+  tibble::tribble(
+    ~domain, ~paramcd, ~paramn, ~anrlo, ~anrhi,
+    "ADVS",  "RESP",   7,       12,     20
+  )
+)
+```
+
 ## Building with your spec
 
 Any spec variant runs through the same pipeline:

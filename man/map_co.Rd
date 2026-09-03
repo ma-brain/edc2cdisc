@@ -22,3 +22,14 @@ text belongs in CO, not SUPP: SUPP is for structured name/value
 qualifiers, CO is for narrative tied to a record. Structure parallels
 SUPPAE - RDOMAIN / IDVAR / IDVARVAL point back at one AE record.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-co")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+ae <- map_ae(forms$AE, spec_synth01, subject_ref(dm))
+co <- map_co(forms$AE, ae, spec_synth01)
+head(co[, c("USUBJID", "COSEQ", "COVAL")])
+}

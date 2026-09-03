@@ -13,6 +13,16 @@
 #' @param ae_built The mapped AE dataset (see [map_ae()])
 #' @param spec A `study_spec`
 #' @return The labelled SDTM CO tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-co")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' ae <- map_ae(forms$AE, spec_synth01, subject_ref(dm))
+#' co <- map_co(forms$AE, ae, spec_synth01)
+#' head(co[, c("USUBJID", "COSEQ", "COVAL")])
 #' @export
 map_co <- function(ae, ae_built, spec) {
   ae |>
@@ -59,6 +69,18 @@ map_co <- function(ae, ae_built, spec) {
 #' @param cm_built The mapped CM dataset
 #' @param spec A `study_spec`
 #' @return The labelled SDTM RELREC tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-relrec")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' refs <- subject_ref(dm)
+#' ae <- map_ae(forms$AE, spec_synth01, refs)
+#' cm <- map_cm(forms$CM, spec_synth01, refs)
+#' relrec <- map_relrec(ae, cm, spec_synth01)
+#' head(relrec[, c("USUBJID", "RDOMAIN", "IDVARVAL", "RELID")])
 #' @export
 map_relrec <- function(ae_built, cm_built, spec) {
   linked_cm <- cm_built |>

@@ -21,3 +21,13 @@ The per-analyte pivot spec comes from \code{spec$tests} (domain "LB") and the
 conventional-to-SI conversion factors from \code{spec$units}. Baseline
 (LBBLFL) is the last non-missing standard result on or before first dose.
 }
+\examples{
+ext <- file.path(tempdir(), "ex-map-lb")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+lb <- map_lb(forms$LB, spec_synth01, subject_ref(dm))
+head(lb[, c("USUBJID", "LBTESTCD", "LBORRES", "LBSTRESN", "LBNRIND")])
+}

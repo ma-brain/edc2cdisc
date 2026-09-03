@@ -18,10 +18,11 @@
 #' @param adsl,adae,advs,adlb The mapped ADaM datasets
 #' @param dm,ds,ae,vs,lb,suppae The SDTM source datasets the ADaM layer was
 #'   built from
-#' @param param_spec The declared reference ranges for ADVS (PARAMCD, ANRLO,
-#'   ANRHI). Defaults to an independent copy of the SYNTH01 SAP stand-in -
-#'   deliberately a second declaration, so a silent change on either side
-#'   (here or in [derive_advs()]) trips the range-drift check.
+#' @param spec A `study_spec`; the ADVS rows of `spec$bds` declare the
+#'   reference ranges the built ADVS is checked against - a silent change
+#'   on either side (in `spec$bds` or in [derive_advs()]) trips the
+#'   range-drift check, and a parameter missing from `spec$bds` trips the
+#'   coverage check
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
 #'   detail. Empty when everything passes.
 #' @export
@@ -34,19 +35,11 @@
 #' issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADVS,
 #'                         built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
 #'                         built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
-#'                         built$sdtm$SUPPAE)
+#'                         built$sdtm$SUPPAE, spec_synth01)
 #' issues                                  # empty: the build is clean
 validate_adam <- function(adsl, adae, advs, adlb,
                           dm, ds, ae, vs, lb, suppae,
-                          param_spec = tribble(
-                            ~PARAMCD, ~ANRLO, ~ANRHI,
-                            "SYSBP",  90,      140,
-                            "DIABP",  50,      90,
-                            "PULSE",  50,      120,
-                            "TEMP",   35,      37.5,
-                            "WEIGHT", NA,      NA,
-                            "HEIGHT", NA,      NA
-                          )) {
+                          spec = spec_synth01) {
   issues <- list()
   add <- function(domain, severity, check, detail) {
     issues[[length(issues) + 1L]] <<- # nolint: assignment_linter. (issue collector)
@@ -486,10 +479,12 @@ validate_adam <- function(adsl, adae, advs, adlb,
 
   # ANRIND: recomputed from the row's own range, and the ranges themselves
   # must equal the declared spec
+  advs_spec <- filter(spec$bds, domain == "ADVS") |>
+    select(PARAMCD = paramcd, ANRLO = anrlo, ANRHI = anrhi)
   bad_range <- advs |>
     select(PARAMCD, ANRLO, ANRHI) |>
     distinct() |>
-    full_join(param_spec, by = "PARAMCD") |>
+    full_join(advs_spec, by = "PARAMCD") |>
     filter(is.na(PARAMCD) |
              xor(is.na(ANRLO.x), is.na(ANRLO.y)) |
              (!is.na(ANRLO.x) & !is.na(ANRLO.y) & ANRLO.x != ANRLO.y) |
@@ -524,6 +519,16 @@ validate_adam <- function(adsl, adae, advs, adlb,
   }
   if (any(advs$ADY == 0, na.rm = TRUE)) {
     add("ADVS", "ERROR", "advs-study-day-zero", "ADY equals zero")
+  }
+
+  # Spec coverage: every built parameter must be declared in spec$bds - a
+  # new vital sign collected on the CRF without an ADaM spec row shows up
+  # here instead of as a silently unconfigured analysis parameter
+  advs_undeclared <- setdiff(unique(advs$PARAMCD),
+                             spec$bds$paramcd[spec$bds$domain == "ADVS"])
+  if (length(advs_undeclared) > 0) {
+    add("ADVS", "ERROR", "advs-param-not-in-spec",
+        str_flatten_comma(advs_undeclared))
   }
 
   # ADLB: structure -------------------------------------------------------------
@@ -674,6 +679,13 @@ validate_adam <- function(adsl, adae, advs, adlb,
   }
   if (any(adlb$ADY == 0, na.rm = TRUE)) {
     add("ADLB", "ERROR", "adlb-study-day-zero", "ADY equals zero")
+  }
+
+  adlb_undeclared <- setdiff(unique(adlb$PARAMCD),
+                             spec$bds$paramcd[spec$bds$domain == "ADLB"])
+  if (length(adlb_undeclared) > 0) {
+    add("ADLB", "ERROR", "adlb-param-not-in-spec",
+        str_flatten_comma(adlb_undeclared))
   }
 
   report <- bind_rows(issues)

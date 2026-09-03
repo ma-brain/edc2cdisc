@@ -44,9 +44,10 @@ utils::globalVariables(c(
   "VSDAT_DD", "VSDAT_MM", "VSDAT_YYYY", "VSDTC", "VSDY", "VSORRES",
   "VSORRESU", "VSPERF", "VSPOS", "VSPOS_DECODE", "VSREASND", "VSSEQ",
   "VSSTAT", "VSSTRESC", "VSSTRESN", "VSSTRESU", "VSTEST", "VSTESTCD",
-  "VSTIM", "VariableLabel", "VariableName", "VariableOrdinal", "contactdtc",
-  "conv_factor", "conv_from", "conv_to", "ct", "domain", "dsstdtc",
-  "exendtc", "expect", "exstdtc", "n", "qeval", "qlabel", "qnam", "qorig",
-  "rave_decode", "rdomain", "recordposition", "src", "testcd", "trtedtc",
-  "trtsdtc", "usubjid", "vd"
+  "VSTIM", "VariableLabel", "VariableName", "VariableOrdinal", "anrhi",
+  "anrlo", "contactdtc", "conv_factor", "conv_from", "conv_to", "ct",
+  "domain", "dsstdtc", "exendtc", "expect", "exstdtc", "n", "paramcd",
+  "paramn", "qeval", "qlabel", "qnam", "qorig", "rave_decode", "rdomain",
+  "recordposition", "ref", "src", "testcd", "trtedtc", "trtsdtc", "usubjid",
+  "vd"
 ))
