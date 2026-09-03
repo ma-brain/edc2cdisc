@@ -1,0 +1,18 @@
+^edc2cdisc\.Rproj$
+^\.Rproj\.user$
+^\.gitignore$
+^PLAN\.md$
+^README\.md$
+^data$
+^data-raw$
+^cran-comments\.md$
+
+# Legacy numbered pipeline scripts, kept runnable alongside the package
+# until the conversion completes (see PLAN.md). Run order lives in
+# build_all() inside the package; these stay for the regression harness.
+^0[0-9]_.+\.R$
+^1[0-9]_.+\.R$
+^2[0-9]_.+\.R$
+^3[0-9]_.+\.R$
+^run_all\.R$
+^run_tests\.R$

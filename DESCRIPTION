@@ -1,0 +1,38 @@
+Package: edc2cdisc
+Type: Package
+Title: Convert EDC Clinical View Exports to CDISC SDTM and ADaM
+Version: 0.1.0
+Authors@R: person("Marius", "Ardelean", email = "m_ardelean@hotmail.com", role = c("aut", "cre"))
+Maintainer: Marius Ardelean <m_ardelean@hotmail.com>
+Description: Reads electronic data capture (EDC) clinical view CSV extracts
+    and maps them to CDISC SDTM domains, ADaM analysis datasets and a
+    define.xml stub, driven by an explicit study specification. A seeded
+    synthetic extract generator ships with the package, so the whole
+    Rave-to-SDTM-to-ADaM pipeline runs, is tested and can be demonstrated
+    without a live EDC system.
+License: MIT + file LICENSE
+URL: https://github.com/ma-brain/edc2cdisc
+BugReports: https://github.com/ma-brain/edc2cdisc/issues
+Depends:
+    R (>= 4.1)
+Imports:
+    dplyr (>= 1.2.0),
+    haven,
+    labelled,
+    purrr,
+    readr,
+    stats,
+    stringr,
+    tibble,
+    tidyr
+Suggests:
+    diffdf,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    waldo,
+    xml2
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
