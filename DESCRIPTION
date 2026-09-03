@@ -1,7 +1,7 @@
 Package: edc2cdisc
 Type: Package
 Title: Convert EDC Clinical View Exports to CDISC SDTM and ADaM
-Version: 0.1.0
+Version: 0.2.0
 Authors@R: person("Marius", "Ardelean", email = "m_ardelean@hotmail.com", role = c("aut", "cre"))
 Maintainer: Marius Ardelean <m_ardelean@hotmail.com>
 Description: Reads electronic data capture (EDC) clinical view CSV extracts
