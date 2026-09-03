@@ -9,7 +9,9 @@
 # Run:     Rscript tests/update_reference.R   (from the project root)
 # ============================================================================
 
-# work from the source tree or an installed copy, whichever is available
+# Only meaningful in a source checkout. Coverage tools and installed-copy
+# test runs reach this file too; there the refresh has nothing to do (and
+# no source tree to load), so it skips quietly.
 root <- local({
   p <- normalizePath(getwd(), mustWork = TRUE)
   repeat {
@@ -20,6 +22,10 @@ root <- local({
   }
   p
 })
+if (!dir.exists(file.path(root, "R"))) {
+  message("update_reference: not a source checkout - nothing to refresh")
+  quit("no", status = 0)
+}
 if (requireNamespace("pkgload", quietly = TRUE)) {
   pkgload::load_all(root, quiet = TRUE)
 } else {
