@@ -39,9 +39,16 @@ jobs:
           covr::to_cobertura(cov)
         shell: Rscript {0}
 
-      # kept self-contained: cobertura.xml is archived as a workflow
-      # artifact instead of uploaded to an external coverage service
-      # (which would require a CODECOV_TOKEN secret)
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./cobertura.xml
+          plugin: noop
+          disable_search: true
+          fail_ci_if_error: false   # a service hiccup must not redden CI
+
+      # local copy of the report, kept alongside the codecov upload
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
         with:
