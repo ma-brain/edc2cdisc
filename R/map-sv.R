@@ -22,16 +22,18 @@ map_sv <- function(forms, spec, refs) {
   source_forms <- intersect(scheduled, names(forms))
 
   sv_headers <- source_forms |>
-    map(\(f) forms[[f]] |>
-          transmute(
-            USUBJID    = str_c(spec$study$STUDYID, Subject, sep = "-"),
-            Folder,
-            FolderName,
-            # TargetDays travels in the header block as a character offset
-            TargetDays = suppressWarnings(as.integer(TargetDays)),
-            RECDT      = str_sub(RecordDate, 1, 10),
-            FORMOID    = f
-          )) |>
+    map(\(f) {
+      forms[[f]] |>
+        transmute(
+          USUBJID    = str_c(spec$study$STUDYID, Subject, sep = "-"),
+          Folder,
+          FolderName,
+          # TargetDays travels in the header block as a character offset
+          TargetDays = suppressWarnings(as.integer(TargetDays)),
+          RECDT      = str_sub(RecordDate, 1, 10),
+          FORMOID    = f
+        )
+    }) |>
     list_rbind() |>
     # keep only scheduled folders with a real record date
     filter(Folder %in% spec$visits$Folder, !is.na(RECDT), RECDT != "")

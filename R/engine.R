@@ -36,11 +36,11 @@ map_variables <- function(data, spec, rows, derivations = list()) {
         if (is.na(row$default)) mapped else coalesce(mapped, row$default)
       },
       dtc          = rave_dtc(
-                       work[[str_c(x, "_YYYY")]],
-                       work[[str_c(x, "_MM")]],
-                       work[[str_c(x, "_DD")]],
-                       time = if (is.na(row$aux)) NULL else work[[row$aux]]
-                     ),
+        work[[str_c(x, "_YYYY")]],
+        work[[str_c(x, "_MM")]],
+        work[[str_c(x, "_DD")]],
+        time = if (is.na(row$aux)) NULL else work[[row$aux]]
+      ),
       yn           = yn(work[[x]]),
       numeric      = suppressWarnings(as.numeric(work[[x]])),
       verbatim     = clean_verbatim(work[[x]]),

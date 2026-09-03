@@ -32,6 +32,7 @@ derive_advs <- function(vs, adsl,
                           "WEIGHT", 5,        NA,     NA,
                           "HEIGHT", 6,        NA,     NA
                         )) {
+  adsl_trtsdt <- adsl |> select(USUBJID, TRTSDT)
   vs_analysis <- vs |>
     # Analysis records are performed measurements. The NOT DONE row
     # documents a missed visit - SDTM keeps it with VSSTAT/VSREASND, but
@@ -39,7 +40,7 @@ derive_advs <- function(vs, adsl,
     # NA = performed rows.)
     filter(!VSSTAT %in% "NOT DONE") |>
     left_join(param_spec, by = c("VSTESTCD" = "PARAMCD")) |>
-    left_join(adsl |> select(USUBJID, TRTSDT), by = "USUBJID") |>
+    left_join(adsl_trtsdt, by = "USUBJID") |>
     mutate(
       # SDTM's baseline flag carried forward under its ADaM name
       ABLFL = VSBLFL,

@@ -255,9 +255,9 @@ build_define_xml <- function(domains, spec, path) {
       xml2::xml_add_child(ref, "def:WhereClauseRef", WhereClauseOID = wc_oid)
     }
     # hook the value list onto the parent variable's ItemRef
-    parent_ref <- xml2::xml_find_first(
-      mdv, str_c("//ItemGroupDef[@Name='", d, "']/ItemRef[@ItemOID='IT.", d,
-                 ".", f$var, "']"))
+    xpath <- str_c("//ItemGroupDef[@Name=']", d,
+                   "']/ItemRef[@ItemOID='IT.", d, ".", f$var, "']")
+    parent_ref <- xml2::xml_find_first(mdv, xpath)
     xml2::xml_add_child(parent_ref, "def:ValueListRef",
                         ValueListOID = str_c("VL.", d, ".", f$var))
   }

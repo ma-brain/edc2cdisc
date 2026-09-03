@@ -1,6 +1,8 @@
-# edc2cdisc <img src="man/figures/logo.png" align="right" height="139" alt="" />
+# edc2cdisc
 
-<!-- logo placeholder: no logo yet; the line above can be dropped until one exists -->
+[![R-CMD-check](https://github.com/ma-brain/edc2cdisc/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ma-brain/edc2cdisc/actions/workflows/R-CMD-check.yaml)
+[![lint](https://github.com/ma-brain/edc2cdisc/actions/workflows/lint.yaml/badge.svg)](https://github.com/ma-brain/edc2cdisc/actions/workflows/lint.yaml)
+[![Codecov test coverage](https://codecov.io/gh/ma-brain/edc2cdisc/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ma-brain/edc2cdisc)
 
 An R package that converts **EDC clinical view exports to CDISC SDTM and
 ADaM**, driven by an explicit study specification. It grew out of a

@@ -65,7 +65,7 @@
   },
 
   # Ongoing (AE) records carry no end date; the relative timing goes in
-  # ENRTPT / ENRF.
+  # the ENRTPT and ENRF flags.
   enrtpt_ongoing = function(data, spec) {
     if_else(data$AEONG == "1", "ONGOING", NA_character_)
   },

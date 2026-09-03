@@ -80,7 +80,7 @@
 validate_sdtm <- function(domains, spec = NULL) {
   issues <- list()
   add <- function(domain, severity, check, detail) {
-    issues[[length(issues) + 1L]] <<- .new_issue(domain, severity, check, detail)
+    issues[[length(issues) + 1L]] <<- .new_issue(domain, severity, check, detail) # nolint: assignment_linter. (issue collector)
   }
 
   dm_ids <- domains$DM$USUBJID
@@ -369,7 +369,7 @@ validate_sdtm <- function(domains, spec = NULL) {
     }
     rel_idvars <- relrec |> distinct(RDOMAIN, IDVAR)
     if (!setequal(rel_idvars$IDVAR, c("CMSEQ", "AESEQ")) ||
-        nrow(rel_idvars) != 2) {
+          nrow(rel_idvars) != 2) {
       add("RELREC", "ERROR", "idvar-not-seq",
           "IDVAR must be CMSEQ for the CM side and AESEQ for the AE side")
     }

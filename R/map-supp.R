@@ -102,9 +102,10 @@ map_suppae <- function(ae, ae_built, spec) {
 #' @return The labelled SUPPEX tibble.
 #' @export
 map_suppex <- function(ex, ex_built, spec) {
+  scheduled_visits <- spec$visits |> select(Folder, VISITNUM)
   parent <- ex |>
     filter(EXOCCUR == "1") |>
-    left_join(spec$visits |> select(Folder, VISITNUM), by = "Folder") |>
+    left_join(scheduled_visits, by = "Folder") |>
     mutate(STUDYID = spec$study$STUDYID,
            USUBJID = str_c(spec$study$STUDYID, Subject, sep = "-"),
            EXADMBY = supp_transform(EXADMBY, "squish")) |>

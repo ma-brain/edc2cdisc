@@ -15,7 +15,7 @@ rave_header_cols <- c(
   "DataPageId", "DataPageName", "PageRepeatNumber", "RecordDate",
   "RecordId", "recordposition", "RecordActive", "SaveTs", "MinCreated",
   "MaxUpdated"
-  )
+)
 
 #' Read one clinical view CSV
 #'
@@ -117,7 +117,7 @@ read_codelists <- function(dir) {
   lines <- read_lines(file.path(dir, "CodeLists.csv"))
   lines <- lines[!str_detect(lines, "^\"?EOF\"?\\s*$")]
   read_csv(I(lines), col_types = cols(.default = col_character()), na = "")
-  }
+}
 
 #' Attach CV metadata labels to a clinical view
 #'
@@ -133,7 +133,7 @@ label_from_cv_metadata <- function(data, form_oid, meta) {
     deframe() |>
     as.list()
   set_variable_labels(data, .labels = lbl, .strict = FALSE)
-  }
+}
 
 #' Safely pull a column that may not exist in this form
 #'
@@ -143,7 +143,7 @@ label_from_cv_metadata <- function(data, form_oid, meta) {
 #' @export
 col_or_na <- function(data, name) {
   if (name %in% names(data)) data[[name]] else rep(NA_character_, nrow(data))
-  }
+}
 
 #' Load every form in the extract at once
 #'
@@ -165,4 +165,4 @@ read_rave_extract <- function(form_oids = c("DM", "VS", "LB", "AE", "CM",
   form_oids |>
     set_names() |>
     map(\(f) label_from_cv_metadata(read_clinical_view(f, dir), f, meta))
-  }
+}

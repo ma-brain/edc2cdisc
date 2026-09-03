@@ -100,11 +100,11 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
   needs_ref <- spec$variables$transform == "derivation" &
     (is.na(spec$variables$ref) | spec$variables$ref == "")
   if (any(needs_ref)) {
+    bad <- paste0(spec$variables$domain, "/", spec$variables$variable)[needs_ref]
     stop(sprintf(
       "study spec: derivation row(s) without a ref: %s",
-      str_flatten_comma(paste0(spec$variables$domain, "/",
-                               spec$variables$variable)[needs_ref])),
-      call. = FALSE)
+      str_flatten_comma(bad)
+    ), call. = FALSE)
   }
 
   dup_ct <- spec$codelists |>

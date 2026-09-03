@@ -19,6 +19,7 @@
 #' @return The labelled ADAE tibble.
 #' @export
 derive_adae <- function(ae, suppae, adsl) {
+  adsl_trt <- adsl |> select(USUBJID, TRTSDT, TRTEDT, SAFFL)
   # SUPPAE -> wide: one column per QNAM, keyed to its AE record by AESEQ
   # (IDVARVAL). The validator keeps the long format unique on this key, so
   # the pivot cannot silently drop or duplicate qualifiers.
@@ -44,7 +45,7 @@ derive_adae <- function(ae, suppae, adsl) {
 
   ae |>
     left_join(supp_wide, by = c("USUBJID", "AESEQ")) |>
-    left_join(adsl |> select(USUBJID, TRTSDT, TRTEDT, SAFFL), by = "USUBJID") |>
+    left_join(adsl_trt, by = "USUBJID") |>
     mutate(
       ASTDT  = impute_dtc(AESTDTC)$date,
       ASTDTF = impute_dtc(AESTDTC)$flag,

@@ -41,18 +41,20 @@ make_supp <- function(parent, rdomain, idvar, qnams) {
   pmap(
     list(qnam = qnams$qnam, qlabel = qnams$qlabel, src = src,
          qorig = qorig, qeval = qeval),
-    \(qnam, qlabel, src, qorig, qeval) tibble(
-      STUDYID  = as.character(parent$STUDYID),
-      RDOMAIN  = rdomain,
-      USUBJID  = parent$USUBJID,
-      IDVAR    = if (is.na(idvar)) NA_character_ else idvar,
-      IDVARVAL = idvarval,
-      QNAM     = qnam,
-      QLABEL   = qlabel,
-      QVAL     = as.character(parent[[src]]),
-      QORIG    = qorig,
-      QEVAL    = qeval
-    )
+    \(qnam, qlabel, src, qorig, qeval) {
+      tibble(
+        STUDYID  = as.character(parent$STUDYID),
+        RDOMAIN  = rdomain,
+        USUBJID  = parent$USUBJID,
+        IDVAR    = if (is.na(idvar)) NA_character_ else idvar,
+        IDVARVAL = idvarval,
+        QNAM     = qnam,
+        QLABEL   = qlabel,
+        QVAL     = as.character(parent[[src]]),
+        QORIG    = qorig,
+        QEVAL    = qeval
+      )
+    }
   ) |>
     list_rbind() |>
     filter(!is.na(QVAL), QVAL != "") |>

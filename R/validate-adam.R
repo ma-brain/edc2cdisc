@@ -49,7 +49,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
                           )) {
   issues <- list()
   add <- function(domain, severity, check, detail) {
-    issues[[length(issues) + 1L]] <<-
+    issues[[length(issues) + 1L]] <<- # nolint: assignment_linter. (issue collector)
       .new_issue(domain, severity, check, detail)
   }
 
@@ -413,6 +413,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
   # Baseline: exactly one per randomized subject per parameter, none for
   # screen failures, and it must be the value SDTM flagged
   itt_ids <- adsl |> filter(ITTFL == "Y") |> pull(USUBJID)
+  adsl_ref <- adsl |> select(USUBJID, .ref_trtsdt = TRTSDT)
   bl_multi <- advs |>
     filter(ABLFL == "Y") |>
     count(USUBJID, PARAMCD, name = ".n") |>
@@ -514,7 +515,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
 
   # Analysis day: anchored on ADSL TRTSDT
   bad_ady <- advs |>
-    left_join(adsl |> select(USUBJID, .ref_trtsdt = TRTSDT), by = "USUBJID") |>
+    left_join(adsl_ref, by = "USUBJID") |>
     mutate(.expect = derive_dy_d(ADT, .ref_trtsdt)) |>
     filter(ADY != .expect)
   if (nrow(bad_ady) > 0) {
@@ -663,7 +664,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
   }
 
   bad_ady <- adlb |>
-    left_join(adsl |> select(USUBJID, .ref_trtsdt = TRTSDT), by = "USUBJID") |>
+    left_join(adsl_ref, by = "USUBJID") |>
     mutate(.expect = derive_dy_d(ADT, .ref_trtsdt)) |>
     filter(xor(is.na(ADY), is.na(.expect)) |
              (!is.na(ADY) & !is.na(.expect) & ADY != .expect))

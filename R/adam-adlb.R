@@ -24,11 +24,12 @@
 #' @export
 derive_adlb <- function(lb, adsl,
                         param_order = c("GLUC", "CREAT", "HGB", "K", "ALT")) {
+  adsl_trtsdt <- adsl |> select(USUBJID, TRTSDT)
   lb_analysis <- lb |>
     # Analysis records are performed panels. The NOT DONE row documents a
     # missed draw - SDTM keeps it with LBSTAT/LBREASND, BDS drops it.
     filter(!LBSTAT %in% "NOT DONE") |>
-    left_join(adsl |> select(USUBJID, TRTSDT), by = "USUBJID") |>
+    left_join(adsl_trtsdt, by = "USUBJID") |>
     mutate(
       ABLFL = LBBLFL,
       ADT   = dtc_date(LBDTC),

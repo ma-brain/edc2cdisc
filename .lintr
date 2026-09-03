@@ -1,0 +1,17 @@
+# edc2cdisc lint configuration (CI: lintr::lint_package(), any lint fails)
+linters: linters_with_defaults(
+    # the generator keeps the FormWriter port's layout; the paired
+    # assignments read better on one line
+    semicolon_linter = NULL,
+    # cannot see through dplyr data masking - it false-positives on every
+    # SDTM variable; R CMD check's possible-problems pass (globals.R) is
+    # the authority here
+    object_usage_linter = NULL,
+    # spec data tables (tribble rows) must stay on one line
+    line_length_linter = line_length_linter(130L),
+    # the generator's leading-dot UPPER internals (.SITES, .CODELISTS, ...)
+    object_name_linter = object_name_linter(
+      styles = "snake_case",
+      regexes = c("^\\.[A-Z0-9_]+$")
+    )
+  )

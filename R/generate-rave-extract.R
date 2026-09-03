@@ -157,14 +157,16 @@
 # Small helpers  (thin wrappers so the port reads like the original)
 # ---------------------------------------------------------------------------
 
- randint <- function(a, b) if (a == b) as.integer(a) else sample(a:b, 1L)
+randint <- function(a, b) {
+  if (a == b) as.integer(a) else sample(a:b, 1L)
+}
 choice  <- function(x) x[[sample.int(length(x), 1L)]]
 choices <- function(x, w) x[[sample.int(length(x), 1L, prob = w)]]
 
 id_gen <- function(start) {
   v <- start
   function() {
-    v <<- v + randint(1L, 4L)
+    v <<- v + randint(1L, 4L) # nolint: assignment_linter. (closure counter)
     as.character(v)
   }
 }
@@ -299,12 +301,12 @@ form_write <- function(e, outdir) {
 .DM_FIELDS <- c(
   "ICDAT", "ICDAT_RAW", "ICDAT_YYYY", "ICDAT_MM", "ICDAT_DD",
   "BRTHDAT", "BRTHDAT_RAW", "BRTHDAT_YYYY", "BRTHDAT_MM", "BRTHDAT_DD",
-  "SUBJINIT",                                   # non-standard -> SUPPDM
+  "SUBJINIT",                                   # non-standard, carried in SUPPDM
   "SEX", "SEX_RAW", "SEX_DECODE",
   "RACE", "RACE_RAW", "RACE_DECODE",
-  "RACEOTH",                                    # non-standard -> SUPPDM (RACE = OTHER only)
+  "RACEOTH",                                    # non-standard, carried in SUPPDM (RACE = OTHER only)
   "ETHNIC", "ETHNIC_RAW", "ETHNIC_DECODE",
-  "CHILDPOT", "CHILDPOT_RAW", "CHILDPOT_DECODE", # non-standard -> SUPPDM (females only)
+  "CHILDPOT", "CHILDPOT_RAW", "CHILDPOT_DECODE", # non-standard, carried in SUPPDM (females only)
   "ARMCD", "ARMCD_RAW", "ARMCD_DECODE",
   "RANDDAT", "RANDDAT_RAW", "RANDDAT_YYYY", "RANDDAT_MM", "RANDDAT_DD"
 )
@@ -333,8 +335,8 @@ form_write <- function(e, outdir) {
   "AEREL", "AEREL_RAW", "AEREL_DECODE",
   "AEACN", "AEACN_RAW", "AEACN_DECODE",
   "AEOUT", "AEOUT_RAW", "AEOUT_DECODE",
-  "AESI", "AESI_RAW", "AESI_DECODE",             # non-standard -> SUPPAE
-  "AEDISCON", "AEDISCON_RAW", "AEDISCON_DECODE", # non-standard -> SUPPAE
+  "AESI", "AESI_RAW", "AESI_DECODE",             # non-standard, carried in SUPPAE
+  "AEDISCON", "AEDISCON_RAW", "AEDISCON_DECODE", # non-standard, carried in SUPPAE
   "AECOMNT"                                      # free text -> CO domain
 )
 
@@ -364,7 +366,7 @@ form_write <- function(e, outdir) {
   "EXROUTE", "EXROUTE_RAW", "EXROUTE_DECODE",
   "EXSTDAT", "EXSTDAT_RAW", "EXSTDAT_YYYY", "EXSTDAT_MM", "EXSTDAT_DD",
   "EXENDAT", "EXENDAT_RAW", "EXENDAT_YYYY", "EXENDAT_MM", "EXENDAT_DD",
-  "EXADMBY"                                      # non-standard -> SUPPEX
+  "EXADMBY"                                      # non-standard, carried in SUPPEX
 )
 
 .DS_FIELDS <- c(
@@ -427,9 +429,7 @@ build_subjects <- function(n) {
     scrn <- enrol + (as.integer(i * 3.5) + randint(0L, 3L))
     base <- scrn + randint(7L, 14L)
 
-    status <- if (i %in% c(5L, 17L)) "SF"
-              else if (i %in% c(3L, 11L, 20L)) "ET"
-              else "COMPLETED"
+    status <- if (i %in% c(5L, 17L)) "SF" else if (i %in% c(3L, 11L, 20L)) "ET" else "COMPLETED"
 
     list(
       subjectId = sid(),
@@ -463,8 +463,11 @@ visit_dates <- function(sub) {
   for (folder in ord) {
     if (folder == "EOT") {
       # EOT always happens, at the point of discontinuation for ET subjects
-      anchor <- if (!is.null(stop_after)) offsets[[stop_after]] + randint(1L, 6L)
-                else 84L + randint(-3L, 3L)
+      anchor <- if (!is.null(stop_after)) {
+        offsets[[stop_after]] + randint(1L, 6L)
+      } else {
+        84L + randint(-3L, 3L)
+      }
       out[["EOT"]] <- sub$base + anchor
       next
     }
@@ -508,7 +511,9 @@ populate <- function(subjects) {
     raceoth <- if (race_code == "5") {
       c("MIDDLE EASTERN", "MIXED WHITE AND ASIAN",
         "NORTH AFRICAN")[idx %% 3L + 1L]
-    } else ""
+    } else {
+      ""
+    }
 
     age_scrn <- as.integer(format(sub$scrn, "%Y")) -
       as.integer(format(sub$birth, "%Y"))
@@ -669,7 +674,9 @@ populate <- function(subjects) {
           sprintf(paste("%s flagged as an event of special interest and",
                         "reported on an expedited basis per protocol."),
                   str_to_sentence(pt))
-        } else ""
+        } else {
+          ""
+        }
 
         f <- c(
           # trailing whitespace + case noise, as in real EDC free text
@@ -939,10 +946,15 @@ write_metadata <- function(forms, outdir) {
           label <- paste(base_label, sm[1]); vtype <- sm[2]; len <- sm[3]
         } else {
           label <- base_label
-          if (endsWith(base, "DAT")) { vtype <- "date"; len <- "20" }
-          else if (base %in% .FLOAT_FIELDS) { vtype <- "float"; len <- "8" }
-          else if (!is.null(.CODELIST_OF[[base]])) { vtype <- "text"; len <- "8" }
-          else { vtype <- "text"; len <- "200" }
+          if (endsWith(base, "DAT")) {
+            vtype <- "date"; len <- "20"
+          } else if (base %in% .FLOAT_FIELDS) {
+            vtype <- "float"; len <- "8"
+          } else if (!is.null(.CODELIST_OF[[base]])) {
+            vtype <- "text"; len <- "8"
+          } else {
+            vtype <- "text"; len <- "200"
+          }
         }
         codelist <- if (!is.null(.CODELIST_OF[[base]])) .CODELIST_OF[[base]] else ""
       }
@@ -964,12 +976,15 @@ write_metadata <- function(forms, outdir) {
 }
 
 write_codelists <- function(outdir) {
-  rows <- imap(.CODELISTS, \(vals, cl) tibble(
-    CodeListOID = cl,
-    CodedValue  = names(vals),
-    Decode      = unname(vals),
-    Ordinal     = seq_along(vals)
-  )) |> list_rbind()
+  rows <- imap(.CODELISTS, \(vals, cl) {
+    tibble(
+      CodeListOID = cl,
+      CodedValue  = names(vals),
+      Decode      = unname(vals),
+      Ordinal     = seq_along(vals)
+    )
+  }) |>
+    list_rbind()
 
   path <- file.path(outdir, "CodeLists.csv")
   write_csv(rows, path, quote = "all", eol = "\n", na = "")
@@ -1062,8 +1077,11 @@ apply_deaths <- function(forms, subjects) {
     )), record_position = as.integer(pos), page_repeat = 0L)
     if (length(own_ae) > 0L) {
       n <- length(forms$AE$rows)
-      forms$AE$rows <- forms$AE$rows[
-        c(seq_len(own_ae[length(own_ae)]), n, seq(own_ae[length(own_ae)] + 1L, n - 1L))]
+      new_order <- c(
+        seq_len(own_ae[length(own_ae)]), n,
+        seq(own_ae[length(own_ae)] + 1L, n - 1L)
+      )
+      forms$AE$rows <- forms$AE$rows[new_order]
     }
   }
   invisible(forms)
@@ -1142,7 +1160,7 @@ apply_mh <- function(forms, subjects) {
       form_add(mh, sub, "LOG", NA, f, record_position = pos)
     }
 
-    assign(".Random.seed", seed_hold, envir = globalenv())
+    assign(".Random.seed", seed_hold, envir = globalenv()) # nolint: object_name_linter. (.Random.seed is a required base name)
   }
   forms$MH <- mh
   invisible(forms)
