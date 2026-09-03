@@ -10,8 +10,9 @@
 # ============================================================================
 
 # Only meaningful in a source checkout. Coverage tools and installed-copy
-# test runs reach this file too; there the refresh has nothing to do (and
-# no source tree to load), so it skips quietly.
+# test runs reach this file too; there the "R/" directory holds the
+# lazy-load database, not sources - nothing to load and nothing to refresh -
+# so the script skips quietly instead of erroring.
 root <- local({
   p <- normalizePath(getwd(), mustWork = TRUE)
   repeat {
@@ -22,34 +23,38 @@ root <- local({
   }
   p
 })
-if (!dir.exists(file.path(root, "R"))) {
+
+is_source_checkout <- dir.exists(file.path(root, "R")) &&
+  length(list.files(file.path(root, "R"), pattern = "[.]R$")) > 0
+
+if (!is_source_checkout) {
   message("update_reference: not a source checkout - nothing to refresh")
-  quit("no", status = 0)
-}
-if (requireNamespace("pkgload", quietly = TRUE)) {
-  pkgload::load_all(root, quiet = TRUE)
 } else {
-  library(edc2cdisc)
-}
-
-scratch <- file.path(tempdir(), "edc2cdisc-ref-update")
-on.exit(unlink(scratch, recursive = TRUE, force = TRUE), add = TRUE)
-
-suppressMessages(generate_rave_extract(out = file.path(scratch, "rave")))
-built <- build_all(file.path(scratch, "rave"))
-
-for (layer in c("sdtm", "adam")) {
-  datasets <- if (layer == "sdtm") built$sdtm else built$adam
-  to <- file.path("tests", "reference", layer)
-  dir.create(to, recursive = TRUE, showWarnings = FALSE)
-  for (nm in names(datasets)) {
-    # write_rds (not saveRDS) so the refresh is byte-stable against the
-    # committed baselines: only real value changes show up as a diff.
-    # version is pinned because the serialization format, and therefore
-    # the bytes, can change between versions.
-    readr::write_rds(datasets[[nm]], file.path(to, paste0(tolower(nm), ".rds")),
-                     version = 2)
+  if (requireNamespace("pkgload", quietly = TRUE)) {
+    pkgload::load_all(root, quiet = TRUE)
+  } else {
+    library(edc2cdisc)
   }
-  message(sprintf("update_reference: %d %s dataset(s) written",
-                  length(datasets), layer))
+
+  scratch <- file.path(tempdir(), "edc2cdisc-ref-update")
+  on.exit(unlink(scratch, recursive = TRUE, force = TRUE), add = TRUE)
+
+  suppressMessages(generate_rave_extract(out = file.path(scratch, "rave")))
+  built <- build_all(file.path(scratch, "rave"))
+
+  for (layer in c("sdtm", "adam")) {
+    datasets <- if (layer == "sdtm") built$sdtm else built$adam
+    to <- file.path("tests", "reference", layer)
+    dir.create(to, recursive = TRUE, showWarnings = FALSE)
+    for (nm in names(datasets)) {
+      # write_rds (not saveRDS) so the refresh is byte-stable against the
+      # committed baselines: only real value changes show up as a diff.
+      # version is pinned because the serialization format, and therefore
+      # the bytes, can change between versions.
+      readr::write_rds(datasets[[nm]], file.path(to, paste0(tolower(nm), ".rds")),
+                       version = 2)
+    }
+    message(sprintf("update_reference: %d %s dataset(s) written",
+                    length(datasets), layer))
+  }
 }
