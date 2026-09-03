@@ -47,7 +47,7 @@ jobs:
         with:
           name: coverage-report
           path: cobertura.xml
-          if-no-files-found: warning
+          if-no-files-found: warn
 
       - name: Show testthat output
         if: always()
