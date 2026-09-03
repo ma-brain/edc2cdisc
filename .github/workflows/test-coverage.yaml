@@ -35,16 +35,19 @@ jobs:
             clean = FALSE,
             install_path = file.path(normalizePath(Sys.getenv("RUNNER_TEMP"), winslash = "/"), "package")
           )
+          print(cov)
           covr::to_cobertura(cov)
         shell: Rscript {0}
 
-      - uses: codecov/codecov-action@v4
+      # kept self-contained: cobertura.xml is archived as a workflow
+      # artifact instead of uploaded to an external coverage service
+      # (which would require a CODECOV_TOKEN secret)
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
         with:
-          fail_ci_if_error: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          files: ./cobertura.xml
-          plugin: noop
-          disable_search: true
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-report
+          path: cobertura.xml
+          if-no-files-found: warning
 
       - name: Show testthat output
         if: always()

@@ -2,7 +2,7 @@
 
 [![R-CMD-check](https://github.com/ma-brain/edc2cdisc/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/ma-brain/edc2cdisc/actions/workflows/R-CMD-check.yaml)
 [![lint](https://github.com/ma-brain/edc2cdisc/actions/workflows/lint.yaml/badge.svg)](https://github.com/ma-brain/edc2cdisc/actions/workflows/lint.yaml)
-[![Codecov test coverage](https://codecov.io/gh/ma-brain/edc2cdisc/branch/main/graph/badge.svg)](https://app.codecov.io/gh/ma-brain/edc2cdisc)
+[![test-coverage](https://github.com/ma-brain/edc2cdisc/actions/workflows/test-coverage.yaml/badge.svg)](https://github.com/ma-brain/edc2cdisc/actions/workflows/test-coverage.yaml)
 
 An R package that converts **EDC clinical view exports to CDISC SDTM and
 ADaM**, driven by an explicit study specification. It grew out of a
