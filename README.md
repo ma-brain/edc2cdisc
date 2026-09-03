@@ -4,8 +4,9 @@
 
 An R package that converts **EDC clinical view exports to CDISC SDTM and
 ADaM**, driven by an explicit study specification. It grew out of a
-script-based training project (Rave → SDTM → ADaM); the conversion plan and
-its rationale live in [PLAN.md](PLAN.md).
+script-based training project (Rave → SDTM → ADaM) and was converted into
+this package form with every output verified behaviour-identical against
+the original pipeline.
 
 The package is **R-only** and needs no live EDC system: a seeded generator
 writes a synthetic clinical view extract (one quoted CSV per CRF form, plus
