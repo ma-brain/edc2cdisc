@@ -30,9 +30,13 @@
 #   - trailing whitespace + case noise in verbatim terms
 # ============================================================================
 
-# Study-level constants of the synthetic study. These describe the CRF the
+# Study-level constants of the synthetic studies. These describe the CRF the
 # generator emits - they are generator internals, not mapping configuration
-# (the mapping side lives in the study spec).
+# (the mapping side lives in the study spec). The SYNTH01 constants below are
+# the module defaults and feed .cfg_synth01() verbatim; .cfg_synth02() (see
+# generator-configs.R) is a second, deliberately different study built on the
+# same CRF family. Everything the two studies share is the family; everything
+# that differs lives in the configs.
 .gen_project      <- "SYNTH01"
 .gen_project_id   <- "1487"
 .gen_studyid      <- "3021"
@@ -214,11 +218,11 @@ date_cols <- function(prefix, d, missing = "none") {
             c(prefix, paste0(prefix, c("_RAW", "_YYYY", "_MM", "_DD"))))
 }
 
-coded_cols <- function(prefix, codelist, value) {
+coded_cols <- function(cfg, prefix, codelist, value) {
   if (length(value) == 0 || is.na(value) || identical(value, "")) {
     out <- list("", "", "")
   } else {
-    out <- list(value, value, unname(.CODELISTS[[codelist]][[value]]))
+    out <- list(value, value, unname(cfg$codelists[[codelist]][[value]]))
   }
   set_names(out, c(prefix, paste0(prefix, c("_RAW", "_DECODE"))))
 }
@@ -233,11 +237,12 @@ dfmt <- function(x, dp) formatC(x, format = "f", digits = dp)
 # Form builder  (was the FormWriter class)
 # ---------------------------------------------------------------------------
 
-new_form <- function(form_oid, page_name, field_cols) {
+new_form <- function(form_oid, page_name, field_cols, cfg) {
   e <- new.env(parent = emptyenv())
   e$form_oid     <- form_oid
   e$page_name    <- page_name
   e$field_cols   <- field_cols
+  e$cfg          <- cfg
   e$rows         <- list()
   off <- .FORM_ID_OFFSET[[form_oid]]
   e$datapage_id  <- id_gen(600000L + off)
@@ -248,7 +253,8 @@ new_form <- function(form_oid, page_name, field_cols) {
 
 form_add <- function(e, sub, folder_oid, rec_date, fields,
                      record_position = 0L, active = "1", page_repeat = 0L) {
-  folder <- .FOLDERS[[folder_oid]]
+  cfg    <- e$cfg
+  folder <- cfg$folders[[folder_oid]]
   site   <- sub$site
   has_rec <- length(rec_date) == 1L && !is.na(rec_date)
 
@@ -258,8 +264,8 @@ form_add <- function(e, sub, folder_oid, rec_date, fields,
   updated <- iso_dt(save_dt + randint(0L, 20L), randint(8L, 17L), randint(0L, 59L))
 
   header <- list(
-    userid = .gen_user_id, projectid = .gen_project_id, project = .gen_project,
-    studyid = .gen_studyid, environmentName = .gen_environment,
+    userid = cfg$user_id, projectid = cfg$project_id, project = cfg$project,
+    studyid = cfg$studyid, environmentName = cfg$environment,
     subjectId = sub$subjectId, StudySiteId = site[5], Subject = sub$Subject,
     siteid = site[1], Site = site[3], SiteNumber = site[2], SiteGroup = site[4],
     instanceId = e$instance_id(), InstanceName = folder[4],
@@ -414,33 +420,42 @@ form_write <- function(e, outdir) {
        dp_us = 0, dp_si = 0, nr = list(M = c(10, 40),   "F" = c(7, 35)))
 )
 
-.LB_FIELDS <- c(
-  "LBPERF", "LBPERF_RAW", "LBPERF_DECODE",
-  "LBDAT", "LBDAT_RAW", "LBDAT_YYYY", "LBDAT_MM", "LBDAT_DD",
-  "LBTIM", "LBTIM_RAW",
-  "LBFAST", "LBFAST_RAW", "LBFAST_DECODE",
-  unlist(lapply(.LB_PANEL, function(a) {
-    cols <- paste0(a$oid, c("", "_RAW", "_UN"))
-    if (a$std) cols <- c(cols, paste0(a$oid, c("_STD", "_STD_UN")))
-    c(cols, paste0(a$oid, c("_NRLO", "_NRHI")))
-  }))
-)
+# The extract column family for the lab form, derived from the panel: one
+# value/_RAW/_UN block per analyte, plus _STD/_STD_UN where the EDC
+# conversion is configured, plus _NRLO/_NRHI always.
+.lb_fields <- function(panel) {
+  c(
+    "LBPERF", "LBPERF_RAW", "LBPERF_DECODE",
+    "LBDAT", "LBDAT_RAW", "LBDAT_YYYY", "LBDAT_MM", "LBDAT_DD",
+    "LBTIM", "LBTIM_RAW",
+    "LBFAST", "LBFAST_RAW", "LBFAST_DECODE",
+    unlist(lapply(panel, function(a) {
+      cols <- paste0(a$oid, c("", "_RAW", "_UN"))
+      if (a$std) cols <- c(cols, paste0(a$oid, c("_STD", "_STD_UN")))
+      c(cols, paste0(a$oid, c("_NRLO", "_NRHI")))
+    }))
+  )
+}
+
+.LB_FIELDS <- .lb_fields(.LB_PANEL)
 
 # ---------------------------------------------------------------------------
 # Subject construction
 # ---------------------------------------------------------------------------
 
-build_subjects <- function(n) {
-  sid <- id_gen(310000L)
-  enrol <- as.Date("2024-01-15")
+build_subjects <- function(n, cfg) {
+  sid   <- id_gen(cfg$subject_id_base)
+  enrol <- cfg$enrol
+  n_arms     <- length(cfg$codelists$ARM)
+  arm_codes  <- names(cfg$codelists$ARM)
 
   map(seq_len(n) - 1L, function(i) {   # i is 0-based, as in the original
-    site <- .SITES[[i %% length(.SITES) + 1L]]
+    site <- cfg$sites[[i %% length(cfg$sites) + 1L]]
     seq  <- i + 1L
     scrn <- enrol + (as.integer(i * 3.5) + randint(0L, 3L))
     base <- scrn + randint(7L, 14L)
 
-    status <- if (i %in% c(5L, 17L)) "SF" else if (i %in% c(3L, 11L, 20L)) "ET" else "COMPLETED"
+    status <- if (i %in% cfg$idx$sf) "SF" else if (i %in% cfg$idx$et) "ET" else "COMPLETED"
 
     list(
       subjectId = sid(),
@@ -450,36 +465,40 @@ build_subjects <- function(n) {
       sex       = choice(c("1", "2")),
       race      = choices(c("1", "2", "3", "5"), c(0.7, 0.12, 0.12, 0.06)),
       ethnic    = choices(c("1", "2", "3"), c(0.15, 0.8, 0.05)),
-      arm       = c("1", "2", "3")[i %% 3L + 1L],
-      birth     = as.Date(sprintf("%04d-%02d-%02d", randint(1948L, 1996L),
+      arm       = arm_codes[i %% n_arms + 1L],
+      birth     = as.Date(sprintf("%04d-%02d-%02d",
+                                  randint(cfg$birth_years[[1]], cfg$birth_years[[2]]),
                                   randint(1L, 12L), randint(1L, 28L))),
       scrn      = scrn,
       base      = base,
       height    = round(runif(1, 152, 191), 1),
       weight_kg = round(runif(1, 54, 108), 1),
-      imperial  = site[2] == "103"   # US site keys imperial units
+      imperial  = site[2] == cfg$imperial_site   # this study's site keys imperial units
     )
   })
 }
 
-# Actual visit dates per folder, honouring discontinuation
-visit_dates <- function(sub) {
+# Actual visit dates per folder, honouring discontinuation. The post-baseline
+# schedule comes from cfg$visit_offsets (named offsets from BASE, EOT last).
+visit_dates <- function(sub, cfg) {
   if (sub$status == "SF") return(list(SCRN = sub$scrn))
   out <- list(SCRN = sub$scrn, BASE = sub$base)
 
-  offsets <- c(WK02 = 14L, WK04 = 28L, WK08 = 56L, EOT = 84L)
-  ord <- names(offsets)
-  stop_after <- if (sub$status == "ET") choice(c("WK02", "WK04")) else NULL
+  offsets    <- cfg$visit_offsets
+  ord        <- names(offsets)
+  last_visit <- utils::tail(ord, 1L)
+  stop_after <- if (sub$status == "ET") choice(cfg$et_stop) else NULL
 
   for (folder in ord) {
-    if (folder == "EOT") {
-      # EOT always happens, at the point of discontinuation for ET subjects
+    if (folder == last_visit) {
+      # End of treatment always happens, at the point of discontinuation for
+      # ET subjects
       anchor <- if (!is.null(stop_after)) {
         offsets[[stop_after]] + randint(1L, 6L)
       } else {
-        84L + randint(-3L, 3L)
+        offsets[[last_visit]] + randint(-3L, 3L)
       }
-      out[["EOT"]] <- sub$base + anchor
+      out[[last_visit]] <- sub$base + anchor
       next
     }
     if (!is.null(stop_after) && match(folder, ord) > match(stop_after, ord)) next
@@ -492,33 +511,39 @@ visit_dates <- function(sub) {
 # Population
 # ---------------------------------------------------------------------------
 
-populate <- function(subjects) {
-  dm <- new_form("DM", "Demographics", .DM_FIELDS)
-  vs <- new_form("VS", "Vital Signs", .VS_FIELDS)
-  ae <- new_form("AE", "Adverse Events", .AE_FIELDS)
-  cm <- new_form("CM", "Concomitant Medications", .CM_FIELDS)
-  ex <- new_form("EX", "Study Drug Administration", .EX_FIELDS)
-  ds <- new_form("DS", "End of Study", .DS_FIELDS)
-  lb <- new_form("LB", "Laboratory", .LB_FIELDS)
+populate <- function(subjects, cfg) {
+  dm <- new_form("DM", "Demographics", cfg$fields$DM, cfg)
+  vs <- new_form("VS", "Vital Signs", cfg$fields$VS, cfg)
+  ae <- new_form("AE", "Adverse Events", cfg$fields$AE, cfg)
+  cm <- new_form("CM", "Concomitant Medications", cfg$fields$CM, cfg)
+  ex <- new_form("EX", "Study Drug Administration", cfg$fields$EX, cfg)
+  ds <- new_form("DS", "End of Study", cfg$fields$DS, cfg)
+  lb <- new_form("LB", "Laboratory", cfg$fields$LB, cfg)
 
   for (idx in seq_along(subjects) - 1L) {
     sub <- subjects[[idx + 1L]]
-    vdates <- visit_dates(sub)
+    vdates <- visit_dates(sub, cfg)
 
     # ---- DM ---------------------------------------------------------------
     ic_date <- sub$scrn - randint(0L, 3L)
-    birth_missing <- if (idx == 2L) "day" else if (idx == 9L) "monthday" else "none"
+    birth_missing <- if (idx == cfg$idx$birth_day) {
+      "day"
+    } else if (idx == cfg$idx$birth_monthday) {
+      "monthday"
+    } else {
+      "none"
+    }
 
     # Non-standard DM fields -> SUPPDM. Derived deterministically so the RNG
     # stream (and every downstream domain) is unchanged by adding them.
     #   SUBJINIT  three letters, keyed off the internal subject id
-    #   RACEOTH   free text, only when RACE is OTHER (idx 6 is forced to OTHER
-    #             so there is always at least one to map)
+    #   RACEOTH   free text, only when RACE is OTHER (one subject index is
+    #             forced to OTHER so there is always at least one to map)
     #   CHILDPOT  collected for women only; "N" once past childbearing age
     init_n   <- sum(utf8ToInt(sub$subjectId))
     subjinit <- paste0(LETTERS[(init_n * c(3L, 7L, 13L)) %% 26L + 1L], collapse = "")
 
-    race_code <- if (idx == 6L) "5" else sub$race
+    race_code <- if (idx == cfg$idx$race_other) "5" else sub$race
     raceoth <- if (race_code == "5") {
       c("MIDDLE EASTERN", "MIXED WHITE AND ASIAN",
         "NORTH AFRICAN")[idx %% 3L + 1L]
@@ -534,30 +559,30 @@ populate <- function(subjects) {
       date_cols("ICDAT", ic_date),
       date_cols("BRTHDAT", sub$birth, birth_missing),
       list(SUBJINIT = subjinit),
-      coded_cols("SEX", "SEX", sub$sex),
-      coded_cols("RACE", "RACE", race_code),
+      coded_cols(cfg, "SEX", "SEX", sub$sex),
+      coded_cols(cfg, "RACE", "RACE", race_code),
       list(RACEOTH = raceoth),
-      coded_cols("ETHNIC", "ETHNIC", sub$ethnic),
-      coded_cols("CHILDPOT", "YN", childpot)
+      coded_cols(cfg, "ETHNIC", "ETHNIC", sub$ethnic),
+      coded_cols(cfg, "CHILDPOT", "YN", childpot)
     )
     if (sub$status == "SF") {
-      f <- c(f, coded_cols("ARMCD", "ARM", ""),
+      f <- c(f, coded_cols(cfg, "ARMCD", "ARM", ""),
              date_cols("RANDDAT", as.Date(NA), "all"))
     } else {
-      f <- c(f, coded_cols("ARMCD", "ARM", sub$arm),
+      f <- c(f, coded_cols(cfg, "ARMCD", "ARM", sub$arm),
              date_cols("RANDDAT", sub$base))
     }
     form_add(dm, sub, "SCRN", sub$scrn, f)
 
     # ---- VS -------------------------------------------------------------
-    for (folder in .VISIT_FOLDERS) {
+    for (folder in cfg$visit_folders) {
       if (is.null(vdates[[folder]])) next
       vdate <- vdates[[folder]]
 
       # one visit not performed
-      if (idx == 7L && folder == "WK04") {
+      if (idx == cfg$idx$vs_np && folder == cfg$idx$vs_np_folder) {
         form_add(vs, sub, folder, vdate,
-                 c(coded_cols("VSPERF", "YN", "0"), date_cols("VSDAT", vdate)))
+                 c(coded_cols(cfg, "VSPERF", "YN", "0"), date_cols("VSDAT", vdate)))
         next
       }
 
@@ -568,11 +593,11 @@ populate <- function(subjects) {
       temp_c    <- round(36.6 + rnorm(1, 0, 0.35), 1)
       weight_kg <- round(sub$weight_kg + rnorm(1, 0, 1.2), 1)
 
-      f <- c(coded_cols("VSPERF", "YN", "1"), date_cols("VSDAT", vdate))
+      f <- c(coded_cols(cfg, "VSPERF", "YN", "1"), date_cols("VSDAT", vdate))
       vstim <- sprintf("%02d:%s", randint(8L, 15L), choice(c("00", "15", "30", "45")))
       f[["VSTIM"]] <- vstim
       f[["VSTIM_RAW"]] <- vstim
-      f <- c(f, coded_cols("VSPOS", "POS", choices(c("1", "2"), c(0.85, 0.15))))
+      f <- c(f, coded_cols(cfg, "VSPOS", "POS", choices(c("1", "2"), c(0.85, 0.15))))
 
       f[["SYSBP"]] <- as.character(sys_bp)
       f[["SYSBP_RAW"]] <- as.character(sys_bp)
@@ -583,6 +608,15 @@ populate <- function(subjects) {
       f[["PULSE"]] <- as.character(pulse)
       f[["PULSE_RAW"]] <- as.character(pulse)
       f[["PULSE_UN"]] <- "beats/min"
+
+      # the study's extra vital sign, if any (no _STD column, like the BPs)
+      if (!is.null(cfg$vs_extra)) {
+        xtra <- cfg$vs_extra
+        xval <- round(xtra$base + rnorm(1, 0, xtra$sd))
+        f[[xtra$field]] <- as.character(xval)
+        f[[paste0(xtra$field, "_RAW")]] <- as.character(xval)
+        f[[paste0(xtra$field, "_UN")]] <- xtra$unit
+      }
 
       if (sub$imperial) {
         temp_f    <- round(temp_c * 9 / 5 + 32, 1)
@@ -618,7 +652,7 @@ populate <- function(subjects) {
       form_add(vs, sub, folder, vdate, f)
 
       # one duplicated-then-deleted vitals record with an impossible SYSBP
-      if (idx == 1L && folder == "BASE") {
+      if (idx == cfg$idx$vs_dup && folder == "BASE") {
         bad <- f
         bad[["SYSBP"]] <- "1200"
         bad[["SYSBP_RAW"]] <- "1200"
@@ -628,28 +662,34 @@ populate <- function(subjects) {
 
     # ---- EX -----------------------------------------------------------
     if (sub$status != "SF") {
-      dm2  <- list("1" = c("PLACEBO", "0"), "2" = c("SYN-101", "50"),
-                   "3" = c("SYN-101", "100"))[[sub$arm]]
-      trt  <- dm2[1]
-      dose <- dm2[2]
-      nxt_of <- c(BASE = "WK02", WK02 = "WK04", WK04 = "WK08", WK08 = "EOT")
+      dm2   <- cfg$doses[[sub$arm]]
+      trt   <- dm2[1]
+      dose  <- dm2[2]
+      dosing <- cfg$dosing_folders
 
-      for (folder in c("BASE", "WK02", "WK04", "WK08")) {
+      for (k in seq_along(dosing)) {
+        folder <- dosing[[k]]
         if (is.null(vdates[[folder]])) next
         start <- vdates[[folder]]
-        nxt <- nxt_of[[folder]]
+        # dosing runs to the day before the next dosing visit; after the last
+        # one, to the day before end of treatment (or a nominal 2 weeks)
+        nxt <- if (k < length(dosing)) dosing[[k + 1L]] else "EOT"
         end <- (if (!is.null(vdates[[nxt]])) vdates[[nxt]] else start + 13L) - 1L
-        # Non-standard EX field -> SUPPEX. First dose is given in clinic under
+        # Non-standard EX fields -> SUPPEX. First dose is given in clinic under
         # observation; the subject self-administers the rest at home.
         admby <- if (folder == "BASE") "STUDY STAFF" else "SUBJECT"
         f <- c(
-          coded_cols("EXOCCUR", "YN", "1"),
+          coded_cols(cfg, "EXOCCUR", "YN", "1"),
           list(EXTRT = trt, EXDOSE = dose, EXDOSE_RAW = dose, EXDOSU = "mg"),
-          coded_cols("EXROUTE", "ROUTE", "1"),
+          coded_cols(cfg, "EXROUTE", "ROUTE", "1"),
           date_cols("EXSTDAT", start),
           date_cols("EXENDAT", end),
           list(EXADMBY = admby)
         )
+        if (!is.null(cfg$ex_lot)) {
+          f[[cfg$ex_lot$field]] <- sprintf("%s%04d", cfg$ex_lot$prefix,
+                                           randint(1L, 9999L))
+        }
         form_add(ex, sub, folder, start, f)
       }
     }
@@ -658,7 +698,7 @@ populate <- function(subjects) {
     if (sub$status != "SF") {
       n_ae <- choices(0:4, c(0.15, 0.3, 0.3, 0.17, 0.08))
       for (pos in seq_len(n_ae)) {
-        trip <- choice(.AE_DICTIONARY)
+        trip <- choice(cfg$ae_dict)
         verbatim <- trip[1]; pt <- trip[2]; soc <- trip[3]
         st <- sub$base + randint(0L, 80L)
         ongoing <- runif(1) < 0.2
@@ -668,11 +708,10 @@ populate <- function(subjects) {
         sev <- choices(c("1", "2", "3"), c(0.6, 0.3, 0.1))
 
         # Non-standard AE fields -> SUPPAE, derived from the draws already made
-        # so the RNG stream is unchanged: injection-site reactions are the
-        # protocol's events of special interest; a severe or serious event is
-        # taken to have led to discontinuation.
-        aesi     <- if (pt %in% c("Injection site pain",
-                                  "Injection site erythema")) "1" else "0"
+        # so the RNG stream is unchanged: the protocol's events of special
+        # interest; a severe or serious event is taken to have led to
+        # discontinuation.
+        aesi     <- if (pt %in% cfg$aesi_terms) "1" else "0"
         aediscon <- if (sev == "3" || serious) "1" else "0"
 
         # Free-text investigator note -> CO domain (not SUPP). Recorded only for
@@ -695,17 +734,17 @@ populate <- function(subjects) {
                AETERM_RAW = verbatim, AECOD_PT = pt, AECOD_SOC = soc),
           date_cols("AESTDAT", st, st_missing),
           date_cols("AEENDAT", en, if (ongoing) "all" else "none"),
-          coded_cols("AEONG", "YN", if (ongoing) "1" else "0"),
-          coded_cols("AESEV", "SEV", sev),
-          coded_cols("AESER", "YN", if (serious) "1" else "0"),
-          coded_cols("AEREL", "REL",
+          coded_cols(cfg, "AEONG", "YN", if (ongoing) "1" else "0"),
+          coded_cols(cfg, "AESEV", "SEV", sev),
+          coded_cols(cfg, "AESER", "YN", if (serious) "1" else "0"),
+          coded_cols(cfg, "AEREL", "REL",
                      choices(c("1", "2", "3", "4"), c(0.5, 0.3, 0.15, 0.05))),
-          coded_cols("AEACN", "ACN",
+          coded_cols(cfg, "AEACN", "ACN",
                      choices(c("1", "2", "3", "4"), c(0.75, 0.1, 0.1, 0.05))),
-          coded_cols("AEOUT", "OUT",
+          coded_cols(cfg, "AEOUT", "OUT",
                      if (ongoing) "3" else choices(c("1", "2"), c(0.85, 0.15))),
-          coded_cols("AESI", "YN", aesi),
-          coded_cols("AEDISCON", "YN", aediscon),
+          coded_cols(cfg, "AESI", "YN", aesi),
+          coded_cols(cfg, "AEDISCON", "YN", aediscon),
           list(AECOMNT = aecomnt)
         )
         form_add(ae, sub, "LOG", st, f, record_position = pos, page_repeat = 0L)
@@ -715,7 +754,7 @@ populate <- function(subjects) {
     # ---- CM (log form) ----------------------------------------------
     n_cm <- choices(0:3, c(0.25, 0.35, 0.25, 0.15))
     for (pos in seq_len(n_cm)) {
-      r <- choice(.CM_DICTIONARY)
+      r <- choice(cfg$cm_dict)
       trt <- r[1]; coded <- r[2]; indc <- r[3]
       dose <- r[4]; unit <- r[5]; route_idx <- r[6]; frq <- r[7]
       st <- sub$scrn - randint(0L, 900L)
@@ -727,32 +766,32 @@ populate <- function(subjects) {
         list(CMTRT = toupper(trt), CMTRT_RAW = trt, CMCOD = coded, CMINDC = indc),
         date_cols("CMSTDAT", st, st_missing),
         date_cols("CMENDAT", en, if (ongoing) "all" else "none"),
-        coded_cols("CMONG", "YN", if (ongoing) "1" else "0"),
+        coded_cols(cfg, "CMONG", "YN", if (ongoing) "1" else "0"),
         list(CMDOSE = dose, CMDOSE_RAW = dose, CMDOSU = unit),
-        coded_cols("CMROUTE", "ROUTE", route_idx),
-        coded_cols("CMFRQ", "FRQ", frq)
+        coded_cols(cfg, "CMROUTE", "ROUTE", route_idx),
+        coded_cols(cfg, "CMFRQ", "FRQ", frq)
       )
       form_add(cm, sub, "LOG", NA, f, record_position = pos)
     }
 
     # ---- DS ---------------------------------------------------------
     if (sub$status == "SF") {
-      term <- "Screen failure - inclusion criterion 4 not met"
+      term <- cfg$sf_term
       f <- c(
-        coded_cols("DSCOMP", "YN", "0"),
+        coded_cols(cfg, "DSCOMP", "YN", "0"),
         date_cols("DSSTDAT", sub$scrn + 2L),
-        coded_cols("DSREAS", "DSREAS", "5"),
+        coded_cols(cfg, "DSREAS", "DSREAS", "5"),
         list(DSTERM = term, DSTERM_RAW = term)
       )
       form_add(ds, sub, "SCRN", sub$scrn + 2L, f)
     } else {
       completed <- sub$status == "COMPLETED"
-      reason <- if (completed) "1" else choice(c("2", "3", "4"))
-      term <- str_to_title(.CODELISTS[["DSREAS"]][[reason]])
+      reason <- if (completed) "1" else choice(cfg$disc_reasons)
+      term <- str_to_title(cfg$codelists[["DSREAS"]][[reason]])
       f <- c(
-        coded_cols("DSCOMP", "YN", if (completed) "1" else "0"),
+        coded_cols(cfg, "DSCOMP", "YN", if (completed) "1" else "0"),
         date_cols("DSSTDAT", vdates[["EOT"]]),
-        coded_cols("DSREAS", "DSREAS", reason),
+        coded_cols(cfg, "DSREAS", "DSREAS", reason),
         list(DSTERM = term, DSTERM_RAW = term)
       )
       form_add(ds, sub, "EOT", vdates[["EOT"]], f)
@@ -762,29 +801,33 @@ populate <- function(subjects) {
     # Placed last in the subject loop so the other domains' random draws are
     # unaffected by adding this panel.
     sex_l <- if (sub$sex == "1") "M" else "F"
-    for (folder in .LB_VISIT_FOLDERS) {
+    for (folder in cfg$lab_folders) {
       if (is.null(vdates[[folder]])) next
       ldate <- vdates[[folder]]
 
       # one lab panel not performed
-      if (idx == 10L && folder == "WK08") {
+      if (idx == cfg$idx$lb_np && folder == cfg$idx$lb_np_folder) {
         form_add(lb, sub, folder, ldate,
-                 c(coded_cols("LBPERF", "YN", "0"), date_cols("LBDAT", ldate)))
+                 c(coded_cols(cfg, "LBPERF", "YN", "0"), date_cols("LBDAT", ldate)))
         next
       }
 
       fasting <- folder %in% c("SCRN", "BASE") || runif(1) < 0.9
-      f <- c(coded_cols("LBPERF", "YN", "1"), date_cols("LBDAT", ldate))
+      f <- c(coded_cols(cfg, "LBPERF", "YN", "1"), date_cols("LBDAT", ldate))
       ltim <- sprintf("%02d:%s", randint(7L, 10L), choice(c("00", "15", "30", "45")))
       f[["LBTIM"]] <- ltim
       f[["LBTIM_RAW"]] <- ltim
-      f <- c(f, coded_cols("LBFAST", "YN", if (fasting) "1" else "0"))
+      f <- c(f, coded_cols(cfg, "LBFAST", "YN", if (fasting) "1" else "0"))
 
-      for (a in .LB_PANEL) {
+      for (a in cfg$lb_panel) {
         rng <- a$nr[[sex_l]]
         val_si <- rnorm(1, mean(rng), diff(rng) / 5)
-        # one forced grade-3 transaminase rise so LBNRIND has a sure HIGH
-        if (a$oid == "ALT" && idx == 4L && folder == "WK04") val_si <- 40 * 3.1
+        # one forced grade-3 rise on the configured analyte so LBNRIND has a
+        # sure HIGH
+        fh <- cfg$idx$force_high
+        if (a$oid == fh$analyte && idx == fh$idx && folder == fh$folder) {
+          val_si <- fh$value
+        }
 
         if (a$std && sub$imperial) {          # US site keys conventional units
           orr  <- val_si / a$f; un_o <- a$un_us; dp_o <- a$dp_us
@@ -931,7 +974,7 @@ populate <- function(subjects) {
 .SASFORMAT_OF <- c(date = "DATE9.", datetime = "E8601DT19.",
                    float = "BEST8.", integer = "BEST8.")
 
-write_metadata <- function(forms, outdir) {
+write_metadata <- function(forms, outdir, cfg) {
   suffixes <- names(.SUFFIX_META)[order(-nchar(names(.SUFFIX_META)))]
   rows <- list()
 
@@ -947,11 +990,11 @@ write_metadata <- function(forms, outdir) {
       } else {
         base <- col; suffix <- ""
         for (suf in suffixes) {
-          if (endsWith(col, suf) && is.null(.FIELD_LABELS[[col]])) {
+          if (endsWith(col, suf) && is.null(cfg$field_labels[[col]])) {
             base <- substr(col, 1, nchar(col) - nchar(suf)); suffix <- suf; break
           }
         }
-        base_label <- if (!is.null(.FIELD_LABELS[[base]])) .FIELD_LABELS[[base]] else base
+        base_label <- if (!is.null(cfg$field_labels[[base]])) cfg$field_labels[[base]] else base
         if (nzchar(suffix)) {
           sm <- .SUFFIX_META[[suffix]]
           label <- paste(base_label, sm[1]); vtype <- sm[2]; len <- sm[3]
@@ -959,19 +1002,19 @@ write_metadata <- function(forms, outdir) {
           label <- base_label
           if (endsWith(base, "DAT")) {
             vtype <- "date"; len <- "20"
-          } else if (base %in% .FLOAT_FIELDS) {
+          } else if (base %in% cfg$float_fields) {
             vtype <- "float"; len <- "8"
-          } else if (!is.null(.CODELIST_OF[[base]])) {
+          } else if (!is.null(cfg$codelist_of[[base]])) {
             vtype <- "text"; len <- "8"
           } else {
             vtype <- "text"; len <- "200"
           }
         }
-        codelist <- if (!is.null(.CODELIST_OF[[base]])) .CODELIST_OF[[base]] else ""
+        codelist <- if (!is.null(cfg$codelist_of[[base]])) cfg$codelist_of[[base]] else ""
       }
 
       rows[[length(rows) + 1L]] <- tibble(
-        ProjectName = .gen_project, FormOID = nm, FormName = e$page_name,
+        ProjectName = cfg$project, FormOID = nm, FormName = e$page_name,
         VariableName = col, VariableLabel = label, VariableOrdinal = i,
         DataType = vtype, Length = as.integer(len),
         CodeListOID = codelist,
@@ -986,8 +1029,8 @@ write_metadata <- function(forms, outdir) {
   invisible(path)
 }
 
-write_codelists <- function(outdir) {
-  rows <- imap(.CODELISTS, \(vals, cl) {
+write_codelists <- function(outdir, cfg) {
+  rows <- imap(cfg$codelists, \(vals, cl) {
     tibble(
       CodeListOID = cl,
       CodedValue  = names(vals),
@@ -1010,14 +1053,13 @@ write_codelists <- function(outdir) {
 # Late deaths: two completed-schedule subjects die shortly after EOT. A
 # fatal AE with onset during the last dosing days, drug withdrawn, EOT
 # visit done, death a couple of days later. Chosen by index like the other
-# deliberate messiness (SF = 5/17 and ET = 3/11/20 must not be touched),
+# deliberate messiness (the config's SF/ET indexes must not be touched),
 # and applied AFTER populate() so the main RNG stream - and every existing
 # row - is untouched. Deaths after a completed schedule are also the case
 # a strict treatment-emergent window keeps: onset before the last dose,
 # outcome after it.
-.DEATH_IDX <- c(7L, 15L)
 
-apply_deaths <- function(forms, subjects) {
+apply_deaths <- function(forms, subjects, cfg) {
   ds_death_date <- function(row) {
     as.Date(sprintf("%s-%s-%s", row$DSSTDAT_YYYY, row$DSSTDAT_MM,
                     row$DSSTDAT_DD))
@@ -1027,7 +1069,7 @@ apply_deaths <- function(forms, subjects) {
                  logical(1)))
   }
 
-  for (idx in .DEATH_IDX) {
+  for (idx in cfg$idx$deaths) {
     sub <- subjects[[idx + 1L]]
     if (sub$status != "COMPLETED") {
       stop(sprintf("apply_deaths: subject %s is '%s', not COMPLETED",
@@ -1040,9 +1082,9 @@ apply_deaths <- function(forms, subjects) {
 
     # DS: the disposition event becomes the death
     forms$DS$rows[[ds_pos]] <- modifyList(forms$DS$rows[[ds_pos]], as.list(c(
-      coded_cols("DSCOMP", "YN", "0"),
+      coded_cols(cfg, "DSCOMP", "YN", "0"),
       date_cols("DSSTDAT", death_date),
-      coded_cols("DSREAS", "DSREAS", "6"),
+      coded_cols(cfg, "DSREAS", "DSREAS", "6"),
       list(DSTERM = "Death", DSTERM_RAW = "Death")
     )))
 
@@ -1057,7 +1099,7 @@ apply_deaths <- function(forms, subjects) {
     }
     dm_pos <- rows_of(forms$DM, sub)
     forms$DM$rows[[dm_pos]] <- modifyList(forms$DM$rows[[dm_pos]], as.list(c(
-      coded_cols("DTHFL", "YN", "1"),
+      coded_cols(cfg, "DTHFL", "YN", "1"),
       date_cols("DTHDAT", death_date)
     )))
 
@@ -1074,25 +1116,30 @@ apply_deaths <- function(forms, subjects) {
            AECOD_PT = "Cardiac arrest", AECOD_SOC = "Cardiac disorders"),
       date_cols("AESTDAT", onset),
       date_cols("AEENDAT", death_date),
-      coded_cols("AEONG", "YN", "0"),
-      coded_cols("AESEV", "SEV", "3"),
-      coded_cols("AESER", "YN", "1"),
-      coded_cols("AEREL", "REL", aerel),
-      coded_cols("AEACN", "ACN", "4"),
-      coded_cols("AEOUT", "OUT", "4"),
-      coded_cols("AESI", "YN", "0"),
-      coded_cols("AEDISCON", "YN", "1"),
+      coded_cols(cfg, "AEONG", "YN", "0"),
+      coded_cols(cfg, "AESEV", "SEV", "3"),
+      coded_cols(cfg, "AESER", "YN", "1"),
+      coded_cols(cfg, "AEREL", "REL", aerel),
+      coded_cols(cfg, "AEACN", "ACN", "4"),
+      coded_cols(cfg, "AEOUT", "OUT", "4"),
+      coded_cols(cfg, "AESI", "YN", "0"),
+      coded_cols(cfg, "AEDISCON", "YN", "1"),
       list(AECOMNT = sprintf(paste("Cardiac arrest with study drug withdrawn;",
                                    "subject died on %s despite resuscitation."),
                              format(death_date, "%d %b %Y")))
     )), record_position = as.integer(pos), page_repeat = 0L)
     if (length(own_ae) > 0L) {
       n <- length(forms$AE$rows)
-      new_order <- c(
-        seq_len(own_ae[length(own_ae)]), n,
+      # Move the appended row (n) to just after the subject's last own row.
+      # When that row is the form's last, the tail range is empty - guard it,
+      # because seq(n, n-1) descends and would duplicate rows.
+      tail_idx <- if (own_ae[length(own_ae)] + 1L <= n - 1L) {
         seq(own_ae[length(own_ae)] + 1L, n - 1L)
-      )
-      forms$AE$rows <- forms$AE$rows[new_order]
+      } else {
+        integer(0)
+      }
+      forms$AE$rows <- forms$AE$rows[c(seq_len(own_ae[length(own_ae)]), n,
+                                       tail_idx)]
     }
   }
   invisible(forms)
@@ -1105,10 +1152,11 @@ apply_deaths <- function(forms, subjects) {
 # A CM whose indication matches one of the subject's adverse events treated
 # that event: stamp the AE's log line on the CM record (CMSPID), which the
 # RELREC mapper turns into a RELREC pair. First match wins, in row order,
-# and each AE is linked at most once - all deterministic.
+# and each AE is linked at most once - all deterministic. The indications
+# linked per study come from the config.
 .RELREC_INDICATIONS <- c("HEADACHE", "BACK PAIN")
 
-apply_relrec <- function(forms) {
+apply_relrec <- function(forms, cfg) {
   if (!"CMSPID" %in% forms$CM$field_cols) {
     forms$CM$field_cols <- c(forms$CM$field_cols, "CMSPID")
   }
@@ -1118,7 +1166,7 @@ apply_relrec <- function(forms) {
   for (i in cm_rows) {
     row <- forms$CM$rows[[i]]
     indc <- toupper(str_squish(if (is.null(row$CMINDC)) "" else row$CMINDC))
-    if (!indc %in% .RELREC_INDICATIONS) next
+    if (!indc %in% cfg$relrec_indications) next
     hit <- vapply(forms$AE$rows, \(r) {
       identical(r$subjectId, row$subjectId) &&
         identical(toupper(r$AECOD_PT), indc) &&
@@ -1141,20 +1189,20 @@ apply_relrec <- function(forms) {
 # later subject's data. Instead each subject gets a private stream seeded
 # from the MH seed + index; .Random.seed is restored afterwards, so the main
 # stream - and every pre-existing row - is byte-identical.
-apply_mh <- function(forms, subjects) {
-  mh <- new_form("MH", "Medical History", .MH_FIELDS)
+apply_mh <- function(forms, subjects, cfg) {
+  mh <- new_form("MH", "Medical History", cfg$fields$MH, cfg)
 
   for (idx in seq_along(subjects) - 1L) {
     sub <- subjects[[idx + 1L]]
     seed_hold <- .Random.seed
-    set.seed(.gen_mh_seed + idx)
+    set.seed(cfg$mh_seed + idx)
 
     # Medical history is collected at screening for everyone, screen
     # failures included; start dates reach back months or years and are
     # often only partly known.
     n_mh <- choices(0:3, c(0.2, 0.4, 0.25, 0.15))
     for (pos in seq_len(n_mh)) {
-      trip <- choice(.MH_DICTIONARY)
+      trip <- choice(cfg$mh_dict)
       verbatim <- trip[1]; pt <- trip[2]; soc <- trip[3]
       st <- sub$scrn - randint(200L, 3600L)
       ongoing <- runif(1) < 0.45
@@ -1166,7 +1214,7 @@ apply_mh <- function(forms, subjects) {
              MHCOD_PT = pt, MHCOD_SOC = soc),
         date_cols("MHSTDAT", st, st_missing),
         date_cols("MHENDAT", en, if (ongoing) "all" else "none"),
-        coded_cols("MHONG", "YN", if (ongoing) "1" else "0")
+        coded_cols(cfg, "MHONG", "YN", if (ongoing) "1" else "0")
       )
       form_add(mh, sub, "LOG", NA, f, record_position = pos)
     }
@@ -1190,36 +1238,59 @@ apply_mh <- function(forms, subjects) {
 #' partial dates, ongoing records, screen failures, a soft-deleted row, a
 #' fatal AE) so the SDTM/ADaM mappers exercise real-world shapes.
 #'
+#' The `study` argument selects which synthetic study to generate. The two
+#' shipped studies share a CRF family but differ in everything a real study
+#' would: sites, arms, visit schedule, lab panel, codelist decodes, dosing,
+#' and an extra vital sign plus SUPP qualifier for SYNTH02. Each study has a
+#' matching `study_spec` (`spec_synth01` / `spec_synth02`) that maps its
+#' extract through the same pipeline - the proof that "a new study is a spec
+#' change".
+#'
 #' @param out Directory to write the extract into; created if missing.
-#' @param seed Random seed. The default regenerates the SYNTH01 extract the
-#'   package's reference outputs were built from.
-#' @param n Number of subjects to generate.
+#' @param seed Random seed. Defaults to the selected study's committed seed
+#'   (20260903 for SYNTH01, whose extract the package's reference outputs
+#'   were built from).
+#' @param n Number of subjects to generate. Defaults to the selected study's
+#'   committed subject count (24 for SYNTH01).
+#' @param study Which synthetic study to generate: "SYNTH01" (default) or
+#'   "SYNTH02". Each has a matching study spec - [spec_synth01],
+#'   [spec_synth02].
 #' @return The form environments built, invisibly.
 #' @export
 #' @examples
 #' ext <- file.path(tempdir(), "extract")
 #' generate_rave_extract(out = ext)
 #' list.files(ext)
-generate_rave_extract <- function(out, seed = 20260903, n = 24) {
+#'
+#' # the second shipped study, and its spec
+#' ext2 <- file.path(tempdir(), "extract2")
+#' generate_rave_extract(out = ext2, study = "SYNTH02")
+#' built <- build_all(ext2, spec = spec_synth02)
+generate_rave_extract <- function(out, seed = NULL, n = NULL,
+                                  study = "SYNTH01") {
+  cfg <- .gen_cfg(study)
+  if (is.null(seed)) seed <- cfg$seed
+  if (is.null(n)) n <- cfg$n
   set.seed(seed)
   dir.create(out, recursive = TRUE, showWarnings = FALSE)
 
-  subjects <- build_subjects(n)
-  forms <- populate(subjects)
+  subjects <- build_subjects(n, cfg)
+  forms <- populate(subjects, cfg)
   # apply_deaths/apply_relrec mutate form environments (references); MH is
   # a new form, so its pass returns the list and the assignment is required.
-  apply_deaths(forms, subjects)
-  apply_relrec(forms)
-  forms <- apply_mh(forms, subjects)
+  apply_deaths(forms, subjects, cfg)
+  apply_relrec(forms, cfg)
+  forms <- apply_mh(forms, subjects, cfg)
 
   for (e in forms) form_write(e, out)
-  write_metadata(forms, out)
-  write_codelists(out)
+  write_metadata(forms, out, cfg)
+  write_codelists(out, cfg)
 
   for (nm in names(forms)) {
     message(sprintf("  %s.csv: %d rows, %d cols", nm, length(forms[[nm]]$rows),
                     length(.HEADER_COLS) + length(forms[[nm]]$field_cols)))
   }
-  message(sprintf("Rave extract written to %s (seed %d, n %d)", out, seed, n))
+  message(sprintf("Rave extract written to %s (study %s, seed %d, n %d)",
+                  out, study, seed, n))
   invisible(forms)
 }

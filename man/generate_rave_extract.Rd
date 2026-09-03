@@ -4,15 +4,21 @@
 \alias{generate_rave_extract}
 \title{Generate a synthetic EDC clinical view extract}
 \usage{
-generate_rave_extract(out, seed = 20260903, n = 24)
+generate_rave_extract(out, seed = NULL, n = NULL, study = "SYNTH01")
 }
 \arguments{
 \item{out}{Directory to write the extract into; created if missing.}
 
-\item{seed}{Random seed. The default regenerates the SYNTH01 extract the
-package's reference outputs were built from.}
+\item{seed}{Random seed. Defaults to the selected study's committed seed
+(20260903 for SYNTH01, whose extract the package's reference outputs
+were built from).}
 
-\item{n}{Number of subjects to generate.}
+\item{n}{Number of subjects to generate. Defaults to the selected study's
+committed subject count (24 for SYNTH01).}
+
+\item{study}{Which synthetic study to generate: "SYNTH01" (default) or
+"SYNTH02". Each has a matching study spec - \link{spec_synth01},
+\link{spec_synth02}.}
 }
 \value{
 The form environments built, invisibly.
@@ -29,9 +35,22 @@ bytes are identical, which is what the package's regression tests stand on.
 The data is deliberately messy in specific, documented ways (mixed units,
 partial dates, ongoing records, screen failures, a soft-deleted row, a
 fatal AE) so the SDTM/ADaM mappers exercise real-world shapes.
+
+The \code{study} argument selects which synthetic study to generate. The two
+shipped studies share a CRF family but differ in everything a real study
+would: sites, arms, visit schedule, lab panel, codelist decodes, dosing,
+and an extra vital sign plus SUPP qualifier for SYNTH02. Each study has a
+matching \code{study_spec} (\code{spec_synth01} / \code{spec_synth02}) that maps its
+extract through the same pipeline - the proof that "a new study is a spec
+change".
 }
 \examples{
 ext <- file.path(tempdir(), "extract")
 generate_rave_extract(out = ext)
 list.files(ext)
+
+# the second shipped study, and its spec
+ext2 <- file.path(tempdir(), "extract2")
+generate_rave_extract(out = ext2, study = "SYNTH02")
+built <- build_all(ext2, spec = spec_synth02)
 }

@@ -111,9 +111,11 @@ map_suppae <- function(ae, ae_built, spec) {
 
 #' Map the Supplemental Qualifiers for EX
 #'
-#' EX has one record per dosing interval per visit, so the raw field is
+#' EX has one record per dosing interval per visit, so the raw fields are
 #' joined onto the built EX by (USUBJID, VISITNUM) to recover the derived
-#' EXSEQ - the EX equivalent of the AESPID trick in [map_suppae()].
+#' EXSEQ - the EX equivalent of the AESPID trick in [map_suppae()]. The
+#' qualifier columns come from `spec$supp`, so a study with a different set
+#' of non-standard EX fields is a spec change, not a code change.
 #'
 #' @param ex Raw EX clinical view
 #' @param ex_built The mapped EX dataset (see [map_ex()])
@@ -131,15 +133,19 @@ map_suppae <- function(ae, ae_built, spec) {
 #' head(suppex[, c("USUBJID", "IDVARVAL", "QNAM", "QVAL")])
 #' @export
 map_suppex <- function(ex, ex_built, spec) {
-  scheduled_visits <- spec$visits |> select(Folder, VISITNUM)
+  rows <- filter(spec$supp, rdomain == "EX")
+  visit_map <- spec$visits |> select(Folder, VISITNUM)
   parent <- ex |>
     filter(EXOCCUR == "1") |>
-    left_join(scheduled_visits, by = "Folder") |>
+    left_join(visit_map, by = "Folder") |>
     mutate(STUDYID = spec$study$STUDYID,
-           USUBJID = str_c(spec$study$STUDYID, Subject, sep = "-"),
-           EXADMBY = supp_transform(EXADMBY, "squish")) |>
-    inner_join(select(ex_built, USUBJID, VISITNUM, EXSEQ),
-               by = c("USUBJID", "VISITNUM"))
+           USUBJID = str_c(spec$study$STUDYID, Subject, sep = "-"))
+  for (i in seq_len(nrow(rows))) {
+    parent[[rows$qnam[i]]] <- supp_transform(parent[[rows$src[i]]],
+                                             rows$transform[i])
+  }
+  parent <- inner_join(parent, select(ex_built, USUBJID, VISITNUM, EXSEQ),
+                       by = c("USUBJID", "VISITNUM"))
 
   n_occur <- sum(ex$EXOCCUR == "1")
   if (nrow(parent) != n_occur) {

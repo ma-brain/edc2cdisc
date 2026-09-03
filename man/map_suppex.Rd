@@ -17,9 +17,11 @@ map_suppex(ex, ex_built, spec)
 The labelled SUPPEX tibble.
 }
 \description{
-EX has one record per dosing interval per visit, so the raw field is
+EX has one record per dosing interval per visit, so the raw fields are
 joined onto the built EX by (USUBJID, VISITNUM) to recover the derived
-EXSEQ - the EX equivalent of the AESPID trick in \code{\link[=map_suppae]{map_suppae()}}.
+EXSEQ - the EX equivalent of the AESPID trick in \code{\link[=map_suppae]{map_suppae()}}. The
+qualifier columns come from \code{spec$supp}, so a study with a different set
+of non-standard EX fields is a spec change, not a code change.
 }
 \examples{
 ext <- file.path(tempdir(), "ex-map-suppx")

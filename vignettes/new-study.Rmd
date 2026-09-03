@@ -21,7 +21,10 @@ library(edc2cdisc)
 Everything that changes between studies — sites, arms, visits, codelists,
 SUPP qualifiers, unit conversions — lives in one `study_spec` object. The
 shipped `spec_synth01` is the reference implementation for the synthetic
-study the package generates. This vignette walks through the kinds of
+study the package generates; `spec_synth02` is a second, complete worked
+example — different sites, arms, visit schedule, codelist decodes, an extra
+vital sign and an extra SUPP qualifier — that runs through `build_all()`
+with no mapper changes. This vignette walks through the kinds of
 changes a new study in the same CRF family needs, and where the boundary
 of "just a spec change" sits.
 
@@ -132,7 +135,12 @@ built <- build_all("path/to/extract", spec = spec5)
 ```
 
 The validators read your spec too, so required-variable checks stay in
-sync with what the mappers emit.
+sync with what the mappers emit. For a complete, tested example of a
+second study built exactly this way, see `spec_synth02`: generating its
+extract and running `build_all(extract, spec = spec_synth02)` passes both
+validators with zero mapper changes, and feeding that extract to
+`build_all(extract, spec = spec_synth01)` fails loudly — the spec really
+is what drives the pipeline.
 
 ## The boundary
 

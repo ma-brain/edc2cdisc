@@ -105,7 +105,17 @@ make_relrec <- function(links, study_id) {
              RELTYPE = "ONE", RELID = relid)
     )
   }) |>
-    list_rbind() |>
+    list_rbind()
+  # A study (or extract cut) with no links is valid - return the shaped
+  # empty tibble rather than a zero-column frame the arrange below cannot
+  # evaluate.
+  if (nrow(rels) == 0) {
+    rels <- tibble(STUDYID = character(), RDOMAIN = character(),
+                   USUBJID = character(), IDVAR = character(),
+                   IDVARVAL = character(), RELTYPE = character(),
+                   RELID = character())
+  }
+  rels <- rels |>
     arrange(USUBJID, RELID) |>
     apply_labels(c(
       STUDYID  = "Study Identifier",

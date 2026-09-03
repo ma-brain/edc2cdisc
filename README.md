@@ -41,7 +41,10 @@ reference outputs without any network access.
 The study-specific configuration (sites, arms, visits, codelists, SUPP
 qualifiers, unit conversions, form typing, per-test pivot specs and the
 variable-level mapping table) lives in one `study_spec` object; the shipped
-`spec_synth01` is the reference implementation. See
+`spec_synth01` is the reference implementation, and `spec_synth02` is a
+second study — different sites, arms, visits, codelists, an extra vital sign
+and SUPP qualifier — that runs through the same `build_all()` with no mapper
+changes, which is the proof behind the claim. See
 `vignette("new-study")` for what it takes to add a study, and
 `vignette("design")` for the design decisions worth arguing with —
 including the honest limit of "a new study is a spec change".
