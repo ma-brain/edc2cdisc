@@ -19,12 +19,15 @@ Imports:
     dplyr (>= 1.2.0),
     haven,
     labelled,
+    labelled,
     purrr,
     readr,
+    rlang,
     stats,
     stringr,
     tibble,
-    tidyr
+    tidyr,
+    utils
 Suggests:
     diffdf,
     knitr,
@@ -33,6 +36,7 @@ Suggests:
     waldo,
     xml2
 Encoding: UTF-8
+VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0

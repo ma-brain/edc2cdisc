@@ -1,0 +1,130 @@
+---
+title: "A new study is a spec change"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{A new study is a spec change}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(edc2cdisc)
+```
+
+Everything that changes between studies — sites, arms, visits, codelists,
+SUPP qualifiers, unit conversions — lives in one `study_spec` object. The
+shipped `spec_synth01` is the reference implementation for the synthetic
+study the package generates. This vignette walks through the kinds of
+changes a new study in the same CRF family needs, and where the boundary
+of "just a spec change" sits.
+
+## What a spec holds
+
+```{r}
+spec_synth01
+names(spec_synth01)
+```
+
+Each table carries one kind of configuration: `study` (constants),
+`sites`, `arms`, `visits`, `codelists` (collected decode -> CDISC term),
+`supp` (SUPP-- qualifiers), `units` (LB conventional-to-SI factors),
+`forms` (event vs log typing), `tests` (per-test pivot specs for VS/LB)
+and `variables` (one row per SDTM variable per domain: source CRF field,
+transform, derivation reference).
+
+## Changing a controlled-terminology mapping
+
+Suppose the sponsor redefines causality so that only "Related" counts as
+related. Edit the codelist rows and everything downstream follows — the
+AE mapper decodes through `ct_lookup()`, so an unmapped value fails loudly
+rather than drifting:
+
+```{r, eval = FALSE}
+spec2 <- spec_synth01
+spec2$codelists$cdisc_term[spec2$codelists$ct == "AEREL"] <-
+  c("NOT RELATED", "NOT RELATED", "NOT RELATED", "RELATED")
+```
+
+## Adding a site, an arm, a visit
+
+Sites, arms and visits are plain rows. A study adds its own:
+
+```{r, eval = FALSE}
+spec3 <- spec_synth01
+spec3$sites <- rbind(
+  spec3$sites,
+  tibble::tribble(
+    ~siteid, ~SiteNumber, ~Site, ~SiteGroup, ~StudySiteId, ~COUNTRY,
+    "4104",  "104",       "New Site General", "Europe", "7704", "FRA"
+  )
+)
+```
+
+The DM mapper's country derivation reads `spec$sites`, so COUNTRY follows
+without touching code — and `validate_sdtm()` derives its required lists
+from the same object.
+
+## Adding a SUPP qualifier
+
+A new non-standard CRF field is one row in `spec$supp`: which domain, the
+IDVAR pinning, the QNAM/QLABEL, the raw source column and the transform
+that produces QVAL:
+
+```{r, eval = FALSE}
+spec4 <- spec_synth01
+spec4$supp <- rbind(
+  spec4$supp,
+  tibble::tribble(
+    ~rdomain, ~idvar,   ~qnam,   ~qlabel,        ~src,    ~transform, ~qorig, ~qeval,
+    "EX",     "EXSEQ",  "EXLOT", "Lot Number",   "EXLOT", "squish",   "CRF",  NA
+  )
+)
+```
+
+`map_suppex()` picks the row up; blank values still produce no SUPP
+record, exactly as in the shipped study.
+
+## Adding a vital sign
+
+The findings domains pivot off `spec$tests` — one row per test, not per
+variable. Adding a respiratory rate collection is a row, not a code
+change:
+
+```{r, eval = FALSE}
+spec5 <- spec_synth01
+spec5$tests <- rbind(
+  spec5$tests,
+  tibble::tribble(
+    ~domain, ~field,  ~testcd, ~test,                ~cat, ~specimen,
+    "VS",    "RESP",  "RESP",  "Respiration Rate",   NA,   NA
+  )
+)
+```
+
+## Building with your spec
+
+Any spec variant runs through the same pipeline:
+
+```{r, eval = FALSE}
+built <- build_all("path/to/extract", spec = spec5)
+```
+
+The validators read your spec too, so required-variable checks stay in
+sync with what the mappers emit.
+
+## The boundary
+
+What a spec change **cannot** do is change semantics: which field means
+"dose administered", how a screen failure is recognised, what counts as
+treatment-emergent. Those live in the derivation registry — named
+functions the spec selects — and a study that changes the CRF design adds
+or edits one or two of them. That is the honest limit; see
+`vignette("design")` for why over-promising fully metadata-driven SDTM is
+how these projects collapse.

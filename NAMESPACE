@@ -63,4 +63,9 @@ import(readr)
 import(stringr)
 import(tibble)
 import(tidyr)
-importFrom(stats,na.omit)
+importFrom(rlang,.data)
+importFrom(stats,
+  na.omit,
+  runif
+)
+importFrom(utils,modifyList)

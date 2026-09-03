@@ -115,7 +115,7 @@ read_codelists <- function(dir) {
 #'
 #' @param data A clinical view tibble
 #' @param form_oid Form OID the view was read for
-#' @param Metadata tibble from [read_cv_metadata()]
+#' @param meta Metadata tibble from [read_cv_metadata()]
 #' @return `data` with variable labels set from the metadata.
 #' @export
 label_from_cv_metadata <- function(data, form_oid, meta) {

@@ -1,0 +1,122 @@
+---
+title: "Design decisions worth arguing with"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Design decisions worth arguing with}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+```{r setup}
+library(edc2cdisc)
+```
+
+This vignette is the package's opinion column: the decisions behind the
+mappers, why they are the way they are, and where they are open to
+argument. The package itself is deliberately opinionated — a mapping is a
+series of decisions, and hiding them behind cleverness is how SDTM projects
+rot.
+
+## Everything is character on read
+
+`read_clinical_view()` reads every column as character. EDC exports quote
+all values, mix numeric and text across CRF versions, and carry partial
+dates no parser should be allowed to guess at. Typing happens later,
+explicitly, per variable (`numeric`, `dtc`, `yn` transforms in the spec).
+The cost is a stream of `as.numeric()` calls in the mappers; the benefit is
+that nothing is ever typed by accident.
+
+## Partial dates stay partial in SDTM
+
+Rave splits dates into year/month/day components; blanks mean UNK. That is
+exactly ISO 8601 reduced precision, so `rave_dtc()` builds `2024-03` or
+`2024` and stops. SDTM keeps the precision it was given.
+
+Imputation is an analysis-layer decision, and it happens exactly once:
+`impute_dtc()` fills missing month/day with 01 (the "first" rule, also
+admiral's default) and returns a flag (`"D"`, `"M"`) recording what was
+filled. ADSL, ADAE, ADVS and ADLB all consume that one rule.
+
+The bias is real: imputing a birth date to January 1st can overstate AGE by
+up to 11 months. A study SAP often prefers mid-year. The point of
+`impute_dtc()` is not that the first rule is right — it is that there is
+one explicit, flagged rule to argue with, rather than silence.
+
+For the same reason, reduced-precision ISO dates compare correctly as
+strings (`"2023" < "2024-03-17"`), which is how the MH-before-first-dose
+validator works without imputing anything.
+
+## One spec, two readers
+
+The mapping configuration lives in a `study_spec` (see
+`vignette("new-study")`). The `variables` table names a small transform
+vocabulary — `rename`, `decode`, `dtc`, `yn`, `numeric`, `verbatim`,
+`constant` — and a derivation registry for everything semantic. The engine
+that applies it is tiny; `map_variables()` is basically `transmute()`
+driven by the table.
+
+What makes this more than documentation is that **the validators read the
+same spec**: the required-variable lists for the engine-mapped domains come
+straight from `spec$variables`, and the decodes go through
+`spec$codelists`. A spec that silently lies breaks the build. Two things
+read it.
+
+## Codelists fail loudly
+
+Every controlled-terminology mapping goes through `check_ct()`: an
+unmapped collected value **stops the run** rather than passing through as
+NA. When the medical monitor adds a new severity term, you get an error
+naming the variable and the value, not a silently truncated AESEV. The
+flip side: mapping a new value is always a deliberate edit to the spec.
+
+## Screen failures have no study days
+
+A screen failure never has an RFSTDTC, so every `--DY` derivation is NA by
+construction — and the validator enforces that nobody leaked a study day
+onto a screen-failure subject. DM ages them at informed consent instead of
+first dose; ADaM carries their arm as absent rather than a placeholder.
+The VISITDY exception is explicit: it is a protocol-planned day, not
+anchored on treatment.
+
+## Deaths must agree three ways
+
+A fatal AE outcome, the DS DEATH disposition record, and the collected DM
+death fields are three independent claims about the same fact. The
+validators require all three to name the same subjects, the dates to
+agree, and the death to anchor ADSL's LSTALVDT and discontinuation reason.
+Deaths are also the case a strict treatment-emergent window keeps: onset
+before the last dose, outcome after it.
+
+## TRTEMFL is an ADaM variable
+
+SDTM keeps the collected facts; the treatment-emergent flag is applied in
+`derive_adae()`, recomputed from ADSL dates by `validate_adam()`. The
+window is onset within `[TRTSDT, TRTEDT]` — no grace period, because no
+SAP in this project defines one. If your study defines a grace window,
+that is one `case_when()` to edit, and the validator will follow you.
+
+## SUPP drops blanks; CO is for prose
+
+`make_supp()` emits a SUPP row only where the qualifier value is present:
+a "specify" field appears only for subjects who triggered it. Free-text
+investigator comments go to CO, not SUPP — structured name/value pairs
+versus narrative tied to a record.
+
+## The honest limit
+
+"A new study is a spec change" is true for studies in the same CRF family:
+same forms, different codelists, arms, visits, sites, SUPP fields. It is
+**not** true when the CRF design changes. "Which field means dose
+administered" or "screen failure arrives on the protocol-deviation code"
+are semantics, and semantics live in the derivation registry as code that
+the spec *selects*. That boundary is a feature: new study = new spec plus,
+rarely, one or two new derivation functions. Over-promising fully
+metadata-driven SDTM is how these projects collapse.

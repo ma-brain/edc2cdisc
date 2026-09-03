@@ -179,12 +179,11 @@ iso_dt <- function(d, hh = 9L, mm = 30L, ss = 0L) {
   sprintf("%sT%02d:%02d:%02d", format(as.Date(d), "%Y-%m-%d"), hh, mm, ss)
 }
 
-#' EDC date column family for one date field
-#'
-#' missing = "none"     full date
-#'           "day"      UNK day
-#'           "monthday" UNK day and month
-#'           "all"      nothing entered
+# EDC date column family for one date field:
+#   missing = "none"     full date
+#             "day"      UNK day
+#             "monthday" UNK day and month
+#             "all"      nothing entered
 date_parts <- function(d, missing = "none") {
   if (length(d) == 0 || is.na(d) || missing == "all") {
     return(list(value = "", raw = "", yyyy = "", mm = "", dd = ""))
@@ -452,7 +451,7 @@ build_subjects <- function(n) {
   })
 }
 
-#' Actual visit dates per folder, honouring discontinuation
+# Actual visit dates per folder, honouring discontinuation
 visit_dates <- function(sub) {
   if (sub$status == "SF") return(list(SCRN = sub$scrn))
   out <- list(SCRN = sub$scrn, BASE = sub$base)

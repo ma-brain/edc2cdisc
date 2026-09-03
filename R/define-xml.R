@@ -200,10 +200,12 @@ build_define_xml <- function(domains, spec, path) {
   # gets the observed reference ranges - ranges are collected data here
   # (sex-specific), so the distinct pairs are the value-level story.
   vs_params <- domains$VS |>
-    distinct(VSTESTCD, VSTEST, VSSTRESU) |> arrange(VSTESTCD)
+    distinct(.data$VSTESTCD, .data$VSTEST, .data$VSSTRESU) |>
+    arrange(.data$VSTESTCD)
   lb_params <- domains$LB |>
-    distinct(LBTESTCD, LBTEST, LBSTRESU, LBSTNRLO, LBSTNRHI) |>
-    arrange(LBTESTCD, LBSTNRLO)
+    distinct(.data$LBTESTCD, .data$LBTEST, .data$LBSTRESU,
+             .data$LBSTNRLO, .data$LBSTNRHI) |>
+    arrange(.data$LBTESTCD, .data$LBSTNRLO)
 
   findings <- list(
     list(domain = "VS", var = "VSSTRESN", codevar = "VSTESTCD",
@@ -227,7 +229,7 @@ build_define_xml <- function(domains, spec, path) {
         rngs <- p |>
           filter(!is.na(LBSTNRLO)) |>
           unite("rng", LBSTNRLO, LBSTNRHI, sep = " to ") |>
-          pull(rng) |>
+          pull(.data$rng) |>
           unique()
         if (length(rngs) > 0) {
           desc <- str_c(desc, " [reference range: ",

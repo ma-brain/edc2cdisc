@@ -11,7 +11,7 @@ label_from_cv_metadata(data, form_oid, meta)
 
 \item{form_oid}{Form OID the view was read for}
 
-\item{Metadata}{tibble from \code{\link[=read_cv_metadata]{read_cv_metadata()}}}
+\item{meta}{Metadata tibble from \code{\link[=read_cv_metadata]{read_cv_metadata()}}}
 }
 \value{
 \code{data} with variable labels set from the metadata.

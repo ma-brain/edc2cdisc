@@ -18,9 +18,8 @@ test_that("generate_rave_extract reproduces the frozen extract byte-for-byte", {
   generated <- sort(list.files(scratch))
   expect_gt(length(generated), 0)
 
-  fixture <- readRDS(system.file("tests", "testthat", "fixtures",
-                                 "generator-digests.rds",
-                                 package = "edc2cdisc"))
+  fixture <- readRDS(testthat::test_path("fixtures",
+                                         "generator-digests.rds"))
   expect_setequal(generated, names(fixture))
 
   for (f in generated) {

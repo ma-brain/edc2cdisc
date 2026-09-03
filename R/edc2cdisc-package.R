@@ -10,5 +10,7 @@
 "_PACKAGE"
 
 #' @import dplyr tidyr stringr purrr tibble labelled haven readr
-#' @importFrom stats na.omit
+#' @importFrom stats na.omit runif
+#' @importFrom utils modifyList
+#' @importFrom rlang .data
 NULL
