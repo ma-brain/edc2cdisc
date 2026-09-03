@@ -23,6 +23,14 @@
 #'   (default NA).
 #' @return The SUPP-- data frame, ordered and labelled.
 #' @export
+#' @examples
+#' parent <- data.frame(
+#'   STUDYID = "3021", USUBJID = c("3021-101-001", "3021-101-002"),
+#'   AESEQ = c(1, 2), AESI = c("Y", "N"), AENOTE = c("", "details")
+#' )
+#' make_supp(parent, "AE", "AESEQ",
+#'           qnams = data.frame(qnam = c("AESI", "AENOTE"),
+#'                              qlabel = c("Special Interest", "Note")))
 make_supp <- function(parent, rdomain, idvar, qnams) {
   src   <- if ("src"   %in% names(qnams)) qnams$src   else qnams$qnam
   qorig <- if ("qorig" %in% names(qnams)) qnams$qorig else rep("CRF", nrow(qnams))

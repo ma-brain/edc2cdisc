@@ -30,3 +30,16 @@ datasets, validates those too, and optionally writes RDS + SAS v5 XPT
 files plus a define.xml stub. Any validation ERROR stops the build before
 anything is written.
 }
+\examples{
+# regenerate the synthetic extract and run the whole pipeline
+ext <- file.path(tempdir(), "extract")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+built <- build_all(ext)
+
+# or, writing the deliverables as RDS + XPT + define.xml
+out <- file.path(tempdir(), "deliverables")
+build_all(ext, sdtm_dir = file.path(out, "sdtm"),
+          adam_dir = file.path(out, "adam"))
+}

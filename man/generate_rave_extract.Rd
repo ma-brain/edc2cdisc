@@ -30,3 +30,8 @@ The data is deliberately messy in specific, documented ways (mixed units,
 partial dates, ongoing records, screen failures, a soft-deleted row, a
 fatal AE) so the SDTM/ADaM mappers exercise real-world shapes.
 }
+\examples{
+ext <- file.path(tempdir(), "extract")
+generate_rave_extract(out = ext)
+list.files(ext)
+}

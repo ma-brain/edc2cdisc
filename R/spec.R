@@ -139,6 +139,8 @@ print.study_spec <- function(x, ...) {
 #' @param ct The codelist name, e.g. "AEOUT"
 #' @return A named character vector: collected decode -> CDISC term.
 #' @export
+#' @examples
+#' ct_lookup(spec_synth01, "AESEV")
 ct_lookup <- function(spec, ct) {
   rows <- spec$codelists[spec$codelists$ct == ct, ]
   if (nrow(rows) == 0) {

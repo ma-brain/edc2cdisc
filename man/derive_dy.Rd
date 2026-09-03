@@ -15,3 +15,7 @@ Integer study day.
 \description{
 Study day relative to a reference start date, with no day 0
 }
+\examples{
+derive_dy("2024-01-10", "2024-01-10")   # the reference date is day 1
+derive_dy("2024-01-09", "2024-01-10")   # no day 0
+}

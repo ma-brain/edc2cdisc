@@ -17,3 +17,9 @@ A list with \code{stresn} (numeric) and \code{stresu} (character).
 \description{
 Coalesce an EDC-provided standard value with a locally derived one
 }
+\examples{
+# the EDC-configured conversion wins when present ...
+resolve_standard("36.8", "C", "98.6", "F")
+# ... and the local fallback fills the gap when it is not
+resolve_standard("", "", "98.6", "F")
+}

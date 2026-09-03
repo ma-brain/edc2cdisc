@@ -23,3 +23,8 @@ Note the bias this rule carries: imputing a birth date to January 1st can
 overstate AGE by up to 11 months. A study SAP often prefers mid-year here -
 the point is to have one explicit, flagged rule rather than silence.
 }
+\examples{
+imp <- impute_dtc(c("2024-03-17", "2024-03", "2024", NA))
+imp$date
+imp$flag
+}

@@ -12,6 +12,11 @@
 #' @param rds_dir,xpt_dir Output directories; both are created if missing
 #' @return `data`, invisibly.
 #' @export
+#' @examples
+#' out <- file.path(tempdir(), "sdtm")
+#' dm <- data.frame(STUDYID = "3021", USUBJID = "3021-101-001")
+#' write_sdtm(dm, "DM", rds_dir = out, xpt_dir = file.path(out, "xpt"))
+#' list.files(out, recursive = TRUE)
 write_sdtm <- function(data, domain, rds_dir, xpt_dir) {
   long_names <- names(data)[str_length(names(data)) > 8]
   if (length(long_names) > 0) {

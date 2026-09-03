@@ -66,6 +66,17 @@
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
 #'   detail. Empty when everything passes.
 #' @export
+#' @examples
+#' ext <- file.path(tempdir(), "extract-val")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' built <- build_all(ext)
+#' issues <- validate_sdtm(built$sdtm, spec_synth01)
+#' issues                                  # empty: the build is clean
+#'
+#' # the pipeline wrapper stops on any ERROR row
+#' stop_on_error(issues, "SDTM validation")
 validate_sdtm <- function(domains, spec = NULL) {
   issues <- list()
   add <- function(domain, severity, check, detail) {

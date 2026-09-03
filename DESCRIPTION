@@ -8,7 +8,7 @@ Description: Reads electronic data capture (EDC) clinical view CSV extracts
     and maps them to CDISC SDTM domains, ADaM analysis datasets and a
     define.xml stub, driven by an explicit study specification. A seeded
     synthetic extract generator ships with the package, so the whole
-    Rave-to-SDTM-to-ADaM pipeline runs, is tested and can be demonstrated
+    EDC-to-SDTM-to-ADaM pipeline runs, is tested and can be demonstrated
     without a live EDC system.
 License: MIT + file LICENSE
 URL: https://github.com/ma-brain/edc2cdisc
@@ -18,7 +18,6 @@ Depends:
 Imports:
     dplyr (>= 1.2.0),
     haven,
-    labelled,
     labelled,
     purrr,
     readr,

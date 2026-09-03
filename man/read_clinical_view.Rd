@@ -28,3 +28,12 @@ explicitly, per variable.
 The file must end with an \code{EOF} marker row: its absence means the stream
 was truncated by an API timeout, which is a hard error, not a warning.
 }
+\examples{
+ext <- file.path(tempdir(), "extract-io")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+vs <- read_clinical_view("VS", ext)
+nrow(vs)
+table(vs$RecordActive)
+}

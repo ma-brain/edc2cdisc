@@ -19,3 +19,10 @@ derive_seq(data, seq_var, ...)
 \description{
 Derive a --SEQ within USUBJID
 }
+\examples{
+df <- data.frame(
+  USUBJID = c("S1", "S1", "S2"),
+  AESTDTC = c("2024-01-05", "2024-01-02", "2024-02-01")
+)
+derive_seq(df, "AESEQ", AESTDTC)
+}

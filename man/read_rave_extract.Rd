@@ -20,3 +20,11 @@ A named list of labelled clinical view tibbles.
 \description{
 Load every form in the extract at once
 }
+\examples{
+ext <- file.path(tempdir(), "extract-io2")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+forms <- suppressMessages(read_rave_extract(dir = ext))
+names(forms)
+}

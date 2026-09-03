@@ -34,6 +34,14 @@ rave_header_cols <- c(
 #'   header bookkeeping columns typed (flags integer, timestamps POSIXct)
 #'   and FORMOID attached.
 #' @export
+#' @examples
+#' ext <- file.path(tempdir(), "extract-io")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' vs <- read_clinical_view("VS", ext)
+#' nrow(vs)
+#' table(vs$RecordActive)
 read_clinical_view <- function(form_oid, dir, active_only = TRUE) {
   path <- file.path(dir, paste0(form_oid, ".csv"))
   if (!file.exists(path)) {
@@ -143,6 +151,13 @@ col_or_na <- function(data, name) {
 #' @param dir Directory holding the extract
 #' @return A named list of labelled clinical view tibbles.
 #' @export
+#' @examples
+#' ext <- file.path(tempdir(), "extract-io2")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' names(forms)
 read_rave_extract <- function(form_oids = c("DM", "VS", "LB", "AE", "CM",
                                             "EX", "DS", "MH"),
                               dir) {

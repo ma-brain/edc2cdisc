@@ -20,3 +20,9 @@ write_sdtm(data, domain, rds_dir, xpt_dir)
 Guards the XPT v5 constraints (variable names <= 8 characters, labels
 <= 40 characters) before writing, then writes both formats.
 }
+\examples{
+out <- file.path(tempdir(), "sdtm")
+dm <- data.frame(STUDYID = "3021", USUBJID = "3021-101-001")
+write_sdtm(dm, "DM", rds_dir = out, xpt_dir = file.path(out, "xpt"))
+list.files(out, recursive = TRUE)
+}

@@ -32,3 +32,12 @@ where the value is present: QVAL is required, so a blank qualifier simply
 produces no SUPP record (a "specify" field appears only for the subjects who
 triggered it; a Y/N field appears for everyone it was asked of).
 }
+\examples{
+parent <- data.frame(
+  STUDYID = "3021", USUBJID = c("3021-101-001", "3021-101-002"),
+  AESEQ = c(1, 2), AESI = c("Y", "N"), AENOTE = c("", "details")
+)
+make_supp(parent, "AE", "AESEQ",
+          qnams = data.frame(qnam = c("AESI", "AENOTE"),
+                             qlabel = c("Special Interest", "Note")))
+}

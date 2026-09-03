@@ -41,3 +41,15 @@ window and SUPP merge-back on ADAE, and for the BDS datasets (ADVS /
 ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic, ANRIND against the
 row's own range, and coverage against the SDTM source records.
 }
+\examples{
+ext <- file.path(tempdir(), "extract-adam")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+built <- build_all(ext)
+issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADVS,
+                        built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
+                        built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                        built$sdtm$SUPPAE)
+issues                                  # empty: the build is clean
+}

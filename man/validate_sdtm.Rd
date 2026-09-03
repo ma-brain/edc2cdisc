@@ -26,3 +26,15 @@ visit uniqueness, VISITNUM reconciliation against SV, screen-failure
 study-day leaks, SUPP/CO related-record structure, death coherence across
 AE/DS/DM, MH onset before first dose, and RELREC pair integrity.
 }
+\examples{
+ext <- file.path(tempdir(), "extract-val")
+\dontshow{
+suppressMessages(generate_rave_extract(out = ext))
+}
+built <- build_all(ext)
+issues <- validate_sdtm(built$sdtm, spec_synth01)
+issues                                  # empty: the build is clean
+
+# the pipeline wrapper stops on any ERROR row
+stop_on_error(issues, "SDTM validation")
+}

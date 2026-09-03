@@ -21,3 +21,8 @@ silent pass-through.
 \description{
 Map collected decodes through a controlled-terminology lookup, loudly
 }
+\examples{
+lookup <- c("Mild" = "MILD", "Moderate" = "MODERATE")
+check_ct(c("Mild", "Moderate"), lookup, "AESEV")
+tryCatch(check_ct("Severe", lookup, "AESEV"), error = conditionMessage)
+}

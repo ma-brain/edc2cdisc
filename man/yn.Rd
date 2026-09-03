@@ -15,3 +15,6 @@ yn(x)
 \description{
 Map coded "1"/"0" yes/no values to SDTM Y/N
 }
+\examples{
+yn(c("1", "0", NA))
+}

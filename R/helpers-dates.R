@@ -14,6 +14,11 @@
 #' @return An ISO 8601 date character vector, reduced precision where
 #'   components are missing.
 #' @export
+#' @examples
+#' rave_dtc("2024", "03", "17")
+#' rave_dtc("2024", "03", NA)                       # UNK day
+#' rave_dtc("2024", NA, NA)                         # UNK day and month
+#' rave_dtc("2024", "03", "17", time = "09:30")     # complete date + time
 rave_dtc <- function(yyyy, mm, dd, time = NULL) {
   y <- str_pad(as.character(yyyy), 4, pad = "0")
   m <- str_pad(as.character(mm), 2, pad = "0")
@@ -42,6 +47,8 @@ rave_dtc <- function(yyyy, mm, dd, time = NULL) {
 #' @param dtc ISO 8601 character vector
 #' @return A Date vector; NA wherever `dtc` has less than full precision.
 #' @export
+#' @examples
+#' dtc_date(c("2024-03-17", "2024-03", NA))
 dtc_date <- function(dtc) {
   as.Date(if_else(str_length(dtc) >= 10, str_sub(dtc, 1, 10), NA_character_))
 }
@@ -60,6 +67,10 @@ dtc_date <- function(dtc) {
 #' @param dtc ISO 8601 character vector (full, reduced precision, or NA)
 #' @return A list with `date` (Date vector) and `flag` (`c("", "D", "M", NA)`).
 #' @export
+#' @examples
+#' imp <- impute_dtc(c("2024-03-17", "2024-03", "2024", NA))
+#' imp$date
+#' imp$flag
 impute_dtc <- function(dtc) {
   full <- str_length(dtc) >= 10
   mth  <- str_length(dtc) >= 7

@@ -1167,6 +1167,10 @@ apply_mh <- function(forms, subjects) {
 #' @param n Number of subjects to generate.
 #' @return The form environments built, invisibly.
 #' @export
+#' @examples
+#' ext <- file.path(tempdir(), "extract")
+#' generate_rave_extract(out = ext)
+#' list.files(ext)
 generate_rave_extract <- function(out, seed = 20260903, n = 24) {
   set.seed(seed)
   dir.create(out, recursive = TRUE, showWarnings = FALSE)

@@ -25,6 +25,17 @@
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
 #'   detail. Empty when everything passes.
 #' @export
+#' @examples
+#' ext <- file.path(tempdir(), "extract-adam")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' built <- build_all(ext)
+#' issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADVS,
+#'                         built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
+#'                         built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+#'                         built$sdtm$SUPPAE)
+#' issues                                  # empty: the build is clean
 validate_adam <- function(adsl, adae, advs, adlb,
                           dm, ds, ae, vs, lb, suppae,
                           param_spec = tribble(

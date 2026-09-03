@@ -16,3 +16,7 @@ Integer study day (no day 0: the reference date itself is day 1).
 Analysis datasets call this directly with imputed Dates; \code{\link[=derive_dy]{derive_dy()}}
 wraps it for --DTC strings.
 }
+\examples{
+ref <- as.Date("2024-01-10")
+derive_dy_d(as.Date(c("2024-01-09", "2024-01-10", "2024-01-11")), ref)
+}

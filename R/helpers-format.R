@@ -8,6 +8,8 @@
 #' @param x Character or factor vector of "1"/"0" coded values
 #' @return "Y"/"N" character vector, NA where the input was not coded.
 #' @export
+#' @examples
+#' yn(c("1", "0", NA))
 yn <- function(x) {
   recode_values(as.character(x), "1" ~ "Y", "0" ~ "N", default = NA_character_)
 }

@@ -17,3 +17,6 @@ Takes Dates, not --DTC strings, so an analysis dataset can feed it an
 imputed analysis date from \code{\link[=impute_dtc]{impute_dtc()}}; SDTM callers wrap the inputs in
 \code{\link[=dtc_date]{dtc_date()}} themselves.
 }
+\examples{
+compute_age(as.Date("1990-06-15"), as.Date("2024-06-15"))
+}

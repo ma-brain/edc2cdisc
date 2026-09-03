@@ -17,3 +17,6 @@ A named character vector: collected decode -> CDISC term.
 \description{
 Pull one controlled-terminology lookup from a study spec
 }
+\examples{
+ct_lookup(spec_synth01, "AESEV")
+}

@@ -15,3 +15,6 @@ A Date vector; NA wherever \code{dtc} has less than full precision.
 \description{
 Numeric date from a --DTC, NA unless the date is complete
 }
+\examples{
+dtc_date(c("2024-03-17", "2024-03", NA))
+}

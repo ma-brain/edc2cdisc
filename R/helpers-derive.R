@@ -12,6 +12,8 @@
 #' @param brthdt,refdt Date vectors
 #' @return Integer age in whole years.
 #' @export
+#' @examples
+#' compute_age(as.Date("1990-06-15"), as.Date("2024-06-15"))
 compute_age <- function(brthdt, refdt) {
   age <- as.integer(floor(as.numeric(difftime(refdt, brthdt, units = "days")) / 365.25))
   if_else(is.na(brthdt) | is.na(refdt), NA_integer_, age)
@@ -25,6 +27,9 @@ compute_age <- function(brthdt, refdt) {
 #' @param dt,refdt Date vectors
 #' @return Integer study day (no day 0: the reference date itself is day 1).
 #' @export
+#' @examples
+#' ref <- as.Date("2024-01-10")
+#' derive_dy_d(as.Date(c("2024-01-09", "2024-01-10", "2024-01-11")), ref)
 derive_dy_d <- function(dt, refdt) {
   diff <- as.integer(dt - refdt)
   case_when(
@@ -39,6 +44,9 @@ derive_dy_d <- function(dt, refdt) {
 #' @param dtc,rfstdtc ISO 8601 character vectors
 #' @return Integer study day.
 #' @export
+#' @examples
+#' derive_dy("2024-01-10", "2024-01-10")   # the reference date is day 1
+#' derive_dy("2024-01-09", "2024-01-10")   # no day 0
 derive_dy <- function(dtc, rfstdtc) {
   derive_dy_d(dtc_date(dtc), dtc_date(rfstdtc))
 }
@@ -50,6 +58,12 @@ derive_dy <- function(dtc, rfstdtc) {
 #' @param ... Ordering expressions passed to [dplyr::arrange()]
 #' @return `data` with the sequence variable added (1..n within USUBJID).
 #' @export
+#' @examples
+#' df <- data.frame(
+#'   USUBJID = c("S1", "S1", "S2"),
+#'   AESTDTC = c("2024-01-05", "2024-01-02", "2024-02-01")
+#' )
+#' derive_seq(df, "AESEQ", AESTDTC)
 derive_seq <- function(data, seq_var, ...) {
   data |>
     arrange(USUBJID, ...) |>
@@ -65,6 +79,10 @@ derive_seq <- function(data, seq_var, ...) {
 #'   a new codelist value must be a deliberate mapping change, never a
 #'   silent pass-through.
 #' @export
+#' @examples
+#' lookup <- c("Mild" = "MILD", "Moderate" = "MODERATE")
+#' check_ct(c("Mild", "Moderate"), lookup, "AESEV")
+#' tryCatch(check_ct("Severe", lookup, "AESEV"), error = conditionMessage)
 check_ct <- function(x, lookup, varname) {
   unmapped <- setdiff(unique(na.omit(x)), names(lookup))
   if (length(unmapped) > 0) {

@@ -20,3 +20,9 @@ The source system splits every date field into integer year/month/day
 components which are blank when the site entered UNK. That maps directly
 onto ISO 8601 reduced precision, so no imputation is needed or wanted here.
 }
+\examples{
+rave_dtc("2024", "03", "17")
+rave_dtc("2024", "03", NA)                       # UNK day
+rave_dtc("2024", NA, NA)                         # UNK day and month
+rave_dtc("2024", "03", "17", time = "09:30")     # complete date + time
+}

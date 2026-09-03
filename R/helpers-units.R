@@ -46,6 +46,11 @@ standard_unit <- function(unit) {
 #' @param orres,orresu Original result/unit, used for the local fallback
 #' @return A list with `stresn` (numeric) and `stresu` (character).
 #' @export
+#' @examples
+#' # the EDC-configured conversion wins when present ...
+#' resolve_standard("36.8", "C", "98.6", "F")
+#' # ... and the local fallback fills the gap when it is not
+#' resolve_standard("", "", "98.6", "F")
 resolve_standard <- function(std_value, std_unit, orres, orresu) {
   std_num <- suppressWarnings(as.numeric(std_value))
   list(
