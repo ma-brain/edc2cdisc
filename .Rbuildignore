@@ -8,3 +8,4 @@
 ^\.lintr$
 ^\.github$
 ^tests/update_reference\.R$
+^REVIEW-.*\.md$

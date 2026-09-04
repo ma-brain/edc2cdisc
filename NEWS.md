@@ -1,9 +1,12 @@
-# edc2cdisc 0.2.0.9000
+# edc2cdisc 0.3.0
 
-Correctness fixes from the first code review (REVIEW-2026-09-03). Items 1-10
-of the review's findings; the API and test-debt findings are queued for the
-next waves. Every fix carries a hand-built edge-case test, because the
-seeded generator cannot produce any of these inputs.
+Closes out the first code review (REVIEW-2026-09-03): all fifteen findings
+actioned. Every fix carries a hand-built edge-case test, because the seeded
+generator cannot produce any of these inputs. Findings 1-10 are the Fixed
+list below, 11-13 are the Breaking list, and 14 plus the two derivation
+bugs hiding inside 15 close it out. Finding 7 is documented as a
+deliberate SAP boundary (the first-dose date), with the datetime-level
+alternative deferred to a future release (#5).
 
 ## Breaking
 
