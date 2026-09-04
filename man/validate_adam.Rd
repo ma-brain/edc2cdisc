@@ -28,7 +28,7 @@ built from}
 reference ranges the built ADVS is checked against - a silent change
 on either side (in \code{spec$bds} or in \code{\link[=derive_advs]{derive_advs()}}) trips the
 range-drift check, and a parameter missing from \code{spec$bds} trips the
-coverage check}
+coverage check. The study's \code{age_min} / \code{age_max} bound the AGE check.}
 }
 \value{
 An issue tibble: domain, severity ("ERROR" / "WARN"), check,

@@ -10,7 +10,8 @@ test_that("spec_synth01 is a valid study_spec", {
 
 test_that("new_study_spec validates its tables", {
   good <- list(
-    study = tibble(STUDYID = "S", PROJECT = "P", seed = 1, n = 1L),
+    study = tibble(STUDYID = "S", PROJECT = "P", seed = 1, n = 1L,
+                   age_min = 18, age_max = 100),
     sites = tibble(SiteNumber = "1", siteid = "1", Site = "s",
                    SiteGroup = "g", StudySiteId = "1", COUNTRY = "ROU"),
     arms = tibble(ARMCD_DECODE = "d", ARMCD = "A", ARM = "a"),
@@ -44,6 +45,74 @@ test_that("new_study_spec validates its tables", {
   no_ref$variables$transform <- "derivation"
   no_ref$variables$ref <- NA
   expect_error(do.call(new_study_spec, no_ref), "without a ref")
+})
+
+test_that("new_study_spec validates references, not just shapes", {
+  base <- list(
+    study = tibble(STUDYID = "S", PROJECT = "P", seed = 1, n = 1L,
+                   age_min = 18, age_max = 100),
+    sites = tibble(SiteNumber = "1", siteid = "1", Site = "s",
+                   SiteGroup = "g", StudySiteId = "1", COUNTRY = "ROU"),
+    arms = tibble(ARMCD_DECODE = "d", ARMCD = "A", ARM = "a"),
+    visits = tibble(Folder = "F", VISITNUM = 1L, VISIT = "V", EPOCH = "E",
+                    TargetDays = 0L),
+    codelists = tibble(ct = "X", rave_decode = "r", cdisc_term = "c"),
+    supp = tibble(rdomain = "DM", idvar = NA, qnam = "Q", qlabel = "ql",
+                  src = "Q", transform = "yn", qorig = "CRF", qeval = NA),
+    units = tibble(testcd = "T", conv_from = "A", conv_to = "B",
+                   conv_factor = 1),
+    forms = tibble(form_oid = "DM", type = "event", scheduled = TRUE),
+    tests = tibble(domain = "VS", field = "F", testcd = "T", test = "t",
+                   cat = NA, specimen = NA),
+    bds = tibble(domain = "ADVS", paramcd = "SYSBP", paramn = 1,
+                 anrlo = 90, anrhi = 140),
+    variables = tibble(
+      domain    = c("DM", "DM"),
+      variable  = c("DOMAIN", "ARM"),
+      crf_field = c(NA, NA),
+      transform = c("constant", "derivation"),
+      ref       = c(NA, "study_id"),
+      value     = c("DM", NA),
+      aux       = NA,
+      default   = NA
+    )
+  )
+
+  # a derivation ref nothing in the registry answers: construction time,
+  # not halfway through a build
+  bad_der <- base
+  bad_der$variables$ref[2] <- "no_such_derivation"
+  expect_error(do.call(new_study_spec, bad_der), "unknown derivation ref")
+
+  # an extra derivation registered at map time must be declared to the
+  # constructor to pass the reference check
+  local_ok <- base
+  local_ok$variables$ref[2] <- "dmdy_local"
+  expect_error(do.call(new_study_spec, local_ok), "unknown derivation ref")
+  local_fns <- list(dmdy_local = function(data, spec, row) {
+    rep(1L, nrow(data))
+  })
+  expect_s3_class(
+    do.call(new_study_spec, c(local_ok, list(derivations = local_fns))),
+    "study_spec"
+  )
+
+  # a decode row naming a codelist the spec does not carry
+  bad_dec <- base
+  bad_dec$variables$transform[2] <- "decode"
+  bad_dec$variables$ref[2] <- "NOPE"
+  bad_dec$variables$crf_field[2] <- "X"
+  expect_error(do.call(new_study_spec, bad_dec), "no matching codelist")
+
+  # a SUPP transform outside the vocabulary supp_transform() knows
+  bad_supp <- base
+  bad_supp$supp$transform <- "rot13"
+  expect_error(do.call(new_study_spec, bad_supp), "unsupported SUPP transform")
+
+  # variables for a domain no mapper can build
+  bad_dom <- base
+  bad_dom$variables$domain <- "ZZ"
+  expect_error(do.call(new_study_spec, bad_dom), "unbuildable domain")
 })
 
 test_that("ct_lookup returns named vectors and fails on unknown ct", {
@@ -85,6 +154,24 @@ test_that("spec visit targets match the extract header block", {
     select(Folder, TargetDays) |>
     arrange(Folder)
   expect_equal(as.data.frame(got), as.data.frame(expected))
+})
+
+test_that("map_variables passes the spec row to derivations", {
+  df <- tibble(Subject = "101-001", MARKER = c("a", "b"))
+  rows <- tibble(
+    domain = "ZZ", variable = "MARKER_OUT", crf_field = "MARKER",
+    transform = "derivation", ref = "row_reader", value = NA, aux = NA,
+    default = NA
+  )
+  out <- map_variables(
+    df, spec_synth01, rows,
+    derivations = list(row_reader = function(data, spec, row) {
+      paste0(row$variable, ":", data[[row$crf_field]])
+    })
+  )
+  # the derivation saw its row: the CRF source came from row$crf_field,
+  # not from a name baked into the function
+  expect_equal(out$MARKER_OUT, c("MARKER_OUT:a", "MARKER_OUT:b"))
 })
 
 test_that("map_variables drives EX columns off the spec table", {

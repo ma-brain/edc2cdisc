@@ -27,7 +27,7 @@
 #'   reference ranges the built ADVS is checked against - a silent change
 #'   on either side (in `spec$bds` or in [derive_advs()]) trips the
 #'   range-drift check, and a parameter missing from `spec$bds` trips the
-#'   coverage check
+#'   coverage check. The study's `age_min` / `age_max` bound the AGE check.
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
 #'   detail. Empty when everything passes.
 #' @export
@@ -192,11 +192,15 @@ validate_adam <- function(adsl, adae, advs, adlb,
   }
 
   # Age: a missing AGE signals a missing birth date, which nothing
-  # downstream expects. Range check matches the protocol's adult population.
-  bad_age <- adsl |> filter(is.na(AGE) | AGE < 18 | AGE > 100)
+  # downstream expects. The bounds are the study's own - spec$study's
+  # age_min / age_max - so a paediatric or elderly protocol is a spec
+  # change, not a validator edit.
+  bad_age <- adsl |>
+    filter(is.na(AGE) | AGE < spec$study$age_min | AGE > spec$study$age_max)
   if (nrow(bad_age) > 0) {
     add("ADSL", "ERROR", "age-out-of-range",
-        sprintf("%d row(s) with AGE missing or outside 18-100", nrow(bad_age)))
+        sprintf("%d row(s) with AGE missing or outside %s-%s", nrow(bad_age),
+                spec$study$age_min, spec$study$age_max))
   }
 
   # Imputation flags: controlled values, and a flag implies a date

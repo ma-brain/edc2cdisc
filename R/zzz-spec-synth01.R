@@ -25,7 +25,10 @@ spec_synth01 <- new_study_spec(
     STUDYID = "3021",
     PROJECT = "SYNTH01",
     seed    = 20260903,
-    n       = 24L
+    n       = 24L,
+    # the protocol's adult population; validate_adam() checks AGE against it
+    age_min = 18L,
+    age_max = 100L
   ),
 
   sites = tribble(
@@ -158,7 +161,7 @@ spec_synth01 <- new_study_spec(
     # ---- DM (output order matters: DM has no trailing select) ----
     "DM",    "STUDYID",  NA,                "derivation",  "study_id", NA,        NA,       NA,
     "DM",    "DOMAIN",   NA,                "constant",    NA,         "DM",      NA,       NA,
-    "DM",    "USUBJID",  NA,                "derivation",  "usubjid",  NA,        NA,       NA,
+    "DM",    "USUBJID",  "Subject",         "derivation",  "usubjid",  NA,        NA,       NA,
     "DM",    "SUBJID",   "Subject",         "rename",      NA,         NA,        NA,       NA,
     "DM",    "RFSTDTC",  "RFXSTDTC",        "rename",      NA,         NA,        NA,       NA,
     "DM",    "RFENDTC",  "RFXENDTC",        "rename",      NA,         NA,        NA,       NA,
@@ -179,13 +182,13 @@ spec_synth01 <- new_study_spec(
     "DM",    "ARM",      NA,                "derivation",  "arm",      NA,        NA,       NA,
     "DM",    "ACTARMCD", "ARMCD",           "rename",      NA,         NA,        NA,       NA,
     "DM",    "ACTARM",   "ARM",             "rename",      NA,         NA,        NA,       NA,
-    "DM",    "COUNTRY",  NA,                "derivation",  "country",  NA,        NA,       NA,
+    "DM",    "COUNTRY",  "SiteNumber",      "derivation",  "country",  NA,        NA,       NA,
     "DM",    "DMDTC",    "ICDAT",           "dtc",         NA,         NA,        NA,       NA,
     "DM",    "DMDY",     NA,                "derivation",  "dmdy",     NA,        NA,       NA,
     # ---- EX ----
     "EX",    "STUDYID",  NA,                "derivation",  "study_id", NA,        NA,       NA,
     "EX",    "DOMAIN",   NA,                "constant",    NA,         "EX",      NA,       NA,
-    "EX",    "USUBJID",  NA,                "derivation",  "usubjid",  NA,        NA,       NA,
+    "EX",    "USUBJID",  "Subject",         "derivation",  "usubjid",  NA,        NA,       NA,
     "EX",    "EXTRT",    "EXTRT",           "upper_squish", NA,        NA,        NA,       NA,
     "EX",    "EXDOSE",   "EXDOSE",          "numeric",     NA,         NA,        NA,       NA,
     "EX",    "EXDOSU",   "EXDOSU",          "rename",      NA,         NA,        NA,       NA,
@@ -196,7 +199,7 @@ spec_synth01 <- new_study_spec(
     # ---- DS ----
     "DS",    "STUDYID",  NA,                "derivation",  "study_id", NA,        NA,       NA,
     "DS",    "DOMAIN",   NA,                "constant",    NA,         "DS",      NA,       NA,
-    "DS",    "USUBJID",  NA,                "derivation",  "usubjid",  NA,        NA,       NA,
+    "DS",    "USUBJID",  "Subject",         "derivation",  "usubjid",  NA,        NA,       NA,
     "DS",    "DSTERM",   "DSTERM",          "squish",      NA,         NA,        NA,       NA,
     "DS",    "DSDECOD",  "DSREAS_DECODE",   "derivation",  "dsdecod",  NA,        NA,       NA,
     "DS",    "DSSTDTC",  "DSSTDAT",         "dtc",         NA,         NA,        NA,       NA,
@@ -204,7 +207,7 @@ spec_synth01 <- new_study_spec(
     # ---- AE ----
     "AE",    "STUDYID",  NA,                "derivation",  "study_id", NA,        NA,       NA,
     "AE",    "DOMAIN",   NA,                "constant",    NA,         "AE",      NA,       NA,
-    "AE",    "USUBJID",  NA,                "derivation",  "usubjid",  NA,        NA,       NA,
+    "AE",    "USUBJID",  "Subject",         "derivation",  "usubjid",  NA,        NA,       NA,
     # Rave log-line number, kept as AESPID so SUPPAE / CO can pin each
     # related record to an AE row without re-deriving AESEQ.
     "AE",    "AESPID",   "recordposition",  "character",   NA,         NA,        NA,       NA,
@@ -218,12 +221,12 @@ spec_synth01 <- new_study_spec(
     "AE",    "AEOUT",    "AEOUT_DECODE",    "decode",      "AEOUT",    NA,        NA,       NA,
     "AE",    "AESTDTC",  "AESTDAT",         "dtc",         NA,         NA,        NA,       NA,
     "AE",    "AEENDTC",  "AEENDAT",         "dtc",         NA,         NA,        NA,       NA,
-    "AE",    "AEENRTPT", NA,                "derivation",  "enrtpt_ongoing", NA,  NA,       NA,
-    "AE",    "AEENRF",   NA,                "derivation",  "enrf_ongoing",   NA,  NA,       NA,
+    "AE",    "AEENRTPT", "AEONG",           "derivation",  "enrtpt_ongoing", NA,  NA,       NA,
+    "AE",    "AEENRF",   "AEONG",           "derivation",  "enrf_ongoing",   NA,  NA,       NA,
     # ---- CM ----
     "CM",    "STUDYID",  NA,                "derivation",  "study_id", NA,        NA,       NA,
     "CM",    "DOMAIN",   NA,                "constant",    NA,         "CM",      NA,       NA,
-    "CM",    "USUBJID",  NA,                "derivation",  "usubjid",  NA,        NA,       NA,
+    "CM",    "USUBJID",  "Subject",         "derivation",  "usubjid",  NA,        NA,       NA,
     # Rave log-line number, kept as CMSPID so RELREC can pin linked records.
     "CM",    "CMSPID",   "CMSPID",          "character",   NA,         NA,        NA,       NA,
     "CM",    "CMTRT",    "CMTRT",           "verbatim",    NA,         NA,        NA,       NA,
@@ -236,18 +239,18 @@ spec_synth01 <- new_study_spec(
     "CM",    "CMROUTE",  "CMROUTE_DECODE",  "upper",       NA,         NA,        NA,       NA,
     "CM",    "CMSTDTC",  "CMSTDAT",         "dtc",         NA,         NA,        NA,       NA,
     "CM",    "CMENDTC",  "CMENDAT",         "dtc",         NA,         NA,        NA,       NA,
-    "CM",    "CMENRTPT", NA,                "derivation",  "enrtpt_ongoing_cm", NA, NA,      NA,
-    "CM",    "CMENRF",   NA,                "derivation",  "enrf_ongoing_cm",  NA,  NA,       NA,
+    "CM",    "CMENRTPT", "CMONG",           "derivation",  "enrtpt_ongoing_cm", NA, NA,      NA,
+    "CM",    "CMENRF",   "CMONG",           "derivation",  "enrf_ongoing_cm",  NA,  NA,       NA,
     # ---- MH ----
     "MH",    "STUDYID",  NA,                "derivation",  "study_id", NA,        NA,       NA,
     "MH",    "DOMAIN",   NA,                "constant",    NA,         "MH",      NA,       NA,
-    "MH",    "USUBJID",  NA,                "derivation",  "usubjid",  NA,        NA,       NA,
+    "MH",    "USUBJID",  "Subject",         "derivation",  "usubjid",  NA,        NA,       NA,
     "MH",    "MHTERM",   "MHTERM",          "squish",      NA,         NA,        NA,       NA,
     "MH",    "MHDECOD",  "MHCOD_PT",        "rename",      NA,         NA,        NA,       NA,
     "MH",    "MHBODSYS", "MHCOD_SOC",       "rename",      NA,         NA,        NA,       NA,
     "MH",    "MHSTDTC",  "MHSTDAT",         "dtc",         NA,         NA,        NA,       NA,
     "MH",    "MHENDTC",  "MHENDAT",         "dtc",         NA,         NA,        NA,       NA,
-    "MH",    "MHENRTPT", NA,                "derivation",  "enrtpt_ongoing_mh", NA, NA,      NA,
-    "MH",    "MHENRF",   NA,                "derivation",  "enrf_ongoing_mh",  NA,  NA,       NA
+    "MH",    "MHENRTPT", "MHONG",           "derivation",  "enrtpt_ongoing_mh", NA, NA,      NA,
+    "MH",    "MHENRF",   "MHONG",           "derivation",  "enrf_ongoing_mh",  NA,  NA,       NA
   )
 )

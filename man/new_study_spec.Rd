@@ -15,11 +15,18 @@ new_study_spec(
   forms,
   tests,
   bds,
-  variables
+  variables,
+  derivations = list()
 )
 }
 \arguments{
 \item{study, sites, arms, visits, codelists, supp, units, forms, tests, bds, variables}{Tibbles as described above.}
+
+\item{derivations}{Optional named list of extra derivation functions
+(signature \verb{function(data, spec, row)}) that this spec's \code{derivation}
+rows reference but that are only registered at map time, via
+\code{map_variables(derivations = )}. Declared here so the reference
+check can see them.}
 }
 \value{
 A \code{study_spec} object (a validated named list).
@@ -30,7 +37,8 @@ study-specific mapping configuration:
 }
 \details{
 \itemize{
-\item \code{study}     - study constants: \code{STUDYID}, \code{PROJECT}, \code{seed}, \code{n}
+\item \code{study}     - study constants: \code{STUDYID}, \code{PROJECT}, \code{seed}, \code{n},
+\code{age_min} / \code{age_max} (the bounds \code{\link[=validate_adam]{validate_adam()}} applies to AGE)
 \item \code{sites}     - site table: \code{SiteNumber}, \code{siteid}, \code{Site}, \code{SiteGroup},
 \code{StudySiteId}, \code{COUNTRY}
 \item \code{arms}      - planned arm decode -> \code{ARMCD} / \code{ARM} (screen failures are
@@ -60,4 +68,12 @@ companion of a --DTC), \code{default} (decode fallback). \code{transform}
 names a member of the fixed vocabulary; \code{derivation} rows name a
 registered derivation in \code{ref}.
 }
+
+The constructor validates references as well as shapes: every
+\code{derivation} row's \code{ref} must resolve against the derivation registry
+(the shared one plus \code{derivations}), every \code{decode} row's \code{ref} must
+name a codelist the spec carries, every \code{supp$transform} must be one
+\code{supp_transform()} knows, and every \code{variables$domain} must be a domain
+the package can build. A spec that cannot be honoured fails here, not
+halfway through a build.
 }
