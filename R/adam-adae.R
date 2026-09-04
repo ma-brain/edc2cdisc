@@ -9,9 +9,11 @@
 #' Derive ADAE, the adverse event analysis dataset
 #'
 #' Treatment-emergent: onset (imputed start) on or after first dose and up
-#' to the last dose. No grace window - no SAP defines one, so the window is
-#' stated here where it can be argued with. Events with no classifiable
-#' onset, or for undosed subjects, stay blank.
+#' to the last dose (the shared rule in adam-rules.R). No grace window - no
+#' SAP defines one, so the window is stated here where it can be argued
+#' with. A missing TRTEDT - dosing ongoing at the data cut - leaves the end
+#' of the window open: those events stay treatment-emergent. Events with no
+#' classifiable onset, or for undosed subjects, stay blank.
 #'
 #' @param ae The mapped SDTM AE dataset
 #' @param suppae The mapped SDTM SUPPAE dataset
@@ -86,11 +88,7 @@ derive_adae <- function(ae, suppae, adsl) {
       ASTDY = derive_dy_d(ASTDT, TRTSDT),
       AENDY = derive_dy_d(AENDT, TRTSDT),
 
-      TRTEMFL = case_when(
-        is.na(ASTDT) | is.na(TRTSDT)               ~ "",
-        ASTDT >= TRTSDT & ASTDT <= TRTEDT          ~ "Y",
-        .default                                   = ""
-      )
+      TRTEMFL = .rule_trtemfl(ASTDT, TRTSDT, TRTEDT),
     ) |>
     arrange(USUBJID, ASEQ) |>
     apply_labels(c(

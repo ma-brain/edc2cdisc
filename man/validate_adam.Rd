@@ -35,11 +35,16 @@ An issue tibble: domain, severity ("ERROR" / "WARN"), check,
 detail. Empty when everything passes.
 }
 \description{
-Recomputes the derivations from their inputs instead of trusting the
-build: population-flag and treatment coherence on ADSL, the TRTEMFL
-window and SUPP merge-back on ADAE, and for the BDS datasets (ADVS /
-ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic, ANRIND against the
-row's own range, and coverage against the SDTM source records.
+Recomputes the derivations from their inputs through the same shared
+rule functions the derivers call (adam-rules.R), so the validator and
+the build cannot drift apart: it detects post-hoc corruption of the
+built dataset. A wrong rule would satisfy both sides - the rules
+themselves are pinned by the rule-level tests against hand-built
+inputs. Checks population-flag and treatment coherence on ADSL, the
+TRTEMFL window and SUPP merge-back on ADAE, and for the BDS datasets
+(ADVS / ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic, ANRIND
+against the row's own range, and coverage against the SDTM source
+records.
 }
 \examples{
 ext <- file.path(tempdir(), "extract-adam")

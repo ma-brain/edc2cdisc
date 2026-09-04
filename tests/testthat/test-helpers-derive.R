@@ -7,6 +7,18 @@ test_that("compute_age is whole years, NA-safe", {
   expect_equal(compute_age(as.Date("1990-06-15"), as.Date(NA)), NA_integer_)
 })
 
+test_that("compute_age counts anniversaries, not average year length", {
+  # the days/365.25 approximation returns 20 here (5 leap days in 21 years)
+  expect_equal(compute_age(as.Date("2003-01-01"), as.Date("2024-01-01")), 21)
+  # 22 years spanning only 5 leap days (8035/365.25 floors to 21)
+  expect_equal(compute_age(as.Date("2002-01-01"), as.Date("2024-01-01")), 22)
+  # day before the birthday the year is not yet complete
+  expect_equal(compute_age(as.Date("1990-06-15"), as.Date("2025-06-14")), 34)
+  # Feb 29 birthday: not reached on Feb 28 of a common year
+  expect_equal(compute_age(as.Date("2000-02-29"), as.Date("2024-02-28")), 23)
+  expect_equal(compute_age(as.Date("2000-02-29"), as.Date("2024-02-29")), 24)
+})
+
 test_that("derive_dy_d has no day 0", {
   ref <- as.Date("2024-01-10")
   expect_equal(derive_dy_d(as.Date("2024-01-10"), ref), 1L)   # same day

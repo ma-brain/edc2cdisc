@@ -9,11 +9,16 @@
 
 #' Validate the derived ADaM datasets
 #'
-#' Recomputes the derivations from their inputs instead of trusting the
-#' build: population-flag and treatment coherence on ADSL, the TRTEMFL
-#' window and SUPP merge-back on ADAE, and for the BDS datasets (ADVS /
-#' ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic, ANRIND against the
-#' row's own range, and coverage against the SDTM source records.
+#' Recomputes the derivations from their inputs through the same shared
+#' rule functions the derivers call (adam-rules.R), so the validator and
+#' the build cannot drift apart: it detects post-hoc corruption of the
+#' built dataset. A wrong rule would satisfy both sides - the rules
+#' themselves are pinned by the rule-level tests against hand-built
+#' inputs. Checks population-flag and treatment coherence on ADSL, the
+#' TRTEMFL window and SUPP merge-back on ADAE, and for the BDS datasets
+#' (ADVS / ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic, ANRIND
+#' against the row's own range, and coverage against the SDTM source
+#' records.
 #'
 #' @param adsl,adae,advs,adlb The mapped ADaM datasets
 #' @param dm,ds,ae,vs,lb,suppae The SDTM source datasets the ADaM layer was
@@ -111,7 +116,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
 
   bad_dur <- adsl |>
     filter(!is.na(TRTSDT), !is.na(TRTEDT),
-           TRTDURD != as.integer(TRTEDT - TRTSDT) + 1L)
+           TRTDURD != .rule_trtdurd(TRTSDT, TRTEDT))
   if (nrow(bad_dur) > 0) {
     add("ADSL", "ERROR", "trtdurd-wrong", sprintf("%d row(s)", nrow(bad_dur)))
   }
@@ -293,11 +298,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
         transmute(USUBJID, .ref_trtsdt = TRTSDT, .ref_trtedt = TRTEDT),
       by = "USUBJID"
     ) |>
-    mutate(.expect = case_when(
-      is.na(ASTDT) | is.na(.ref_trtsdt)          ~ "",
-      ASTDT >= .ref_trtsdt & ASTDT <= .ref_trtedt ~ "Y",
-      .default                                    = ""
-    ))
+    mutate(.expect = .rule_trtemfl(ASTDT, .ref_trtsdt, .ref_trtedt))
   bad_te <- te_expected |> filter(TRTEMFL != .expect)
   if (nrow(bad_te) > 0) {
     add("ADAE", "ERROR", "trtemfl-not-derivable",
@@ -320,8 +321,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
   # Analysis study days: anchored on TRTSDT with the no-day-0 rule
   bad_dy <- adae |>
     filter(!is.na(ASTDT), !is.na(TRTSDT)) |>
-    mutate(.diff = as.integer(ASTDT - TRTSDT),
-           .expect = if_else(.diff >= 0, .diff + 1L, .diff)) |>
+    mutate(.expect = derive_dy_d(ASTDT, TRTSDT)) |>
     filter(ASTDY != .expect)
   if (nrow(bad_dy) > 0) {
     add("ADAE", "ERROR", "astdy-wrong-anchor",
@@ -468,8 +468,8 @@ validate_adam <- function(adsl, adae, advs, adlb,
 
   bad_chg <- advs |>
     filter(!is.na(BASE)) |>
-    mutate(.chg  = if_else(ABLFL %in% "Y", NA_real_, AVAL - BASE),
-           .pchg = if_else(is.na(.chg), NA_real_, 100 * .chg / BASE)) |>
+    mutate(.chg  = .rule_chg(AVAL, BASE, ABLFL),
+           .pchg = .rule_pchg(.chg, BASE)) |>
     filter(xor(is.na(CHG), is.na(.chg)) | xor(is.na(PCHG), is.na(.pchg)) |
              (!is.na(CHG) & CHG != .chg) | (!is.na(PCHG) & PCHG != .pchg))
   if (nrow(bad_chg) > 0) {
@@ -629,8 +629,8 @@ validate_adam <- function(adsl, adae, advs, adlb,
   }
   bad_chg <- adlb |>
     filter(!is.na(BASE)) |>
-    mutate(.chg  = if_else(ABLFL %in% "Y", NA_real_, AVAL - BASE),
-           .pchg = if_else(is.na(.chg), NA_real_, 100 * .chg / BASE)) |>
+    mutate(.chg  = .rule_chg(AVAL, BASE, ABLFL),
+           .pchg = .rule_pchg(.chg, BASE)) |>
     filter(xor(is.na(CHG), is.na(.chg)) | xor(is.na(PCHG), is.na(.pchg)) |
              (!is.na(CHG) & CHG != .chg) | (!is.na(PCHG) & PCHG != .pchg))
   if (nrow(bad_chg) > 0) {

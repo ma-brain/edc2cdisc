@@ -15,7 +15,12 @@
 #' @examples
 #' compute_age(as.Date("1990-06-15"), as.Date("2024-06-15"))
 compute_age <- function(brthdt, refdt) {
-  age <- as.integer(floor(as.numeric(difftime(refdt, brthdt, units = "days")) / 365.25))
+  # Completed years by anniversary. A days/365.25 approximation understates
+  # age by one whenever more leap days fall before the birthday than after
+  # it (e.g. 2003-01-01 to 2024-01-01 is 21 years, not 20).
+  years  <- as.integer(format(refdt, "%Y")) - as.integer(format(brthdt, "%Y"))
+  before <- format(refdt, "%m-%d") < format(brthdt, "%m-%d")
+  age    <- years - as.integer(before)
   if_else(is.na(brthdt) | is.na(refdt), NA_integer_, age)
 }
 

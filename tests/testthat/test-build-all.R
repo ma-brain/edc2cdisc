@@ -36,6 +36,9 @@ test_that("the define.xml stub is well-formed and complete", {
   expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 10)
   # value-level metadata hooked onto VSSTRESN / LBSTRESN
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 2)
+  # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no
+  # ItemRef references is metadata emitted and then orphaned
+  expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListRef", ns)), 2)
 })
 
 test_that("XPT output round-trips", {

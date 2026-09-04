@@ -74,14 +74,8 @@ derive_advs <- function(vs, adsl, spec = spec_synth01) {
       # Change is defined against the baseline record; the baseline row
       # itself carries no CHG/PCHG (nothing to change from), and rows
       # without a baseline (screen failures) stay missing rather than zero.
-      # ABLFL is "Y" or NA, so the %in% form matters: NA != "Y" would be NA
-      # and the NA-armed if_else would nullify every post-baseline change.
-      CHG  = case_when(
-        ABLFL %in% "Y" ~ NA_real_,
-        is.na(BASE)    ~ NA_real_,
-        .default       = AVAL - BASE
-      ),
-      PCHG = if_else(!is.na(CHG), 100 * CHG / BASE, NA_real_),
+      CHG  = .rule_chg(AVAL, BASE, ABLFL),
+      PCHG = .rule_pchg(CHG, BASE),
       ANRIND = case_when(
         is.na(AVAL) | is.na(ANRLO) ~ NA_character_,
         AVAL < ANRLO               ~ "LOW",

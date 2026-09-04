@@ -18,9 +18,11 @@ The labelled ADAE tibble.
 }
 \description{
 Treatment-emergent: onset (imputed start) on or after first dose and up
-to the last dose. No grace window - no SAP defines one, so the window is
-stated here where it can be argued with. Events with no classifiable
-onset, or for undosed subjects, stay blank.
+to the last dose (the shared rule in adam-rules.R). No grace window - no
+SAP defines one, so the window is stated here where it can be argued
+with. A missing TRTEDT - dosing ongoing at the data cut - leaves the end
+of the window open: those events stay treatment-emergent. Events with no
+classifiable onset, or for undosed subjects, stay blank.
 }
 \examples{
 ext <- file.path(tempdir(), "ex-adae")

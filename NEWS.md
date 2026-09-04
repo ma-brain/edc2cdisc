@@ -1,4 +1,55 @@
-# edc2cdisc 0.2.0
+# edc2cdisc 0.2.0.9000
+
+Correctness fixes from the first code review (REVIEW-2026-09-03). Items 1-10
+of the review's findings; the API and test-debt findings are queued for the
+next waves. Every fix carries a hand-built edge-case test, because the
+seeded generator cannot produce any of these inputs.
+
+## Fixed
+
+* ADAE `TRTEMFL` silently went blank for every event of a subject whose
+  `TRTEDT` is missing (dosing ongoing at the data cut, a blank `EXENDAT`,
+  or an unresolvable partial date): `TRUE & NA` fell through the
+  `case_when()` and understated the treatment-emergent count with no
+  error and no warning. A missing last-dose date now leaves the end of
+  the window open - events on or after first dose stay flagged.
+* `compute_age()` understated age by one year for a window of
+  birth/reference date pairs (days/365.25, e.g. 21 years spanning only 5
+  leap days floored to 20). It now counts completed anniversaries.
+* `build_define_xml()` never attached `def:ValueListRef` to the parent
+  `ItemRef`: a stray `]` inside the XPath string literal matched nothing,
+  and `xml_add_child()` on the resulting `xml_missing` is a silent no-op,
+  orphaning the value-level metadata. The regression test now counts the
+  refs, not just the definitions.
+* A blank collected `LBORRESU` voided `LBSTRESN` (NA-condition
+  `if_else()`), and a collected unit the spec does not know got the
+  converted `LBSTRESU` label on an unconverted value. The unit label now
+  follows the conversion actually applied; an unmapped collected unit is
+  a `lb-unit-unmapped` WARN, and a numeric `LBORRES` with no `LBSTRESN`
+  is a `lb-result-lost` WARN.
+* `derive_adsl()` crashed on a partial disposition date
+  (`as.Date("2024-04")` in the `LSTALVDT` anchor), and the SV visit-window
+  check crashed the same way. Both go through `dtc_date()`: reduced
+  precision stays NA instead of erroring.
+* `validate_sdtm()` crashed on NA `DOMAIN` / `RDOMAIN`
+  (`any(x != y)` with NA) instead of reporting; `map_suppex()` crashed on
+  NA `EXOCCUR` in its dosing-count guard. All three now report (WARN rows
+  `domain-na` / `rdomain-na`, a warning() for the EXOCCUR case).
+* `generate_rave_extract()` reseeded the caller's global RNG and never
+  restored it; it now saves and restores `.Random.seed` (the contract
+  `apply_mh()` already honoured).
+
+## Changed
+
+* The four derivation rules the ADaM validator had copied verbatim from
+  the derivers (TRTEMFL, TRTDURD, CHG/PCHG, study days) now live once, in
+  internal `adam-rules.R`, called by both sides. The validator checks the
+  build against the rules; the new rule-level tests check the rules
+  themselves against hand-built inputs.
+* Baseline eligibility in VS/LB documents its boundary: it is the
+  first-dose *date* (RFSTDTC carries no time), so a same-day post-dose
+  measurement stays baseline-eligible - a recorded SAP choice.
+
 
 Proved the package's central claim - "a new study is a spec change" - with
 a real second study, and fixed the hard-coded spots the exercise exposed.

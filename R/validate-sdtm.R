@@ -93,8 +93,16 @@ validate_sdtm <- function(domains, spec = NULL) {
     miss <- setdiff(req, names(df))
     if (length(miss) > 0) add(d, "ERROR", "required-vars", str_flatten_comma(miss))
 
-    if ("DOMAIN" %in% names(df) && any(df$DOMAIN != d)) {
-      add(d, "ERROR", "domain-constant", str_c("DOMAIN != '", d, "'"))
+    if ("DOMAIN" %in% names(df)) {
+      # na.rm, not a bare any(): an NA DOMAIN must reach the WARN below,
+      # not crash the validator with "missing value where TRUE/FALSE needed"
+      if (any(df$DOMAIN != d, na.rm = TRUE)) {
+        add(d, "ERROR", "domain-constant", str_c("DOMAIN != '", d, "'"))
+      }
+      if (anyNA(df$DOMAIN)) {
+        add(d, "WARN", "domain-na",
+            sprintf("%d row(s) with NA DOMAIN", sum(is.na(df$DOMAIN))))
+      }
     }
 
     if ("USUBJID" %in% names(df)) {
@@ -176,6 +184,47 @@ validate_sdtm <- function(domains, spec = NULL) {
         sprintf("%d numeric result(s) with no LBSTRESU", nrow(lb_unit_gap)))
   }
 
+  # LB: a numeric collected result that produced no standard result - the
+  # conversion the spec does know could not be applied to it
+  lb_lost <- domains$LB |>
+    filter(!is.na(LBORRES),
+           !is.na(suppressWarnings(as.numeric(LBORRES))),
+           is.na(LBSTRESN))
+  if (nrow(lb_lost) > 0) {
+    add("LB", "WARN", "lb-result-lost",
+        sprintf("%d numeric LBORRES value(s) with no LBSTRESN", nrow(lb_lost)))
+  }
+
+  # LB: collected units the conversion table does not know. The value is
+  # delivered as collected - unconverted - which is honest, but it must be
+  # visible: nothing else in the row says the label is not the standard.
+  if (!is.null(spec) &&
+        all(c("LBTESTCD", "LBORRESU", "LBSTRESN") %in% names(domains$LB))) {
+    units_known <- spec$units |>
+      transmute(LBTESTCD = testcd,
+                .unit = str_to_upper(str_trim(coalesce(conv_from, "")))) |>
+      bind_rows(spec$units |>
+                  transmute(LBTESTCD = testcd,
+                            .unit = str_to_upper(str_trim(coalesce(conv_to, ""))))) |>
+      filter(.unit != "") |>
+      distinct()
+    units_unknown <- domains$LB |>
+      # only analytes that HAVE a conversion row are checkable: an analyte
+      # with no spec$units row (ALT, K) is collected and delivered as-is
+      filter(LBTESTCD %in% unique(spec$units$testcd)) |>
+      filter(!is.na(LBORRES), !is.na(LBSTRESN)) |>
+      mutate(.unit = str_to_upper(str_trim(coalesce(LBORRESU, "")))) |>
+      filter(.unit != "") |>
+      anti_join(units_known, by = c("LBTESTCD", ".unit")) |>
+      distinct(LBTESTCD, .unit)
+    if (nrow(units_unknown) > 0) {
+      add("LB", "WARN", "lb-unit-unmapped",
+          sprintf("collected unit(s) not in spec$units: %s",
+                  str_flatten_comma(str_c(units_unknown$LBTESTCD,
+                                          " [", units_unknown$.unit, "]"))))
+    }
+  }
+
   # SV: one row per subject per visit
   sv_dup <- domains$SV |> count(USUBJID, VISITNUM, name = ".n") |> filter(.n > 1)
   if (nrow(sv_dup) > 0) {
@@ -214,12 +263,14 @@ validate_sdtm <- function(domains, spec = NULL) {
   }
 
   # Date coherence: a VS measurement should fall inside its SV visit window
+  # (dtc_date, not as.Date: a reduced-precision DTC would be a hard
+  # as.Date() error; here it simply cannot be window-checked)
   vs_outside <- domains$VS |>
     filter(!is.na(VSDTC)) |>
     inner_join(select(domains$SV, USUBJID, VISITNUM, SVSTDTC, SVENDTC),
                by = c("USUBJID", "VISITNUM")) |>
-    mutate(vd = as.Date(str_sub(VSDTC, 1, 10))) |>
-    filter(vd < as.Date(SVSTDTC) | vd > as.Date(SVENDTC))
+    mutate(vd = dtc_date(VSDTC)) |>
+    filter(vd < dtc_date(SVSTDTC) | vd > dtc_date(SVENDTC))
   if (nrow(vs_outside) > 0) {
     add("VS", "WARN", "vsdtc-outside-sv-window",
         sprintf("%d VS record(s) dated outside their SV visit window",
@@ -250,8 +301,12 @@ validate_sdtm <- function(domains, spec = NULL) {
     parent <- domains[[rd]]
     val_var <- if ("QVAL" %in% names(df)) "QVAL" else "COVAL"
 
-    if (any(df$RDOMAIN != rd)) {
+    if (any(df$RDOMAIN != rd, na.rm = TRUE)) {
       add(rel, "ERROR", "rdomain-constant", str_c("RDOMAIN != '", rd, "'"))
+    }
+    if (anyNA(df$RDOMAIN)) {
+      add(rel, "WARN", "rdomain-na",
+          sprintf("%d row(s) with NA RDOMAIN", sum(is.na(df$RDOMAIN))))
     }
 
     n_blank <- sum(is.na(df[[val_var]]) | df[[val_var]] == "")

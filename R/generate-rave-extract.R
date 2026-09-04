@@ -1268,6 +1268,19 @@ apply_mh <- function(forms, subjects, cfg) {
 #' built <- build_all(ext2, spec = spec_synth02)
 generate_rave_extract <- function(out, seed = NULL, n = NULL,
                                   study = "SYNTH01") {
+  # Keep the caller's RNG stream intact: the extract is reproducible from
+  # its own seed, and the session that asked for it must not find its RNG
+  # silently reseeded afterwards (same contract as apply_mh() below).
+  rng_hold <- if (exists(".Random.seed", envir = globalenv())) {
+    .Random.seed # nolint: object_name_linter. (.Random.seed is a required base name)
+  }
+  on.exit(
+    if (!is.null(rng_hold)) {
+      assign(".Random.seed", rng_hold, envir = globalenv()) # nolint: object_name_linter. (.Random.seed is a required base name)
+    },
+    add = TRUE
+  )
+
   cfg <- .gen_cfg(study)
   if (is.null(seed)) seed <- cfg$seed
   if (is.null(n)) n <- cfg$n
