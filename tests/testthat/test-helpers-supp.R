@@ -64,7 +64,10 @@ test_that("make_relrec emits one row per side per link with a shared RELID", {
   expect_length(unique(out$RELID), 1)
   expect_match(unique(out$RELID), "^3021-RL-0001$")
   expect_equal(unique(out$STUDYID), "3021")
-  expect_equal(unique(out$RELTYPE), "ONE")
+  # RELTYPE describes a dataset-level relationship; these are record-level
+  # links (IDVAR populated), which SDTMIG leaves null - populating it is
+  # what Pinnacle 21 flags
+  expect_true(all(is.na(out$RELTYPE)))
 })
 
 test_that("make_relrec validates the link structure", {

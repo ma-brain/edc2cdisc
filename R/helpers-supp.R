@@ -77,7 +77,10 @@ make_supp <- function(parent, rdomain, idvar, qnams) {
 #' Assemble a RELREC dataset from one-to-one record links
 #'
 #' RELREC holds one row per linked record: every link in `links` becomes two
-#' rows - one per domain - sharing a RELID.
+#' rows - one per domain - sharing a RELID. The links are record-level
+#' (IDVAR / IDVARVAL populated), so RELTYPE stays null: per SDTMIG it
+#' describes a dataset-level relationship, and populating it on
+#' record-level links is what Pinnacle 21 flags.
 #'
 #' @param links A data frame with columns `USUBJID`, `RDOMAIN_1`, `IDVAR_1`,
 #'   `IDVARVAL_1`, `RDOMAIN_2`, `IDVAR_2`, `IDVARVAL_2` - one row per link.
@@ -99,10 +102,10 @@ make_relrec <- function(links, study_id) {
     bind_rows(
       tibble(STUDYID = study_id, RDOMAIN = l$RDOMAIN_1, USUBJID = l$USUBJID,
              IDVAR = l$IDVAR_1, IDVARVAL = as.character(l$IDVARVAL_1),
-             RELTYPE = "ONE", RELID = relid),
+             RELTYPE = NA_character_, RELID = relid),
       tibble(STUDYID = study_id, RDOMAIN = l$RDOMAIN_2, USUBJID = l$USUBJID,
              IDVAR = l$IDVAR_2, IDVARVAL = as.character(l$IDVARVAL_2),
-             RELTYPE = "ONE", RELID = relid)
+             RELTYPE = NA_character_, RELID = relid)
     )
   }) |>
     list_rbind()

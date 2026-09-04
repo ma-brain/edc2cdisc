@@ -94,6 +94,24 @@ test_that("a dropped dataset row breaks referential integrity loudly", {
                "no SUPPAE qualifiers")
 })
 
+test_that("RELREC record-level links carry a blank RELTYPE, and only those", {
+  built <- build_fixtures()$built
+
+  # the built record-level RELREC (IDVAR populated) passes with blank
+  # RELTYPE - the one value the old validator refused
+  issues <- validate_sdtm(built$sdtm, spec_synth01)
+  expect_false("reltype-bad-value" %in% issues$check)
+
+  # ...and populating it on a record-level link is the P21-flagged
+  # mistake the validator must catch
+  domains <- built$sdtm
+  domains$RELREC$RELTYPE[1] <- "ONE"
+  issues2 <- validate_sdtm(domains, spec_synth01)
+  expect_true("reltype-bad-value" %in% issues2$check)
+  expect_equal(unique(issues2$severity[issues2$check == "reltype-bad-value"]),
+               "ERROR")
+})
+
 test_that("an unmapped codelist value breaks the mapper, not the report", {
   built <- build_fixtures()$built
   fx <- build_fixtures()

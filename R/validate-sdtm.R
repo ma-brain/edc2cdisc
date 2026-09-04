@@ -436,9 +436,21 @@ validate_sdtm <- function(domains, spec = NULL) {
   # RELREC: a link is a claim about two records, so both halves must resolve
   relrec <- domains$RELREC
   if (!is.null(relrec) && nrow(relrec) > 0) {
-    bad_reltype <- relrec |> filter(!RELTYPE %in% c("ONE", "MANY"))
+    # RELTYPE describes a dataset-level relationship: record-level links
+    # (IDVAR populated) leave it null per SDTMIG - populating it is what
+    # Pinnacle 21 flags - while a dataset-level link (IDVAR blank) declares
+    # its cardinality as ONE or MANY.
+    bad_reltype <- relrec |>
+      filter(
+        (!is.na(IDVAR) & IDVAR != "") &
+          (!is.na(RELTYPE) & RELTYPE != "") |
+          ((is.na(IDVAR) | IDVAR == "") &
+             !RELTYPE %in% c("ONE", "MANY", NA))
+      )
     if (nrow(bad_reltype) > 0) {
-      add("RELREC", "ERROR", "reltype-bad-value", "RELTYPE must be ONE or MANY")
+      add("RELREC", "ERROR", "reltype-bad-value",
+          paste("RELTYPE must be blank for record-level links (IDVAR",
+                "populated), ONE or MANY for dataset-level links"))
     }
 
     rel_size <- relrec |> count(RELID, name = ".n") |> filter(.n != 2)

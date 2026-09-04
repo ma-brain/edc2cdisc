@@ -17,5 +17,8 @@ The RELREC data frame, ordered and labelled.
 }
 \description{
 RELREC holds one row per linked record: every link in \code{links} becomes two
-rows - one per domain - sharing a RELID.
+rows - one per domain - sharing a RELID. The links are record-level
+(IDVAR / IDVARVAL populated), so RELTYPE stays null: per SDTMIG it
+describes a dataset-level relationship, and populating it on
+record-level links is what Pinnacle 21 flags.
 }

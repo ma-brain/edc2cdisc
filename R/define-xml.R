@@ -104,8 +104,12 @@ build_define_xml <- function(domains, spec, path) {
   codelist_values <- map(set_names(codelist_vars), \(v) {
     vals <- unlist(imap(domains, \(df, d) if (v %in% names(df)) unique(df[[v]])),
                    use.names = FALSE)
-    sort(unique(na.omit(vals)))
+    sort(unique(na.omit(vals[vals != ""])))
   })
+  # A variable whose values are all blank (RELTYPE on record-level links)
+  # has nothing to enumerate: an empty codelist is not emitted, and the
+  # ItemDef carries no CodeListRef.
+  codelist_values <- keep(codelist_values, \(v) length(v) > 0)
 
   # Document -------------------------------------------------------------------
   doc <- xml2::xml_new_document()

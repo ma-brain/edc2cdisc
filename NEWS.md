@@ -29,6 +29,14 @@ seeded generator cannot produce any of these inputs.
 
 ## Fixed
 
+* RELREC carried `RELTYPE = "ONE"` on record-level links. Per SDTMIG,
+  RELTYPE describes a dataset-level relationship; record-level links
+  keyed by RELID leave it null, and populating it is what Pinnacle 21
+  flags. `make_relrec()` now leaves RELTYPE blank, and the validator
+  learned the actual rule - blank for record-level links (IDVAR
+  populated), ONE or MANY for dataset-level links - instead of refusing
+  the one correct value. The define.xml stub skips codelists with no
+  observed values rather than emitting an empty RELTYPE codelist.
 * ADVS `ANRIND` read every value above a missing `ANRHI` as `NORMAL`
   (`AVAL > NA` fell through `case_when()`'s default), and the validator's
   own ADVS recompute had the same hole, so it could never catch it.
