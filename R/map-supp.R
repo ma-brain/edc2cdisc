@@ -147,7 +147,13 @@ map_suppex <- function(ex, ex_built, spec) {
   parent <- inner_join(parent, select(ex_built, USUBJID, VISITNUM, EXSEQ),
                        by = c("USUBJID", "VISITNUM"))
 
-  n_occur <- sum(ex$EXOCCUR == "1")
+  # na.rm: an NA EXOCCUR must reach the guard as "not dosed", not crash the
+  # comparison below with "missing value where TRUE/FALSE needed"
+  n_occur <- sum(ex$EXOCCUR == "1", na.rm = TRUE)
+  if (anyNA(ex$EXOCCUR)) {
+    warning(sprintf("SUPPEX: %d EX record(s) with NA EXOCCUR - treated as not dosed",
+                    sum(is.na(ex$EXOCCUR))), call. = FALSE)
+  }
   if (nrow(parent) != n_occur) {
     stop(sprintf(
       "SUPPEX: %d of %d dosing record(s) did not map to an EX record",

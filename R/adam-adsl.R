@@ -96,7 +96,7 @@ derive_adsl <- function(dm, ex, ds) {
       ENRLSTDT,
       TRTSDT, TRTSDTF,
       TRTEDT, TRTEDTF,
-      TRTDURD = as.integer(TRTEDT - TRTSDT) + 1L,
+      TRTDURD = .rule_trtdurd(TRTSDT, TRTEDT),
 
       # End of study: screen failures have no disposition record, so their
       # EOS* fields stay empty - they never entered the treated population.
@@ -113,8 +113,10 @@ derive_adsl <- function(dm, ex, ds) {
       DTHDT  = DTHDT,
       DTHDTF = DTHDTF,
 
-      # Last known alive: death is the anchor when it exists
-      LSTALVDT = pmax(TRTEDT, as.Date(contactdtc), DTHDT, na.rm = TRUE),
+      # Last known alive: death is the anchor when it exists. A partial
+      # last-contact date cannot anchor it and is dropped (dtc_date -> NA)
+      # rather than imputed: LSTALVDT has no imputation flag to declare it.
+      LSTALVDT = pmax(TRTEDT, dtc_date(contactdtc), DTHDT, na.rm = TRUE),
       DTHFL    = if_else(DTHFL %in% "Y", "Y", "")
     ) |>
     arrange(USUBJID) |>

@@ -14,6 +14,12 @@
 #' conventional-to-SI conversion factors from `spec$units`. Baseline
 #' (LBBLFL) is the last non-missing standard result on or before first dose.
 #'
+#' The baseline boundary is the first-dose *date*: RFSTDTC carries no time
+#' in this pipeline, so LBDTC's time component is deliberately not compared
+#' and a same-day draw taken after dosing stays baseline-eligible. If a
+#' study's SAP wants a pre-dose-time boundary, that is a rule change here,
+#' not a data property.
+#'
 #' @param lb Raw LB clinical view
 #' @param spec A `study_spec`
 #' @param refs Subject reference dates from [subject_ref()]
@@ -57,18 +63,24 @@ map_lb <- function(lb, spec, refs) {
       .orres_n = suppressWarnings(as.numeric(LBORRES)),
       .rave_n  = suppressWarnings(as.numeric(RAVE_STD)),
       # apply the analyte factor only when the collected unit is the one it
-      # converts from; otherwise the value is already standard -> identity
-      .factor  = if_else(!is.na(CONV_FACTOR) &
-                           str_to_upper(str_trim(LBORRESU)) == CONV_FROM,
-                         CONV_FACTOR, 1),
+      # converts from; otherwise the value is already standard -> identity.
+      # coalesce(): a blank collected unit must compare FALSE, not NA - an
+      # NA-condition if_else would void .factor, LBSTRESN with it, and the
+      # record would arrive in ADLB without a result.
+      .conv    = !is.na(CONV_FACTOR) & coalesce(str_to_upper(str_trim(LBORRESU)) == CONV_FROM, FALSE),
+      .factor  = if_else(.conv, CONV_FACTOR, 1),
       LBSTAT   = if_else(LBPERF == "0", "NOT DONE", NA_character_),
       LBREASND = if_else(LBPERF == "0", "PANEL NOT PERFORMED", NA_character_),
       # the EDC-configured conversion wins; local factor is the fallback
       LBSTRESN = if_else(!is.na(.rave_n), .rave_n, round(.orres_n * .factor, 4)),
+      # the unit label follows the conversion actually applied: CONV_TO only
+      # where the value really was converted (by the EDC, or locally via the
+      # factor), the collected unit otherwise - a converted label on an
+      # unconverted value misstates the unit of every result downstream
       LBSTRESU = case_when(
-        !is.na(RAVE_STDU) & RAVE_STDU != "" ~ RAVE_STDU,
-        !is.na(CONV_TO)                     ~ CONV_TO,
-        .default                            = LBORRESU
+        !is.na(RAVE_STDU) & RAVE_STDU != ""          ~ RAVE_STDU,
+        (!is.na(.rave_n) | .conv) & !is.na(CONV_TO)  ~ CONV_TO,
+        .default                                     = LBORRESU
       ),
       LBSTRESC = as.character(LBSTRESN),
       # reference range: same factor as the result, so the comparison below
@@ -105,6 +117,7 @@ map_lb <- function(lb, spec, refs) {
     mutate(LBDY = derive_dy(LBDTC, RFSTDTC))
 
   # Baseline = last non-missing result on or before first dose
+  # (date-level boundary by design - RFSTDTC has no time; see roxygen)
   lb <- lb |>
     mutate(
       .eligible = !is.na(LBSTRESN) & !is.na(RFSTDTC) &

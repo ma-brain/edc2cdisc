@@ -23,6 +23,13 @@ the collected _STD columns where the EDC system converted, with
 non-missing standard result on or before first dose, per subject per
 test - screen failures get none because RFSTDTC is the anchor.
 }
+\details{
+The baseline boundary is the first-dose \emph{date}: RFSTDTC carries no time
+in this pipeline, so VSDTC's time component is deliberately not compared
+and a same-day measurement taken after dosing stays baseline-eligible.
+If a study's SAP wants a pre-dose-time boundary, that is a rule change
+here, not a data property.
+}
 \examples{
 ext <- file.path(tempdir(), "ex-map-vs")
 \dontshow{

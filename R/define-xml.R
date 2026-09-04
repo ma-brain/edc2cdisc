@@ -254,8 +254,11 @@ build_define_xml <- function(domains, spec, path) {
                                  OrderNumber = as.character(i), Mandatory = "Yes")
       xml2::xml_add_child(ref, "def:WhereClauseRef", WhereClauseOID = wc_oid)
     }
-    # hook the value list onto the parent variable's ItemRef
-    xpath <- str_c("//ItemGroupDef[@Name=']", d,
+    # hook the value list onto the parent variable's ItemRef. The bracket
+    # sits outside the quotes: inside them the predicate matches the literal
+    # name "]VS", xml_find_first() returns xml_missing, and xml_add_child()
+    # on xml_missing is a silent no-op - the value list would be orphaned.
+    xpath <- str_c("//ItemGroupDef[@Name='", d,
                    "']/ItemRef[@ItemOID='IT.", d, ".", f$var, "']")
     parent_ref <- xml2::xml_find_first(mdv, xpath)
     xml2::xml_add_child(parent_ref, "def:ValueListRef",

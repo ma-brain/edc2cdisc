@@ -67,13 +67,9 @@ derive_adlb <- function(lb, adsl, spec = spec_synth01) {
       AVALU = LBSTRESU,
       ABLFL,
       BASE, BNRIND,
-      # Same rules as ADVS; the %in% forms matter because ABLFL is "Y"/NA
-      CHG  = case_when(
-        ABLFL %in% "Y" ~ NA_real_,
-        is.na(BASE)    ~ NA_real_,
-        .default       = AVAL - BASE
-      ),
-      PCHG = if_else(!is.na(CHG), 100 * CHG / BASE, NA_real_),
+      # Same rules as ADVS (adam-rules.R)
+      CHG  = .rule_chg(AVAL, BASE, ABLFL),
+      PCHG = .rule_pchg(CHG, BASE),
       ANRIND = LBNRIND,
       ANRLO  = LBSTNRLO,
       ANRHI  = LBSTNRHI,

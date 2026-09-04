@@ -21,6 +21,13 @@ The per-analyte pivot spec comes from \code{spec$tests} (domain "LB") and the
 conventional-to-SI conversion factors from \code{spec$units}. Baseline
 (LBBLFL) is the last non-missing standard result on or before first dose.
 }
+\details{
+The baseline boundary is the first-dose \emph{date}: RFSTDTC carries no time
+in this pipeline, so LBDTC's time component is deliberately not compared
+and a same-day draw taken after dosing stays baseline-eligible. If a
+study's SAP wants a pre-dose-time boundary, that is a rule change here,
+not a data property.
+}
 \examples{
 ext <- file.path(tempdir(), "ex-map-lb")
 \dontshow{

@@ -13,6 +13,12 @@
 #' non-missing standard result on or before first dose, per subject per
 #' test - screen failures get none because RFSTDTC is the anchor.
 #'
+#' The baseline boundary is the first-dose *date*: RFSTDTC carries no time
+#' in this pipeline, so VSDTC's time component is deliberately not compared
+#' and a same-day measurement taken after dosing stays baseline-eligible.
+#' If a study's SAP wants a pre-dose-time boundary, that is a rule change
+#' here, not a data property.
+#'
 #' @param vs Raw VS clinical view
 #' @param spec A `study_spec`
 #' @param refs Subject reference dates from [subject_ref()]
@@ -79,6 +85,7 @@ map_vs <- function(vs, spec, refs) {
     mutate(VSDY = derive_dy(VSDTC, RFSTDTC))
 
   # Baseline = last non-missing result on or before first dose
+  # (date-level boundary by design - RFSTDTC has no time; see roxygen)
   vs <- vs |>
     mutate(
       .eligible = !is.na(VSSTRESN) & !is.na(RFSTDTC) &
