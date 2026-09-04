@@ -5,6 +5,10 @@
 #          coming from spec$supp.
 # ============================================================================
 
+# The SUPP transform vocabulary (spec$supp$transform); new_study_spec()
+# validates supp$transform against this vector.
+.supp_transforms <- c("squish", "yn", "verbatim")
+
 # Apply a spec$supp transform to a raw column. QVAL is required, so a blank
 # result becomes NA and yields no SUPP record (make_supp drops it).
 supp_transform <- function(x, transform) {

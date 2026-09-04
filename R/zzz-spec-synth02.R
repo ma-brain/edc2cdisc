@@ -30,7 +30,10 @@ spec_synth02 <- new_study_spec(
     STUDYID = "4033",
     PROJECT = "SYNTH02",
     seed    = 20260904,
-    n       = 18L
+    n       = 18L,
+    # the protocol's adult population; validate_adam() checks AGE against it
+    age_min = 18L,
+    age_max = 100L
   ),
 
   sites = tribble(

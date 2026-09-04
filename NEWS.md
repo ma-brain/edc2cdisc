@@ -5,6 +5,28 @@ of the review's findings; the API and test-debt findings are queued for the
 next waves. Every fix carries a hand-built edge-case test, because the
 seeded generator cannot produce any of these inputs.
 
+## Breaking
+
+* Derivation functions now take the spec row they run for: the signature
+  is `function(data, spec, row)`, and `map_variables()` passes it. The
+  contract a derivation must keep is now documented in `derivations.R`:
+  a collected CRF source is read through `row$crf_field` (or `row$aux`),
+  never a literal column name. The registry entries that hardcoded CRF
+  columns (`usubjid`, `country`, `dsdecod`, the ongoing ENRTPT/ENRF
+  family) now read the row; the shipped spec rows name their fields
+  (`Subject`, `SiteNumber`, `AEONG`/`CMONG`/`MHONG`, `DSREAS_DECODE`).
+  Anyone with a custom registry updates the signature; `row` is
+  positional, so existing `function(data, spec)` closures must gain the
+  parameter even when unused.
+* `new_study_spec()` validates references, not just shapes: an unknown
+  derivation ref, a decode ref with no codelist, a SUPP transform outside
+  the vocabulary, or variables for an unbuildable domain now fail at
+  construction. A new optional `derivations` argument declares map-time
+  derivation extensions so the check can see them.
+* `spec$study` gains required `age_min` / `age_max`: the bounds
+  `validate_adam()` applies to AGE were hardcoded 18-100 and made a
+  paediatric or elderly protocol impossible without a validator edit.
+
 ## Fixed
 
 * ADAE `TRTEMFL` silently went blank for every event of a subject whose

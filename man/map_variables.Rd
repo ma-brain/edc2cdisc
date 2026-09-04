@@ -16,7 +16,7 @@ whatever glue columns the mapper joined on before calling this.}
 \code{filter(spec$variables, domain == "XX")})}
 
 \item{derivations}{Additional named derivation functions with signature
-\verb{function(data, spec)}; they extend the shared registry.}
+\verb{function(data, spec, row)}; they extend the shared registry.}
 }
 \value{
 A tibble with exactly the rows' variables, in table order.
@@ -25,5 +25,12 @@ A tibble with exactly the rows' variables, in table order.
 Applies the \code{transform} vocabulary row by row, in table order, so later
 rows see columns created by earlier ones (DM's ACTARMCD mirrors the
 derived ARMCD, DMDY uses the derived DMDTC, and so on).
+}
+\details{
+Derivations receive the spec row they run for: a study's
+collected source for a derivation-mapped variable must be read
+through \code{row$crf_field} (or \code{row$aux}), never a literal column name.
+That is what keeps "a new study is a spec change" true for the
+derivation layer.
 }
 \keyword{internal}

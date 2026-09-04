@@ -99,6 +99,38 @@ test_that("clean data produces an empty issue tibble", {
   expect_error(stop_on_error(issues, "meta"), NA)
 })
 
+test_that("the AGE bounds come from spec$study and can be widened there", {
+  built <- build_fixtures()$built
+  adsl <- built$adam$ADSL
+  adsl$AGE[1] <- 17
+
+  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADVS,
+                          built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
+                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$SUPPAE, spec_synth01)
+  expect_true("age-out-of-range" %in% issues$check)
+
+  # a paediatric protocol is a spec row, not a validator edit
+  spec_paed <- new_study_spec(
+    study     = dplyr::mutate(spec_synth01$study, age_min = 12),
+    sites     = spec_synth01$sites,
+    arms      = spec_synth01$arms,
+    visits    = spec_synth01$visits,
+    codelists = spec_synth01$codelists,
+    supp      = spec_synth01$supp,
+    units     = spec_synth01$units,
+    forms     = spec_synth01$forms,
+    tests     = spec_synth01$tests,
+    bds       = spec_synth01$bds,
+    variables = spec_synth01$variables
+  )
+  issues2 <- validate_adam(adsl, built$adam$ADAE, built$adam$ADVS,
+                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
+                           built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                           built$sdtm$SUPPAE, spec_paed)
+  expect_false("age-out-of-range" %in% issues2$check)
+})
+
 
 # Exact-name battery + spec-driven checks -------------------------------
 # Combined corruptions in one build; the union of fired checks must equal

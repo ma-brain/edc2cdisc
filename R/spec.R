@@ -15,12 +15,17 @@
   "upper", "upper_squish", "character", "constant", "derivation"
 )
 
+# The domains build_all() can produce; variables rows must name one of these
+.sdtm_domains <- c("DM", "EX", "VS", "AE", "CM", "DS", "SV", "LB", "MH",
+                   "SUPPDM", "SUPPAE", "SUPPEX", "CO", "RELREC")
+
 #' Build and validate a study specification
 #'
 #' A `study_spec` is a list of tibbles. Each table carries one kind of
 #' study-specific mapping configuration:
 #'
-#' * `study`     - study constants: `STUDYID`, `PROJECT`, `seed`, `n`
+#' * `study`     - study constants: `STUDYID`, `PROJECT`, `seed`, `n`,
+#'   `age_min` / `age_max` (the bounds [validate_adam()] applies to AGE)
 #' * `sites`     - site table: `SiteNumber`, `siteid`, `Site`, `SiteGroup`,
 #'   `StudySiteId`, `COUNTRY`
 #' * `arms`      - planned arm decode -> `ARMCD` / `ARM` (screen failures are
@@ -50,12 +55,26 @@
 #'   names a member of the fixed vocabulary; `derivation` rows name a
 #'   registered derivation in `ref`.
 #'
+#' The constructor validates references as well as shapes: every
+#' `derivation` row's `ref` must resolve against the derivation registry
+#' (the shared one plus `derivations`), every `decode` row's `ref` must
+#' name a codelist the spec carries, every `supp$transform` must be one
+#' `supp_transform()` knows, and every `variables$domain` must be a domain
+#' the package can build. A spec that cannot be honoured fails here, not
+#' halfway through a build.
+#'
 #' @param study,sites,arms,visits,codelists,supp,units,forms,tests,bds,variables
 #'   Tibbles as described above.
+#' @param derivations Optional named list of extra derivation functions
+#'   (signature `function(data, spec, row)`) that this spec's `derivation`
+#'   rows reference but that are only registered at map time, via
+#'   `map_variables(derivations = )`. Declared here so the reference
+#'   check can see them.
 #' @return A `study_spec` object (a validated named list).
 #' @export
 new_study_spec <- function(study, sites, arms, visits, codelists,
-                           supp, units, forms, tests, bds, variables) {
+                           supp, units, forms, tests, bds, variables,
+                           derivations = list()) {
   spec <- list(
     study     = study,
     sites     = sites,
@@ -71,7 +90,7 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
   )
 
   required <- list(
-    study     = c("STUDYID", "PROJECT", "seed", "n"),
+    study     = c("STUDYID", "PROJECT", "seed", "n", "age_min", "age_max"),
     sites     = c("SiteNumber", "siteid", "Site", "SiteGroup", "StudySiteId",
                   "COUNTRY"),
     arms      = c("ARMCD_DECODE", "ARMCD", "ARM"),
@@ -110,6 +129,35 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
       "study spec: derivation row(s) without a ref: %s",
       str_flatten_comma(bad)
     ), call. = FALSE)
+  }
+
+  # Reference checks: a spec naming something the package cannot resolve
+  # must fail at construction, not halfway through a build.
+  der_rows <- spec$variables$transform == "derivation"
+  unknown_der <- setdiff(unique(spec$variables$ref[der_rows]),
+                         c(names(.derivations), names(derivations)))
+  if (length(unknown_der) > 0) {
+    stop(sprintf("study spec: unknown derivation ref(s): %s",
+                 str_flatten_comma(unknown_der)), call. = FALSE)
+  }
+
+  dec_refs <- spec$variables$ref[spec$variables$transform == "decode"]
+  bad_dec <- setdiff(unique(dec_refs), unique(spec$codelists$ct))
+  if (length(bad_dec) > 0) {
+    stop(sprintf("study spec: decode row(s) with no matching codelist: %s",
+                 str_flatten_comma(bad_dec)), call. = FALSE)
+  }
+
+  bad_supp_tr <- setdiff(unique(spec$supp$transform), .supp_transforms)
+  if (length(bad_supp_tr) > 0) {
+    stop(sprintf("study spec: unsupported SUPP transform(s): %s",
+                 str_flatten_comma(bad_supp_tr)), call. = FALSE)
+  }
+
+  bad_dom <- setdiff(unique(spec$variables$domain), .sdtm_domains)
+  if (length(bad_dom) > 0) {
+    stop(sprintf("study spec: variables for unbuildable domain(s): %s",
+                 str_flatten_comma(bad_dom)), call. = FALSE)
   }
 
   dup_ct <- spec$codelists |>

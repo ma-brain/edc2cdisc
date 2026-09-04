@@ -17,7 +17,12 @@
 #' @param rows The variables-table rows for one domain, in order (usually
 #'   `filter(spec$variables, domain == "XX")`)
 #' @param derivations Additional named derivation functions with signature
-#'   `function(data, spec)`; they extend the shared registry.
+#'   `function(data, spec, row)`; they extend the shared registry.
+#' @details Derivations receive the spec row they run for: a study's
+#'   collected source for a derivation-mapped variable must be read
+#'   through `row$crf_field` (or `row$aux`), never a literal column name.
+#'   That is what keeps "a new study is a spec change" true for the
+#'   derivation layer.
 #' @return A tibble with exactly the rows' variables, in table order.
 #' @keywords internal
 map_variables <- function(data, spec, rows, derivations = list()) {
@@ -54,7 +59,7 @@ map_variables <- function(data, spec, rows, derivations = list()) {
           stop(sprintf("map_variables: unknown derivation '%s'", row$ref),
                call. = FALSE)
         }
-        fn(work, spec)
+        fn(work, spec, row)
       },
       stop(sprintf("map_variables: unhandled transform '%s'",
                    row$transform), call. = FALSE)
