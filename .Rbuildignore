@@ -1,5 +1,6 @@
 ^edc2cdisc\.Rproj$
 ^\.Rproj\.user$
+^\.git$
 ^\.gitignore$
 ^README\.md$
 ^data$
