@@ -33,7 +33,9 @@ test_that("the define.xml stub is well-formed and complete", {
   doc <- xml2::read_xml(path)
   ns <- xml2::xml_ns(doc)
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 14)
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 10)
+  # 10 curated value codelists, minus RELTYPE: its values are all blank on
+  # record-level links, and an empty codelist is not emitted
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 9)
   # value-level metadata hooked onto VSSTRESN / LBSTRESN
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 2)
   # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no
