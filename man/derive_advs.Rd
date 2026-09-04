@@ -23,7 +23,9 @@ reference ranges at all, so ANRIND needs a declared table - this is the
 SAP stand-in, in one place, arguable by construction, and the same table
 the validator checks the build against. Weight and height have no
 absolute adult range: their ANRIND stays missing by design, not by
-oversight.
+oversight. ANRIND needs the value and both bounds - a one-sided
+declared range stays unclassified, the same rule the collected LB
+ranges follow (adam-rules.R).
 }
 \examples{
 ext <- file.path(tempdir(), "ex-advs")

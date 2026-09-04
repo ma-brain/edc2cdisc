@@ -151,3 +151,75 @@ test_that("generate_rave_extract leaves the caller's RNG stream alone", {
   suppressMessages(generate_rave_extract(out = file.path(out, "rave")))
   expect_identical(.Random.seed, seed_before) # nolint: object_name_linter. (.Random.seed is a required base name)
 })
+
+# ADVS/ADLB derivation edges (finding 15) --------------------------------
+
+vs_row <- function(testcd, test, stresn, stresu) {
+  tibble(
+    STUDYID = "3021", DOMAIN = "VS", USUBJID = "3021-101-001",
+    VSSEQ = 1L, VSTESTCD = testcd, VSTEST = test, VSPOS = NA,
+    VSORRES = as.character(stresn), VSORRESU = stresu,
+    VSSTRESC = as.character(stresn), VSSTRESN = stresn, VSSTRESU = stresu,
+    VSSTAT = NA, VSREASND = NA,
+    Folder = "BASE", VISITNUM = 2, VISIT = "BASELINE", EPOCH = "TREATMENT",
+    VSBLFL = NA, VSDTC = "2024-04-01", VSDY = 1L
+  )
+}
+adsl_one <- tibble(USUBJID = "3021-101-001", TRTSDT = as.Date("2024-04-01"))
+
+test_that("derive_advs: a one-sided declared range leaves ANRIND missing", {
+  # TEMP declared with a lower bound only: 38 exceeds everything the spec
+  # knows about and must NOT read as NORMAL
+  bds_one <- spec_synth01$bds |>
+    dplyr::mutate(anrhi = ifelse(paramcd == "TEMP", NA_real_, anrhi))
+  spec_one <- new_study_spec(
+    study     = spec_synth01$study,
+    sites     = spec_synth01$sites,
+    arms      = spec_synth01$arms,
+    visits    = spec_synth01$visits,
+    codelists = spec_synth01$codelists,
+    supp      = spec_synth01$supp,
+    units     = spec_synth01$units,
+    forms     = spec_synth01$forms,
+    tests     = spec_synth01$tests,
+    bds       = bds_one,
+    variables = spec_synth01$variables
+  )
+  vs <- rbind(vs_row("TEMP", "Temperature", 38, "C"),
+              vs_row("SYSBP", "Systolic Blood Pressure", 120, "mmHg"))
+  advs <- derive_advs(vs, adsl_one, spec_one)
+
+  expect_equal(as.vector(advs$ANRIND[advs$PARAMCD == "TEMP"]), NA_character_)
+  # the fully-bounded parameter beside it classifies as before
+  expect_equal(as.vector(advs$ANRIND[advs$PARAMCD == "SYSBP"]), "NORMAL")
+})
+
+test_that("derive_advs: a missing unit falls back to VSTEST in PARAM", {
+  vs <- vs_row("TEMP", "Temperature", 37, NA) # numeric result, no unit
+  advs <- derive_advs(vs, adsl_one, spec_synth01)
+  # PARAM is required in ADaM: the bare test name, never an NA from
+  # str_c()'s propagation
+  expect_equal(as.vector(advs$PARAM), "Temperature")
+  expect_true(is.na(as.vector(advs$AVALU)))
+})
+
+lb_row <- function(stresu) {
+  tibble(
+    STUDYID = "3021", DOMAIN = "LB", USUBJID = "3021-101-001", LBSEQ = 1L,
+    LBTESTCD = "GLUC", LBTEST = "Glucose", LBCAT = "CHEMISTRY",
+    LBSPEC = "SERUM",
+    LBORRES = "90", LBORRESU = "mg/dL", LBSTRESC = "5",
+    LBSTRESN = 5, LBSTRESU = stresu,
+    LBORNRLO = 70, LBORNRHI = 100, LBSTNRLO = 3.9, LBSTNRHI = 5.6,
+    LBNRIND = "NORMAL",
+    LBSTAT = NA, LBREASND = NA, LBFAST = "N", LBBLFL = NA,
+    Folder = "BASE", VISITNUM = 2, VISIT = "BASELINE", EPOCH = "TREATMENT",
+    LBDTC = "2024-04-01", LBDY = 1L
+  )
+}
+
+test_that("derive_adlb: a missing unit falls back to LBTEST in PARAM", {
+  adlb <- derive_adlb(lb_row(NA), adsl_one, spec_synth01)
+  expect_equal(as.vector(adlb$PARAM), "Glucose")
+  expect_true(is.na(as.vector(adlb$AVALU)))
+})
