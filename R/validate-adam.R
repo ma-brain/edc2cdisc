@@ -499,12 +499,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
   }
 
   bad_anrind <- advs |>
-    mutate(.expect = case_when(
-      is.na(ANRLO) ~ NA_character_,
-      AVAL < ANRLO ~ "LOW",
-      AVAL > ANRHI ~ "HIGH",
-      .default     = "NORMAL"
-    )) |>
+    mutate(.expect = .rule_anrind(AVAL, ANRLO, ANRHI)) |>
     filter(xor(is.na(ANRIND), is.na(.expect)) |
              (!is.na(ANRIND) & !is.na(.expect) & ANRIND != .expect))
   if (nrow(bad_anrind) > 0) {
@@ -645,12 +640,7 @@ validate_adam <- function(adsl, adae, advs, adlb,
   # ANRIND: recomputed from the row's own limits, and the whole range triple
   # must match the SDTM record - the ranges are collected data here
   bad_anrind <- adlb |>
-    mutate(.expect = case_when(
-      is.na(ANRLO) | is.na(ANRHI) ~ NA_character_,
-      AVAL < ANRLO                ~ "LOW",
-      AVAL > ANRHI                ~ "HIGH",
-      .default                    = "NORMAL"
-    )) |>
+    mutate(.expect = .rule_anrind(AVAL, ANRLO, ANRHI)) |>
     filter(xor(is.na(ANRIND), is.na(.expect)) |
              (!is.na(ANRIND) & !is.na(.expect) & ANRIND != .expect))
   if (nrow(bad_anrind) > 0) {

@@ -43,3 +43,16 @@
 .rule_pchg <- function(chg, base) {
   if_else(!is.na(chg), 100 * chg / base, NA_real_)
 }
+
+# Reference range indicator: needs the value and BOTH bounds. A missing
+# bound means "cannot classify" - the old `aval > anrhi` with an NA anrhi
+# fell through case_when()'s default and read every unclassifiable value
+# as NORMAL (same rule the ADLB path applies to its collected ranges).
+.rule_anrind <- function(aval, anrlo, anrhi) {
+  case_when(
+    is.na(aval) | is.na(anrlo) | is.na(anrhi) ~ NA_character_,
+    aval < anrlo                              ~ "LOW",
+    aval > anrhi                              ~ "HIGH",
+    .default                                  = "NORMAL"
+  )
+}

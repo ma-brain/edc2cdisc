@@ -42,3 +42,14 @@ test_that("pchg: defined only where CHG is", {
   expect_equal(.rule_pchg(2, 10), 20)
   expect_equal(.rule_pchg(2, NA_real_), NA_real_)
 })
+
+test_that("anrind: needs the value and both bounds", {
+  expect_equal(.rule_anrind(36, 35, 37.5), "NORMAL")
+  expect_equal(.rule_anrind(30, 35, 37.5), "LOW")
+  expect_equal(.rule_anrind(40, 35, 37.5), "HIGH")
+  # a missing bound means "cannot classify" - never a default NORMAL,
+  # which is how a value far above a missing upper limit used to read
+  expect_equal(.rule_anrind(40, 35, NA), NA_character_)
+  expect_equal(.rule_anrind(30, NA, 37.5), NA_character_)
+  expect_equal(.rule_anrind(NA_real_, 35, 37.5), NA_character_)
+})

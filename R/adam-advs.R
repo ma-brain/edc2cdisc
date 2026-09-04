@@ -15,7 +15,9 @@
 #' SAP stand-in, in one place, arguable by construction, and the same table
 #' the validator checks the build against. Weight and height have no
 #' absolute adult range: their ANRIND stays missing by design, not by
-#' oversight.
+#' oversight. ANRIND needs the value and both bounds - a one-sided
+#' declared range stays unclassified, the same rule the collected LB
+#' ranges follow (adam-rules.R).
 #'
 #' @param vs The mapped SDTM VS dataset
 #' @param adsl The ADSL dataset (see [derive_adsl()])
@@ -65,7 +67,10 @@ derive_advs <- function(vs, adsl, spec = spec_synth01) {
     transmute(
       STUDYID, USUBJID,
       PARAMCD = VSTESTCD,
-      PARAM   = str_c(VSTEST, " (", VSSTRESU, ")"),
+      # the unit in parentheses only when there is one: str_c() would
+      # propagate an NA unit into a required ADaM variable
+      PARAM   = if_else(is.na(VSSTRESU), VSTEST,
+                        str_c(VSTEST, " (", VSSTRESU, ")")),
       PARAMN,
       AVAL  = VSSTRESN,
       AVALU = VSSTRESU,
@@ -76,12 +81,7 @@ derive_advs <- function(vs, adsl, spec = spec_synth01) {
       # without a baseline (screen failures) stay missing rather than zero.
       CHG  = .rule_chg(AVAL, BASE, ABLFL),
       PCHG = .rule_pchg(CHG, BASE),
-      ANRIND = case_when(
-        is.na(AVAL) | is.na(ANRLO) ~ NA_character_,
-        AVAL < ANRLO               ~ "LOW",
-        AVAL > ANRHI               ~ "HIGH",
-        .default                   = "NORMAL"
-      ),
+      ANRIND = .rule_anrind(AVAL, ANRLO, ANRHI),
       ANRLO, ANRHI,
       AVISIT  = VISIT,
       AVISITN = VISITNUM,

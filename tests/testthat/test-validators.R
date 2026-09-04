@@ -37,6 +37,19 @@ test_that("a flipped TRTEMFL is recomputed and flagged", {
   expect_true("trtemfl-not-derivable" %in% issues$check)
 })
 
+test_that("an ADVS row whose upper bound went missing cannot stay NORMAL", {
+  built <- build_fixtures()$built
+  advs <- built$adam$ADVS
+  i <- which(!is.na(advs$ANRHI) & advs$ANRIND == "NORMAL")[1]
+  advs$ANRHI[i] <- NA # the range is now one-sided; NORMAL is unsupported
+
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, advs,
+                          built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
+                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$SUPPAE, spec_synth01)
+  expect_true("advs-anrind-wrong" %in% issues$check)
+})
+
 test_that("a zero study day is caught in SDTM and ADaM", {
   built <- build_fixtures()$built
   ae <- built$sdtm$AE

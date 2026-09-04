@@ -29,6 +29,16 @@ seeded generator cannot produce any of these inputs.
 
 ## Fixed
 
+* ADVS `ANRIND` read every value above a missing `ANRHI` as `NORMAL`
+  (`AVAL > NA` fell through `case_when()`'s default), and the validator's
+  own ADVS recompute had the same hole, so it could never catch it.
+  ANRIND now needs the value and both bounds - a missing bound means
+  "cannot classify", the same rule ADLB already applied - and the rule
+  lives once in `adam-rules.R`, used by the deriver and both validator
+  recomputes.
+* ADVS/ADLB `PARAM` silently became NA when the analysis unit was
+  missing (`str_c()` propagates NA into a required ADaM variable); it
+  now falls back to the bare test name.
 * ADAE `TRTEMFL` silently went blank for every event of a subject whose
   `TRTEDT` is missing (dosing ongoing at the data cut, a blank `EXENDAT`,
   or an unresolvable partial date): `TRUE & NA` fell through the

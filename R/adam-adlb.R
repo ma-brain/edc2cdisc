@@ -60,7 +60,9 @@ derive_adlb <- function(lb, adsl, spec = spec_synth01) {
     transmute(
       STUDYID, USUBJID,
       PARAMCD = LBTESTCD,
-      PARAM   = str_c(LBTEST, " (", LBSTRESU, ")"),
+      # the unit in parentheses only when there is one (see derive_advs)
+      PARAM   = if_else(is.na(LBSTRESU), LBTEST,
+                        str_c(LBTEST, " (", LBSTRESU, ")")),
       PARAMN,
       LBCAT,
       AVAL  = LBSTRESN,
