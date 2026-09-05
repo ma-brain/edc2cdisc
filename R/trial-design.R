@@ -46,9 +46,8 @@ map_te <- function(spec) {
 #' @export
 map_ta <- function(spec) {
   spec$ta |>
-    left_join(spec$arms |> select(ARMCD, ARM),
-              by = "ARMCD") |>
-    left_join(spec$elements |> select(ETCD, ELEMENT), by = "ETCD") |>
+    left_join(select(spec$arms, ARMCD, ARM), by = "ARMCD") |>
+    left_join(select(spec$elements, ETCD, ELEMENT), by = "ETCD") |>
     mutate(STUDYID = spec$study$STUDYID, DOMAIN = "TA") |>
     arrange(ARMCD, TAETORD) |>
     transmute(STUDYID, DOMAIN, ARMCD, ARM, TAETORD, ETCD, ELEMENT,

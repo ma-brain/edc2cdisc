@@ -41,9 +41,8 @@ test_that("the define.xml stub is well-formed and complete", {
   igd_ta <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='TA']", ns)
   expect_equal(xml2::xml_attr(igd_ta, "Domain"), "TA")
   # ARMCD carries KeySequence 2 now that key_spec knows TA
-  expect_equal(xml2::xml_attr(xml2::xml_find_first(
-    doc, "//d1:ItemGroupDef[@Name='TA']/d1:ItemRef[@ItemOID='IT.TA.ARMCD']", ns),
-    "KeySequence"), "2")
+  ta_ref <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='TA']/d1:ItemRef[@ItemOID='IT.TA.ARMCD']", ns)
+  expect_equal(xml2::xml_attr(ta_ref, "KeySequence"), "2")
   # value-level metadata hooked onto VSSTRESN / LBSTRESN
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 2)
   # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no

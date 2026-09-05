@@ -90,14 +90,14 @@ spec_synth01 <- new_study_spec(
   ),
 
   ts = tribble(
-    ~TSPARMCD, ~TSPARM,                              ~TSVAL,                                                                   ~TSVALNF,
-    "TITLE",   "Trial Title",                        "A Phase II randomised, double-blind, placebo-controlled study of SYN-101", NA,
-    "PHASE",   "Trial Phase Classification",         "PHASE II",                                                                NA,
-    "SPONSOR", "Clinical Study Sponsor",             "SYNTH Pharmaceuticals",                                                   NA,
-    "INDIC",   "Trial Indication",                   "Essential Hypertension",                                                  NA,
-    "TRT",     "Investigational Therapy or Treatment", "SYN-101; Placebo",                                                                      NA,
-    "NARMS",   "Planned Number of Arms",             "3",                                                                       NA,
-    "PLANSUB", "Planned Number of Subjects",         "24",                                                                      NA
+    ~TSPARMCD, ~TSPARM, ~TSVAL, ~TSVALNF,
+    "TITLE",   "Trial Title", "A Phase II randomised, double-blind, placebo-controlled study of SYN-101", NA,
+    "PHASE",   "Trial Phase Classification", "PHASE II", NA,
+    "SPONSOR", "Clinical Study Sponsor", "SYNTH Pharmaceuticals", NA,
+    "INDIC",   "Trial Indication", "Essential Hypertension", NA,
+    "TRT",     "Investigational Therapy or Treatment", "SYN-101; Placebo", NA,
+    "NARMS",   "Planned Number of Arms", "3", NA,
+    "PLANSUB", "Planned Number of Subjects", "24", NA
   ),
 
   codelists = tribble(
