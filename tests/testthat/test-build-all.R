@@ -34,9 +34,16 @@ test_that("the define.xml stub is well-formed and complete", {
   doc <- xml2::read_xml(path)
   ns <- xml2::xml_ns(doc)
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 19)
-  # 10 curated value codelists, minus RELTYPE: its values are all blank on
+  # 11 curated value codelists, minus RELTYPE: its values are all blank on
   # record-level links, and an empty codelist is not emitted
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 9)
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 10)
+  # the trial design domains carry keys and structures like the rest
+  igd_ta <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='TA']", ns)
+  expect_equal(xml2::xml_attr(igd_ta, "Domain"), "TA")
+  # ARMCD carries KeySequence 2 now that key_spec knows TA
+  expect_equal(xml2::xml_attr(xml2::xml_find_first(
+    doc, "//d1:ItemGroupDef[@Name='TA']/d1:ItemRef[@ItemOID='IT.TA.ARMCD']", ns),
+    "KeySequence"), "2")
   # value-level metadata hooked onto VSSTRESN / LBSTRESN
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 2)
   # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no

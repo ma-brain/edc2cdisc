@@ -41,7 +41,12 @@ build_define_xml <- function(domains, spec, path) {
     SUPPAE = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "QNAM"),
     SUPPEX = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "QNAM"),
     CO     = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "COSEQ"),
-    RELREC = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "RELID")
+    RELREC = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "RELID"),
+    TA     = c("STUDYID", "ARMCD", "TAETORD"),
+    TE     = c("STUDYID", "ETCD"),
+    TI     = c("STUDYID", "IETESTCD"),
+    TV     = c("STUDYID", "VISITNUM"),
+    TS     = c("STUDYID", "TSPARMCD")
   )
 
   # Dataset structure strings
@@ -59,7 +64,12 @@ build_define_xml <- function(domains, spec, path) {
     SUPPAE = "One record per subject per AE record per SUPPAE variable",
     SUPPEX = "One record per subject per EX record per SUPPEX variable",
     CO     = "One record per subject per comment",
-    RELREC = "One record per linked record (two records per RELID)"
+    RELREC = "One record per linked record (two records per RELID)",
+    TA     = "One record per arm per element",
+    TE     = "One record per trial element",
+    TI     = "One record per inclusion/exclusion criterion",
+    TV     = "One record per planned visit",
+    TS     = "One record per trial summary parameter"
   )
 
   # Origins: collected (CRF) is the default for tabulations; the derived
@@ -74,12 +84,26 @@ build_define_xml <- function(domains, spec, path) {
     MHDECOD  = "Derived", MHBODSYS = "Derived",
     AESPID   = "Assigned", CMSPID = "Assigned", QNAM = "Assigned",
     QLABEL   = "Assigned", QORIG = "Assigned", IDVAR = "Assigned",
-    RELTYPE  = "Assigned", RELID = "Assigned"
+    RELTYPE  = "Assigned", RELID = "Assigned",
+    ETCD = "Protocol", ELEMENT = "Protocol", TESTRL = "Protocol",
+    TEENRL = "Protocol", TEDUR = "Protocol", TAETORD = "Protocol",
+    TABRANCH = "Protocol", TATRANS = "Protocol", IETESTCD = "Protocol",
+    IETEST = "Protocol", IECAT = "Protocol", TSPARMCD = "Protocol",
+    TSPARM = "Protocol", TSVAL = "Protocol", TSVALNF = "Protocol"
   )
 
-  var_origin <- function(var) {
+  # Names shared with collected domains get a per-domain override: TA's
+  # ARMCD is protocol fact, DM's stays CRF/Assigned as declared above.
+  origin_by_domain <- list(
+    TA = c(ARMCD = "Protocol", ARM = "Protocol", EPOCH = "Protocol"),
+    TV = c(VISITNUM = "Protocol", VISIT = "Protocol")
+  )
+
+  var_origin <- function(var, domain) {
+    dom_hit <- origin_by_domain[[domain]][var]
+    if (length(dom_hit) == 1 && !is.na(dom_hit)) return(unname(dom_hit))
     hit <- origin_suffix[str_ends(var, names(origin_suffix))]
-    if (length(hit) > 0) return(hit[[1]])
+    if (length(hit) > 0) return(unname(hit[[1]]))
     if (var %in% names(origin_named)) return(unname(origin_named[[var]]))
     "CRF"
   }
@@ -100,7 +124,7 @@ build_define_xml <- function(domains, spec, path) {
   # Curated codelists: the values observed across all domains carrying the
   # variable.
   codelist_vars <- c("AESEV", "AEREL", "AEACN", "AEOUT", "LBNRIND", "DTHFL",
-                     "QNAM", "RDOMAIN", "RELTYPE", "DSDECOD")
+                     "QNAM", "RDOMAIN", "RELTYPE", "DSDECOD", "IECAT")
   codelist_values <- map(set_names(codelist_vars), \(v) {
     vals <- unlist(imap(domains, \(df, d) if (v %in% names(df)) unique(df[[v]])),
                    use.names = FALSE)
@@ -188,7 +212,7 @@ build_define_xml <- function(domains, spec, path) {
       if (var %in% names(codelist_values)) {
         xml2::xml_add_child(it, "CodeListRef", CodeListOID = str_c("CL.", var))
       }
-      xml2::xml_add_child(it, "def:Origin", Type = var_origin(var))
+      xml2::xml_add_child(it, "def:Origin", Type = var_origin(var, d))
 
       ref <- xml2::xml_add_child(igd, "ItemRef", ItemOID = oid,
                                  OrderNumber = as.character(i),
