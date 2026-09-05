@@ -37,6 +37,45 @@ test_that("a flipped TRTEMFL is recomputed and flagged", {
   expect_true("trtemfl-not-derivable" %in% issues$check)
 })
 
+test_that("a blanked TRTEMFL is recomputed and flagged", {
+  built <- build_fixtures()$built
+  adae <- built$adam$ADAE
+  treated <- which(adae$TRTEMFL == "Y")
+  adae$TRTEMFL[treated[1]] <- NA_character_
+
+  issues <- validate_adam(built$adam$ADSL, adae, built$adam$ADVS,
+                          built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
+                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$SUPPAE, spec_synth01)
+  expect_true("trtemfl-not-derivable" %in% issues$check)
+})
+
+test_that("a blanked TRTDURD is flagged", {
+  built <- build_fixtures()$built
+  adsl <- built$adam$ADSL
+  i <- which(!is.na(adsl$TRTSDT) & !is.na(adsl$TRTEDT) & !is.na(adsl$TRTDURD))[1]
+  adsl$TRTDURD[i] <- NA_integer_
+
+  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADVS,
+                          built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
+                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$SUPPAE, spec_synth01)
+  expect_true("trtdurd-wrong" %in% issues$check)
+})
+
+test_that("a blanked ADVS ADY is flagged", {
+  built <- build_fixtures()$built
+  advs <- built$adam$ADVS
+  i <- which(!is.na(advs$ADY))[1]
+  advs$ADY[i] <- NA_integer_
+
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, advs,
+                          built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
+                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$SUPPAE, spec_synth01)
+  expect_true("advs-ady-wrong" %in% issues$check)
+})
+
 test_that("an ADVS row whose upper bound went missing cannot stay NORMAL", {
   built <- build_fixtures()$built
   advs <- built$adam$ADVS

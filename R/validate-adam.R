@@ -115,8 +115,10 @@ validate_adam <- function(adsl, adae, advs, adlb,
   }
 
   bad_dur <- adsl |>
-    filter(!is.na(TRTSDT), !is.na(TRTEDT),
-           TRTDURD != .rule_trtdurd(TRTSDT, TRTEDT))
+    filter(!is.na(TRTSDT), !is.na(TRTEDT)) |>
+    mutate(.expect = .rule_trtdurd(TRTSDT, TRTEDT)) |>
+    filter(xor(is.na(TRTDURD), is.na(.expect)) |
+             (!is.na(TRTDURD) & !is.na(.expect) & TRTDURD != .expect))
   if (nrow(bad_dur) > 0) {
     add("ADSL", "ERROR", "trtdurd-wrong", sprintf("%d row(s)", nrow(bad_dur)))
   }
@@ -303,7 +305,9 @@ validate_adam <- function(adsl, adae, advs, adlb,
       by = "USUBJID"
     ) |>
     mutate(.expect = .rule_trtemfl(ASTDT, .ref_trtsdt, .ref_trtedt))
-  bad_te <- te_expected |> filter(TRTEMFL != .expect)
+  bad_te <- te_expected |>
+    filter(xor(is.na(TRTEMFL), is.na(.expect)) |
+             (!is.na(TRTEMFL) & !is.na(.expect) & TRTEMFL != .expect))
   if (nrow(bad_te) > 0) {
     add("ADAE", "ERROR", "trtemfl-not-derivable",
         sprintf(paste("%d row(s) where TRTEMFL disagrees with the",
@@ -326,7 +330,8 @@ validate_adam <- function(adsl, adae, advs, adlb,
   bad_dy <- adae |>
     filter(!is.na(ASTDT), !is.na(TRTSDT)) |>
     mutate(.expect = derive_dy_d(ASTDT, TRTSDT)) |>
-    filter(ASTDY != .expect)
+    filter(xor(is.na(ASTDY), is.na(.expect)) |
+             (!is.na(ASTDY) & !is.na(.expect) & ASTDY != .expect))
   if (nrow(bad_dy) > 0) {
     add("ADAE", "ERROR", "astdy-wrong-anchor",
         sprintf("%d row(s) where ASTDY disagrees with ASTDT vs TRTSDT",
@@ -511,7 +516,8 @@ validate_adam <- function(adsl, adae, advs, adlb,
   bad_ady <- advs |>
     left_join(adsl_ref, by = "USUBJID") |>
     mutate(.expect = derive_dy_d(ADT, .ref_trtsdt)) |>
-    filter(ADY != .expect)
+    filter(xor(is.na(ADY), is.na(.expect)) |
+             (!is.na(ADY) & !is.na(.expect) & ADY != .expect))
   if (nrow(bad_ady) > 0) {
     add("ADVS", "ERROR", "advs-ady-wrong",
         "ADY disagrees with ADT vs ADSL TRTSDT")
