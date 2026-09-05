@@ -145,7 +145,8 @@ spec_synth01 <- new_study_spec(
     "DM",     NA,       "RACEOTH",  "Race, Other Specify",                "RACEOTH",  "verbatim", "CRF",          NA,
     "AE",     "AESEQ",  "AESI",     "Adverse Event of Special Interest",  "AESI",     "yn",       "CRF",          "INVESTIGATOR",
     "AE",     "AESEQ",  "AEDISCON", "AE Led to Study Discontinuation",    "AEDISCON", "yn",       "CRF",          NA,
-    "EX",     "EXSEQ",  "EXADMBY",  "Dose Administered By",               "EXADMBY",  "squish",   "CRF",          NA
+    "EX",     "EXSEQ",  "EXADMBY",  "Dose Administered By",               "EXADMBY",  "squish",   "CRF",          NA,
+    "PE",     "PESEQ",  "PEABNDT",  "Abnormality Details",                "CVSPEC",   "squish",   "CRF",          NA
   ),
 
   units = tribble(
@@ -163,6 +164,8 @@ spec_synth01 <- new_study_spec(
     "DS",      "event",  TRUE,
     "LB",      "event",  TRUE,
     "QS",      "event",  TRUE,
+    "PE",      "event",  TRUE,
+    "EG",      "event",  TRUE,
     "AE",      "log",    FALSE,
     "CM",      "log",    FALSE,
     "MH",      "log",    FALSE
@@ -184,7 +187,16 @@ spec_synth01 <- new_study_spec(
     "QS",     "MOS01",  "MOS01",  "Mood: Cheerful",             "MOOD SCALE", NA,
     "QS",     "MOS02",  "MOS02",  "Mood: Down",                 "MOOD SCALE", NA,
     "QS",     "MOS03",  "MOS03",  "Sleep Quality",              "MOOD SCALE", NA,
-    "QS",     "MOS04",  "MOS04",  "Energy Level",               "MOOD SCALE", NA
+    "QS",     "MOS04",  "MOS04",  "Energy Level",               "MOOD SCALE", NA,
+    "PE",     "CARDIO", "CV",     "Cardiovascular",             NA,           NA,
+    "PE",     "RESPIR", "RESP",   "Respiratory",                NA,           NA,
+    "PE",     "ABDO",   "ABDO",   "Abdomen",                    NA,           NA,
+    "PE",     "NEURO",  "NEURO",  "Neurological",               NA,           NA,
+    "EG",     "PR",     "PR",     "PR Interval",                NA,           NA,
+    "EG",     "QRS",    "QRS",    "QRS Duration",               NA,           NA,
+    "EG",     "QT",     "QT",     "QT Interval",                NA,           NA,
+    "EG",     "QTCF",   "QTCF",   "QTcF Interval",              NA,           NA,
+    "EG",     "RRI",    "RR",     "RR Interval",                NA,           NA
   ),
 
   bds = tribble(

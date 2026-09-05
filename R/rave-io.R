@@ -159,7 +159,8 @@ col_or_na <- function(data, name) {
 #' forms <- suppressMessages(read_rave_extract(dir = ext))
 #' names(forms)
 read_rave_extract <- function(form_oids = c("DM", "VS", "LB", "AE", "CM",
-                                            "EX", "DS", "MH", "QS"),
+                                            "EX", "DS", "MH", "QS", "PE",
+                                            "EG"),
                               dir) {
   meta <- read_cv_metadata(dir)
   form_oids |>

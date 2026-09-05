@@ -150,7 +150,8 @@ spec_synth02 <- new_study_spec(
     "AE",     "AESEQ",  "AEDISCON", "AE Led to Study Discontinuation",    "AEDISCON", "yn",       "CRF",  NA,
     "EX",     "EXSEQ",  "EXADMBY",  "Dose Administered By",               "EXADMBY",  "squish",   "CRF",  NA,
     # the study's extra non-standard field: the dose's lot number
-    "EX",     "EXSEQ",  "EXLOT",    "Lot Number",                         "EXLOT",    "squish",   "CRF",  NA
+    "EX",     "EXSEQ",  "EXLOT",    "Lot Number",                         "EXLOT",    "squish",   "CRF",  NA,
+    "PE",     "PESEQ",  "PEABNDT",  "Abnormality Details",                "CVSPEC",   "squish",   "CRF",  NA
   ),
 
   units = tribble(
@@ -168,6 +169,8 @@ spec_synth02 <- new_study_spec(
     "DS",      "event",  TRUE,
     "LB",      "event",  TRUE,
     "QS",      "event",  TRUE,
+    "PE",      "event",  TRUE,
+    "EG",      "event",  TRUE,
     "AE",      "log",    FALSE,
     "CM",      "log",    FALSE,
     "MH",      "log",    FALSE
@@ -194,7 +197,18 @@ spec_synth02 <- new_study_spec(
     "QS",     "MOS02",  "MOS02",  "Mood: Down",                 "MOOD SCALE", NA,
     "QS",     "MOS03",  "MOS03",  "Sleep Quality",              "MOOD SCALE", NA,
     "QS",     "MOS04",  "MOS04",  "Energy Level",               "MOOD SCALE", NA,
-    "QS",     "MOS05",  "MOS05",  "Concentration",              "MOOD SCALE", NA
+    "QS",     "MOS05",  "MOS05",  "Concentration",              "MOOD SCALE", NA,
+    "PE",     "CARDIO", "CV",     "Cardiovascular",             NA,           NA,
+    "PE",     "RESPIR", "RESP",   "Respiratory",                NA,           NA,
+    "PE",     "ABDO",   "ABDO",   "Abdomen",                    NA,           NA,
+    "PE",     "NEURO",  "NEURO",  "Neurological",               NA,           NA,
+    # this protocol adds a skin examination to the PE panel
+    "PE",     "SKIN",   "SKIN",   "Skin",                       NA,           NA,
+    "EG",     "PR",     "PR",     "PR Interval",                NA,           NA,
+    "EG",     "QRS",    "QRS",    "QRS Duration",               NA,           NA,
+    "EG",     "QT",     "QT",     "QT Interval",                NA,           NA,
+    "EG",     "QTCF",   "QTCF",   "QTcF Interval",              NA,           NA,
+    "EG",     "RRI",    "RR",     "RR Interval",                NA,           NA
   ),
 
   bds = tribble(

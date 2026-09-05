@@ -80,7 +80,6 @@
 
     qs_n_items = 4L,
     pe_systems = c("CARDIO", "RESPIR", "ABDO", "NEURO"),
-    eg_tests = c("PR", "QRS", "QT", "QTCF", "RRI"),
 
     idx = list(
       birth_day = 2L, birth_monthday = 9L,
@@ -246,7 +245,6 @@
 
     qs_n_items = 5L,
     pe_systems = c("CARDIO", "RESPIR", "ABDO", "NEURO", "SKIN"),
-    eg_tests = c("PR", "QRS", "QT", "QTCF", "RRI"),
 
     idx = list(
       birth_day = 4L, birth_monthday = 11L,
