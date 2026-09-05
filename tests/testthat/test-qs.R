@@ -82,3 +82,41 @@ test_that("screen failures appear only at screening, with no study day", {
   expect_true(all(is.na(sf_qs$QSDY)))
   expect_true(all(is.na(sf_qs$QSBLFL)))
 })
+
+# Meta-tests: corrupt QS, assert the validator trips -----------------------
+
+qs_built <- function() {
+  out <- file.path(tempdir(), "qs-meta")
+  dir.create(out, showWarnings = FALSE)
+  ext <- file.path(out, "rave")
+  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
+  suppressMessages(build_all(ext))
+}
+
+test_that("a QSCAT not in spec$tests trips qscat-not-in-spec", {
+  domains <- qs_built()$sdtm
+  domains$QS$QSCAT[1] <- "BOGUS"
+  expect_true("qscat-not-in-spec" %in%
+                validate_sdtm(domains, spec_synth01)$check)
+})
+
+test_that("a NOT DONE row with a blank reason trips stat-reason", {
+  domains <- qs_built()$sdtm
+  idx <- which(domains$QS$QSSTAT == "NOT DONE")[1]
+  domains$QS$QSREASND[idx] <- NA_character_
+  expect_true("stat-reason" %in%
+                validate_sdtm(domains, spec_synth01)$check)
+})
+
+test_that("a result injected onto a NOT DONE row trips stat-reason", {
+  domains <- qs_built()$sdtm
+  idx <- which(domains$QS$QSSTAT == "NOT DONE")[1]
+  domains$QS$QSORRES[idx] <- "2"
+  expect_true("stat-reason" %in%
+                validate_sdtm(domains, spec_synth01)$check)
+})
+
+test_that("a clean build validates QS with zero findings", {
+  built <- qs_built()
+  expect_equal(nrow(validate_sdtm(built$sdtm, spec_synth01)), 0)
+})

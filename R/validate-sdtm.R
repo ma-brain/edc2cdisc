@@ -32,7 +32,9 @@
   TE = c("STUDYID", "DOMAIN", "ETCD", "ELEMENT"),
   TI = c("STUDYID", "DOMAIN", "IETESTCD", "IETEST", "IECAT"),
   TV = c("STUDYID", "DOMAIN", "VISITNUM", "VISIT", "VISITDY", "EPOCH"),
-  TS = c("STUDYID", "DOMAIN", "TSPARMCD", "TSPARM", "TSVAL")
+  TS = c("STUDYID", "DOMAIN", "TSPARMCD", "TSPARM", "TSVAL"),
+  QS = c("STUDYID", "DOMAIN", "USUBJID", "QSSEQ", "QSCAT", "QSTESTCD",
+         "QSTEST", "QSORRES", "QSDTC")
 )
 
 # ISO 8601: full or reduced precision, optional time; NA is allowed
@@ -40,6 +42,9 @@
   is.na(x) |
     str_detect(x, "^\\d{4}(-\\d{2}(-\\d{2}(T\\d{2}:\\d{2}(:\\d{2})?)?)?)?$")
 }
+
+# blank means NA or the empty string - the ts-valnf precedent
+.is_blank <- function(x) is.na(x) | x == ""
 
 .new_issue <- function(domain = character(0), severity = character(0),
                        check = character(0), detail = character(0)) {
@@ -61,15 +66,17 @@
 #' referential integrity against DM, unique --SEQ keys, ISO 8601 --DTC
 #' formats, no study day 0, baseline-flag uniqueness, LBNRIND coherence, SV
 #' visit uniqueness, VISITNUM reconciliation against SV, screen-failure
-#' study-day leaks, SUPP/CO related-record structure, death coherence across
+#' study-day leaks, --STAT/--REASND coherence, SUPP/CO related-record
+#' structure, death coherence across
 #' AE/DS/DM, MH onset before first dose, RELREC pair integrity, trial design
 #' integrity (TA→TE, TA against `spec$arms`/`spec$visits`, TV against
 #' `spec$visits`, SV visits planned in TV, TS parameter consistency against
 #' `spec$arms`/`spec$study$n`) and - when a spec is supplied - controlled
-#' terminology values against `spec$codelists`.
+#' terminology values against `spec$codelists` and QS categories against
+#' `spec$tests`.
 #'
 #' @param domains A named list of mapped SDTM datasets, as built by
-#'   [build_all()] (DM, EX, VS, AE, CM, DS, SV, LB, MH, SUPPDM, SUPPAE,
+#'   [build_all()] (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, SUPPDM, SUPPAE,
 #'   SUPPEX, CO, RELREC, TA, TE, TI, TV, TS)
 #' @param spec Optional `study_spec`; when given, required-variable lists
 #'   for the engine-mapped domains come from `spec$variables`.
@@ -284,7 +291,7 @@ validate_sdtm <- function(domains, spec = NULL) {
 
   # Screen failures must have no study days anywhere (no RFSTDTC)
   sf_ids <- domains$DM |> filter(ARMCD == "SCRNFAIL") |> pull(USUBJID)
-  for (d in c("VS", "AE", "CM", "DS", "SV", "LB", "MH")) {
+  for (d in c("VS", "AE", "CM", "DS", "SV", "LB", "MH", "QS")) {
     df <- domains[[d]]
     # VISITDY is a protocol-planned day, not anchored to RFSTDTC - exclude it.
     dy_vars <- setdiff(names(df)[str_ends(names(df), "DY")], "VISITDY")
@@ -630,6 +637,41 @@ validate_sdtm <- function(domains, spec = NULL) {
             sprintf("TS PLANSUB '%s' but spec$study$n is %d",
                     plansub[1], spec$study$n))
       }
+    }
+  }
+
+  # Questionnaires ------------------------------------------------------------
+  # QS is pivoted from spec$tests, so the checks recompute what the spec
+  # already knows instead of trusting the mapper - the same read-the-spec-
+  # twice discipline as the trial design and CT blocks above. A missing
+  # column is already an ERROR via required-vars, so each check below only
+  # runs once its column is there.
+  qs_df <- domains$QS
+  if (!is.null(qs_df) && nrow(qs_df) > 0) {
+    if (!is.null(spec) && "QSCAT" %in% names(qs_df)) {
+      bad_cat <- setdiff(unique(qs_df$QSCAT),
+                         spec$tests$cat[spec$tests$domain == "QS"])
+      if (length(bad_cat) > 0) {
+        add("QS", "ERROR", "qscat-not-in-spec", str_flatten_comma(bad_cat))
+      }
+    }
+  }
+
+  # --STAT/--REASND coherence, written over generic column names so the
+  # other findings domains that carry a completion status (PE, EG) join by
+  # adding a tuple. NOT DONE owes a reason and must carry no result; a
+  # collected result must not declare a status.
+  for (sr in list(c("QS", "QSSTAT", "QSREASND", "QSORRES"))) {
+    df <- domains[[sr[1]]]
+    if (is.null(df) || nrow(df) == 0 || !all(sr[2:4] %in% names(df))) next
+    bad <- df |>
+      filter((.data[[sr[2]]] == "NOT DONE" &
+                (.is_blank(.data[[sr[3]]]) | !.is_blank(.data[[sr[4]]]))) |
+               (!.is_blank(.data[[sr[4]]]) & !.is_blank(.data[[sr[2]]])))
+    if (nrow(bad) > 0) {
+      add(sr[1], "ERROR", "stat-reason",
+          sprintf(paste("%d row(s) where %s/%s/%s disagree (e.g. USUBJID %s)"),
+                  nrow(bad), sr[2], sr[3], sr[4], bad$USUBJID[1]))
     }
   }
 

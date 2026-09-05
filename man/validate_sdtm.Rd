@@ -8,7 +8,7 @@ validate_sdtm(domains, spec = NULL)
 }
 \arguments{
 \item{domains}{A named list of mapped SDTM datasets, as built by
-\code{\link[=build_all]{build_all()}} (DM, EX, VS, AE, CM, DS, SV, LB, MH, SUPPDM, SUPPAE,
+\code{\link[=build_all]{build_all()}} (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, SUPPDM, SUPPAE,
 SUPPEX, CO, RELREC, TA, TE, TI, TV, TS)}
 
 \item{spec}{Optional \code{study_spec}; when given, required-variable lists
@@ -23,12 +23,14 @@ Runs the structural checks: required variables, DOMAIN constants, USUBJID
 referential integrity against DM, unique --SEQ keys, ISO 8601 --DTC
 formats, no study day 0, baseline-flag uniqueness, LBNRIND coherence, SV
 visit uniqueness, VISITNUM reconciliation against SV, screen-failure
-study-day leaks, SUPP/CO related-record structure, death coherence across
+study-day leaks, --STAT/--REASND coherence, SUPP/CO related-record
+structure, death coherence across
 AE/DS/DM, MH onset before first dose, RELREC pair integrity, trial design
 integrity (TA→TE, TA against \code{spec$arms}/\code{spec$visits}, TV against
 \code{spec$visits}, SV visits planned in TV, TS parameter consistency against
 \code{spec$arms}/\code{spec$study$n}) and - when a spec is supplied - controlled
-terminology values against \code{spec$codelists}.
+terminology values against \code{spec$codelists} and QS categories against
+\code{spec$tests}.
 }
 \examples{
 ext <- file.path(tempdir(), "extract-val")
