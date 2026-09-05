@@ -13,10 +13,11 @@ test_that("build_all writes the full output tree", {
   expect_setequal(list.files(file.path(out, "sdtm"), pattern = "[.]rds$"),
                   c("ae.rds", "cm.rds", "co.rds", "dm.rds", "ds.rds",
                     "ex.rds", "lb.rds", "mh.rds", "relrec.rds", "suppae.rds",
-                    "suppdm.rds", "suppex.rds", "sv.rds", "vs.rds"))
+                    "suppdm.rds", "suppex.rds", "sv.rds", "ta.rds",
+                    "te.rds", "ti.rds", "ts.rds", "tv.rds", "vs.rds"))
   expect_setequal(list.files(file.path(out, "adam"), pattern = "[.]rds$"),
                   c("adae.rds", "adlb.rds", "adsl.rds", "advs.rds"))
-  expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 14)
+  expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 19)
   expect_equal(length(list.files(file.path(out, "adam", "xpt"))), 4)
   expect_true(file.exists(file.path(out, "sdtm", "define.xml")))
 })
@@ -32,7 +33,7 @@ test_that("the define.xml stub is well-formed and complete", {
                            file.path(out, "define.xml"))
   doc <- xml2::read_xml(path)
   ns <- xml2::xml_ns(doc)
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 14)
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 19)
   # 10 curated value codelists, minus RELTYPE: its values are all blank on
   # record-level links, and an empty codelist is not emitted
   expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 9)

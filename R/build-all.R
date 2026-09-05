@@ -22,7 +22,7 @@
 #'   and a `define.xml` stub is written alongside.
 #' @param adam_dir Optional output directory for the ADaM datasets, laid out
 #'   like `sdtm_dir`.
-#' @return A list with `sdtm` (named list of the 14 mapped domains) and
+#' @return A list with `sdtm` (named list of the 19 mapped domains) and
 #'   `adam` (ADSL, ADAE, ADVS, ADLB), invisibly.
 #' @export
 #' @examples
@@ -57,10 +57,17 @@ build_all <- function(extract_dir, spec = spec_synth01,
   suppex <- map_suppex(forms$EX, ex, spec)
   co     <- map_co(forms$AE, ae, spec)
   relrec <- map_relrec(ae, cm, spec)
+  # Trial design: protocol facts from the spec, no CRF forms involved
+  ta <- map_ta(spec)
+  te <- map_te(spec)
+  ti <- map_ti(spec)
+  tv <- map_tv(spec)
+  ts <- map_ts(spec)
 
   sdtm <- list(DM = dm, EX = ex, VS = vs, AE = ae, CM = cm, DS = ds, SV = sv,
                LB = lb, MH = mh, SUPPDM = suppdm, SUPPAE = suppae,
-               SUPPEX = suppex, CO = co, RELREC = relrec)
+               SUPPEX = suppex, CO = co, RELREC = relrec,
+               TA = ta, TE = te, TI = ti, TV = tv, TS = ts)
 
   issues <- validate_sdtm(sdtm, spec)
   stop_on_error(issues, "SDTM validation")

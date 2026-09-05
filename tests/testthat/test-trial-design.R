@@ -78,3 +78,28 @@ test_that("map_tv derives the planned visits from spec$visits", {
                ignore_attr = "label")
   expect_equal(attr(tv$VISITDY, "label"), "Planned Study Day of Visit")
 })
+
+test_that("build_all returns the trial design domains for both studies", {
+  out <- file.path(tempdir(), "td-build")
+  on.exit(unlink(out, recursive = TRUE, force = TRUE), add = TRUE)
+
+  ext1 <- file.path(out, "rave1")
+  suppressMessages(generate_rave_extract(out = ext1))
+  built1 <- build_all(ext1)
+  expect_setequal(names(built1$sdtm),
+                  c("DM", "EX", "VS", "AE", "CM", "DS", "SV", "LB", "MH",
+                    "SUPPDM", "SUPPAE", "SUPPEX", "CO", "RELREC",
+                    "TA", "TE", "TI", "TV", "TS"))
+  expect_equal(nrow(built1$sdtm$TA), 6)
+  expect_equal(nrow(built1$sdtm$TE), 2)
+  expect_equal(nrow(built1$sdtm$TI), 6)
+  expect_equal(nrow(built1$sdtm$TV), 6)
+  expect_equal(nrow(built1$sdtm$TS), 7)
+
+  ext2 <- file.path(out, "rave2")
+  suppressMessages(generate_rave_extract(out = ext2, study = "SYNTH02"))
+  built2 <- suppressMessages(build_all(ext2, spec = spec_synth02))
+  expect_equal(nrow(built2$sdtm$TA), 8)
+  expect_equal(nrow(built2$sdtm$TV), 6)
+  expect_equal(nrow(built2$sdtm$TS), 7)
+})

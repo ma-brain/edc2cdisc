@@ -109,7 +109,7 @@ test_that("SYNTH02 runs end-to-end through build_all with its own spec", {
 
   # deliverables written like any study's
   expect_true(file.exists(file.path(out, "sdtm", "define.xml")))
-  expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 14L)
+  expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 19L)
   expect_equal(length(list.files(file.path(out, "adam", "xpt"))), 4L)
 })
 
