@@ -14,7 +14,10 @@
 #' AE outcome / action / severity / causality and disposition reason, the
 #' SUPP-- qualifiers, the LB conventional-to-SI conversions, form typing,
 #' the VS/LB per-test pivot specs, and the variable-level mapping table for
-#' the event/log forms.
+#' the event/log forms. The trial design domains are built from the
+#' `elements`, `ta`, `ie` and `ts` tables (two elements, a 3-arm x 2-element
+#' plan, six criteria and seven trial summary parameters); TV comes from the
+#' `visits` table.
 #'
 #' @format A `study_spec` object (a validated named list of tibbles).
 #' @source Assembled from the SYNTH01 CRF design; see `?new_study_spec`
@@ -53,6 +56,48 @@ spec_synth01 <- new_study_spec(
     "WK04",  4,         "WEEK 4",           "TREATMENT",   28L,
     "WK08",  5,         "WEEK 8",           "TREATMENT",   56L,
     "EOT",   6,         "END OF TREATMENT", "TREATMENT",   84L
+  ),
+
+  # Trial design: protocol facts, not collected data. TA carries the
+  # transition rule on the element being left (SCRN -> "Randomised") and
+  # the branch on the element the branch leads to (TREAT -> "Randomised
+  # to <arm>"), per SDTMIG. NARMS / PLANSUB must agree with the arms and
+  # study tables - validate_sdtm() recomputes both.
+  elements = tribble(
+    ~ETCD,   ~ELEMENT,    ~TESTRL,                     ~TEENRL,                            ~TEDUR,
+    "SCRN",  "Screening", "Informed consent obtained", "Randomised or screen failure",     "P2W",
+    "TREAT", "Treatment", "First dose of study drug",  "End of treatment visit completed", "P12W"
+  ),
+
+  ta = tribble(
+    ~ARMCD,   ~ETCD,   ~TAETORD, ~EPOCH,      ~TABRANCH,                       ~TATRANSAC,
+    "PBO",    "SCRN",  1L,       "SCREENING", NA,                              "Randomised",
+    "PBO",    "TREAT", 2L,       "TREATMENT", "Randomised to Placebo",         NA,
+    "SYN50",  "SCRN",  1L,       "SCREENING", NA,                              "Randomised",
+    "SYN50",  "TREAT", 2L,       "TREATMENT", "Randomised to SYN-101 50 mg",   NA,
+    "SYN100", "SCRN",  1L,       "SCREENING", NA,                              "Randomised",
+    "SYN100", "TREAT", 2L,       "TREATMENT", "Randomised to SYN-101 100 mg",  NA
+  ),
+
+  ie = tribble(
+    ~IETESTCD, ~IETEST,                                                                   ~IECAT,
+    "INC1",    "Age 18 to 100 years, inclusive",                                          "INCLUSION",
+    "INC2",    "Diagnosis of essential hypertension per protocol section 4.1",            "INCLUSION",
+    "INC3",    "Written informed consent obtained before any study procedure",            "INCLUSION",
+    "EXC1",    "Treatment with an investigational drug within 30 days before screening",  "EXCLUSION",
+    "EXC2",    "Pregnant or breastfeeding",                                               "EXCLUSION",
+    "EXC3",    "Clinically significant laboratory abnormality at screening",              "EXCLUSION"
+  ),
+
+  ts = tribble(
+    ~TSPARMCD, ~TSPARM,                              ~TSVAL,                                                                   ~TSVALNF,
+    "TITLE",   "Trial Title",                        "A Phase II randomised, double-blind, placebo-controlled study of SYN-101", NA,
+    "PHASE",   "Trial Phase Classification",         "PHASE II",                                                                NA,
+    "SPONSOR", "Clinical Study Sponsor",             "SYNTH Pharmaceuticals",                                                   NA,
+    "INDIC",   "Trial Indication",                   "Essential Hypertension",                                                  NA,
+    "TRT",     "Investigational Therapy or Treatment", "SYN-101; Placebo",                                                                      NA,
+    "NARMS",   "Planned Number of Arms",             "3",                                                                       NA,
+    "PLANSUB", "Planned Number of Subjects",         "24",                                                                      NA
   ),
 
   codelists = tribble(
