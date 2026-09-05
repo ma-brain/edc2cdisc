@@ -88,16 +88,18 @@ test_that("build_all returns the trial design domains for both studies", {
   built1 <- build_all(ext1)
   expect_setequal(names(built1$sdtm),
                   c("DM", "EX", "VS", "AE", "CM", "DS", "SV", "LB", "MH",
-                    "QS", "SUPPDM", "SUPPAE", "SUPPEX", "CO", "RELREC",
-                    "TA", "TE", "TI", "TV", "TS"))
+                    "QS", "PE", "EG", "SUPPDM", "SUPPAE", "SUPPEX", "CO",
+                    "RELREC", "TA", "TE", "TI", "TV", "TS"))
   expect_equal(nrow(built1$sdtm$TA), 6)
   expect_equal(nrow(built1$sdtm$TE), 2)
   expect_equal(nrow(built1$sdtm$TI), 6)
   expect_equal(nrow(built1$sdtm$TV), 6)
   expect_equal(nrow(built1$sdtm$TS), 7)
-  # QS rides along for both studies: findings, not trial design, but the
-  # domain list is all-or-nothing
+  # QS, PE and EG ride along for both studies: findings, not trial design,
+  # but the domain list is all-or-nothing
   expect_gt(nrow(built1$sdtm$QS), 0)
+  expect_gt(nrow(built1$sdtm$PE), 0)
+  expect_gt(nrow(built1$sdtm$EG), 0)
 
   ext2 <- file.path(out, "rave2")
   suppressMessages(generate_rave_extract(out = ext2, study = "SYNTH02"))
@@ -109,6 +111,12 @@ test_that("build_all returns the trial design domains for both studies", {
   # pivots to exactly 5 QS records
   key_counts <- dplyr::count(built2$sdtm$QS, USUBJID, VISITNUM)
   expect_equal(unique(key_counts$n), 5)
+  # its PE panel adds a skin system (5 per key, vs 4 in SYNTH01) and EG
+  # collects the same 5 intervals in both studies
+  pe_counts <- dplyr::count(built2$sdtm$PE, USUBJID, VISITNUM)
+  expect_equal(unique(pe_counts$n), 5)
+  eg_counts <- dplyr::count(built2$sdtm$EG, USUBJID, VISITNUM)
+  expect_equal(unique(eg_counts$n), 5)
 })
 
 # Meta-tests: corrupt a trial design domain, assert the validator trips ---
