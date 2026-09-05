@@ -119,3 +119,36 @@ map_ts <- function(spec) {
       TSVALNF  = "Null Flavor"
     ))
 }
+
+#' Map the Trial Visits domain
+#'
+#' One record per planned visit. TV has no spec table of its own: it is a
+#' transform of the `visits` table the scheduled-visit domains already
+#' read - VISITNUM, VISIT and EPOCH carry over, and VISITDY is TargetDays
+#' under the same no-day-0 rule `map_sv()` applies to planned days.
+#'
+#' @param spec A `study_spec` (see [new_study_spec()])
+#' @return The labelled SDTM TV tibble.
+#' @examples
+#' tv <- map_tv(spec_synth01)
+#' tv[, c("VISITNUM", "VISIT", "VISITDY", "EPOCH")]
+#' @export
+map_tv <- function(spec) {
+  spec$visits |>
+    mutate(
+      STUDYID = spec$study$STUDYID,
+      DOMAIN  = "TV",
+      # Planned study day: same no-day-0 rule as derive_dy()/map_sv()
+      VISITDY = if_else(TargetDays >= 0L, TargetDays + 1L, TargetDays)
+    ) |>
+    arrange(VISITNUM) |>
+    transmute(STUDYID, DOMAIN, VISITNUM, VISIT, VISITDY, EPOCH) |>
+    apply_labels(c(
+      STUDYID  = "Study Identifier",
+      DOMAIN   = "Domain Abbreviation",
+      VISITNUM = "Visit Number",
+      VISIT    = "Visit Name",
+      VISITDY  = "Planned Study Day of Visit",
+      EPOCH    = "Epoch"
+    ))
+}

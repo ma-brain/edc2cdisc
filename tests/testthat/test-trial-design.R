@@ -34,7 +34,9 @@ test_that("map_ta joins the arm decode and element names", {
 })
 
 test_that("trial design builders emit XPT-safe names and labels", {
-  for (df in list(map_te(spec_synth01), map_ta(spec_synth01))) {
+  for (df in list(map_te(spec_synth01), map_ta(spec_synth01),
+                  map_ti(spec_synth01), map_ts(spec_synth01),
+                  map_tv(spec_synth01))) {
     expect_true(all(nchar(names(df)) <= 8))
     long <- keep(var_label(df), \(l) !is.null(l) && nchar(l) > 40)
     expect_length(long, 0)
@@ -62,4 +64,17 @@ test_that("map_ts returns the SYNTH01 parameters with values", {
   # exactly one of TSVAL / TSVALNF is filled on every row
   expect_true(all(!is.na(ts$TSVAL) & ts$TSVAL != ""))
   expect_true(all(is.na(ts$TSVALNF) | ts$TSVALNF == ""))
+})
+
+test_that("map_tv derives the planned visits from spec$visits", {
+  tv <- map_tv(spec_synth01)
+  expect_equal(nrow(tv), 6)
+  expect_equal(tv$VISITNUM, 1:6, ignore_attr = "label")
+  expect_equal(tv$VISIT[1], "SCREENING")
+  expect_equal(tv$EPOCH[tv$VISIT == "BASELINE"], "TREATMENT")
+  # VISITDY follows the no-day-0 rule map_sv() uses for planned days:
+  # screening (day -14) stays negative, baseline (day 0) becomes day 1
+  expect_equal(tv$VISITDY, c(-14L, 1L, 15L, 29L, 57L, 85L),
+               ignore_attr = "label")
+  expect_equal(attr(tv$VISITDY, "label"), "Planned Study Day of Visit")
 })
