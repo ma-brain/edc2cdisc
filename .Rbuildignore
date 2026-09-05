@@ -10,3 +10,5 @@
 ^\.github$
 ^tests/update_reference\.R$
 ^REVIEW-.*\.md$
+^docs$
+^\.worktrees$

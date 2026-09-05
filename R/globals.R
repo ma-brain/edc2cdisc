@@ -36,7 +36,7 @@ utils::globalVariables(c(
   "MHENDTC", "MHENDY", "MHENRF", "MHENRTPT", "MHSEQ", "MHSTDTC", "MHSTDY",
   "MHTERM", "MaxUpdated", "MinCreated", "NRHI_O", "NRLO_O", "PARAMCD",
   "PARAMN", "PCHG", "PageRepeatNumber", "QLABEL", "QNAM", "QVAL", "RACE",
-  "RAVE_STD", "RDOMAIN", "RECDT", "RELID", "RELTYPE", "RFENDTC", "RFICDTC",
+  "RAVE_STD", "RAVE_STDU", "RDOMAIN", "RECDT", "RELID", "RELTYPE", "RFENDTC", "RFICDTC",
   "RFPENDTC", "RFSTDTC", "RecordActive", "RecordDate", "SAFFL", "SEX",
   "SITEID", "STUDYID", "SUBJID", "SVENDTC", "SVENDY", "SVSTDTC", "SVSTDY",
   "SaveTs", "Subject", "TRT01A", "TRT01ACD", "TRT01P", "TRT01PCD", "TRTDURD",
