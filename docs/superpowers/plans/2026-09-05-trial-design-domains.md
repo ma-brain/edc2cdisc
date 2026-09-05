@@ -916,7 +916,7 @@ Line 13–16, extend the expected rds set:
 
 Line 19: `expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 19)`.
 
-Line 35: `expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 19)` — **this stays 14 until Task 9 adds the define.xml entries; make this edit now anyway, and expect this one test to stay red until Task 9 lands.** (Keeps the diff reviewable; the task-9 step re-runs the file.)
+**Leave line 35 (the ItemGroupDef count) at 14 for now** — it stays true because the define.xml entries only land in Task 9, which is also where this assertion moves to 19. Every commit stays green.
 
 - [ ] **Step 2: Run to verify state**
 
@@ -950,7 +950,7 @@ Update the roxygen `@return` line: "A list with `sdtm` (named list of the 19 map
 - [ ] **Step 4: Run the affected test files**
 
 Run: `Rscript -e 'devtools::test(filter = "^trial-design$|^build-all$|^synth02$")'`
-Expected: PASS everywhere **except** the ItemGroupDef-count test (19 vs 14) — that closes in Task 9.
+Expected: PASS everywhere.
 
 - [ ] **Step 5: Commit**
 
@@ -1215,7 +1215,13 @@ git commit -m "feat(validate): trial design integrity checks"
 
 - [ ] **Step 1: Write the failing assertions**
 
-In `tests/testthat/test-build-all.R`, the define test (Task 7 already moved ItemGroupDef to 19) — extend it with the trial design expectations by appending inside the same `test_that`:
+In `tests/testthat/test-build-all.R`, update the define test: line 35 moves from 14 to 19,
+
+```r
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 19)
+```
+
+and extend the same `test_that` with the trial design expectations:
 
 ```r
   # the trial design domains carry keys and structures like the rest
