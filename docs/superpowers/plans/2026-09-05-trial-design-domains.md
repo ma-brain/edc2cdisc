@@ -618,7 +618,7 @@ map_te <- function(spec) {
 #' @export
 map_ta <- function(spec) {
   spec$ta |>
-    left_join(spec$arms |> select(ARMCD_DECODE, ARMCD, ARM),
+    left_join(spec$arms |> select(ARMCD, ARM),
               by = "ARMCD") |>
     left_join(spec$elements |> select(ETCD, ELEMENT), by = "ETCD") |>
     mutate(STUDYID = spec$study$STUDYID, DOMAIN = "TA") |>
@@ -642,7 +642,7 @@ map_ta <- function(spec) {
 
 - [ ] **Step 4: Add the masked names to `R/globals.R`**
 
-In the `utils::globalVariables(c(...))` vector (alphabetical spots): add `EPOCH` is already present; add `ETCD`, `TAETORD`, `TABRANCH`, `TATRANS`, `ARMCD_DECODE` (used data-masked in the `left_join` `by` only — `by` is not data-masked, so ARMCD_DECODE is *not* needed; only add names appearing bare in `mutate`/`transmute`/`arrange`/`select` on a data frame: `ETCD`, `ELEMENT`, `TESTRL`, `TEENRL`, `TEDUR`, `TAETORD`, `TABRANCH`, `TATRANS`). Insert them alphabetically.
+In the `utils::globalVariables(c(...))` vector, add the names that appear bare (data-masked) in `mutate`/`transmute`/`arrange`/`select` in the new file: `ETCD`, `ELEMENT`, `TESTRL`, `TEENRL`, `TEDUR`, `TAETORD`, `TABRANCH`, `TATRANS`. `EPOCH`, `ARMCD`, `ARM` are already declared. The `select()` on `spec$arms` names only `ARMCD, ARM` — `transmute()` would discard `ARMCD_DECODE` anyway, and a bare dead column would need a globals entry for nothing. Insert alphabetically.
 
 - [ ] **Step 5: Run the builder tests**
 
