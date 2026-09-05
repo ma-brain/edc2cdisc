@@ -83,6 +83,8 @@ map_lb <- function(lb, spec, refs) {
         .default                                     = LBORRESU
       ),
       LBSTRESC = as.character(LBSTRESN),
+      .unfinished_std = !is.na(.rave_n) &
+        (is.na(RAVE_STDU) | RAVE_STDU == ""),
       # reference range: scale when .conv; blank standard ranges only when
       # EDC supplied RAVE_STD but not RAVE_STDU (collected ranges cannot
       # be trusted next to an unfinished standard picture); otherwise
@@ -92,12 +94,12 @@ map_lb <- function(lb, spec, refs) {
       LBORNRHI = suppressWarnings(as.numeric(NRHI_O)),
       LBSTNRLO = case_when(
         .conv ~ round(LBORNRLO * .factor, 4),
-        !is.na(.rave_n) & (is.na(RAVE_STDU) | RAVE_STDU == "") ~ NA_real_,
+        .unfinished_std ~ NA_real_,
         .default = LBORNRLO
       ),
       LBSTNRHI = case_when(
         .conv ~ round(LBORNRHI * .factor, 4),
-        !is.na(.rave_n) & (is.na(RAVE_STDU) | RAVE_STDU == "") ~ NA_real_,
+        .unfinished_std ~ NA_real_,
         .default = LBORNRHI
       ),
       LBNRIND  = case_when(
@@ -108,14 +110,12 @@ map_lb <- function(lb, spec, refs) {
       )
     )
 
-  blank_stdu <- !is.na(lb$.rave_n) &
-    (is.na(lb$RAVE_STDU) | lb$RAVE_STDU == "")
-  if (any(blank_stdu)) {
+  if (any(lb$.unfinished_std)) {
     warning(
       sprintf(paste("lb-std-unit-blank: %d row(s) have a populated EDC",
                     "standard value and a blank standard unit;",
                     "LBSTRESU is assumed from CONV_TO or LBORRESU"),
-              sum(blank_stdu)),
+              sum(lb$.unfinished_std)),
       call. = FALSE
     )
   }
