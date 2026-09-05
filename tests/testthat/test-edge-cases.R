@@ -42,6 +42,71 @@ test_that("map_lb: a unit the spec does not know labels the value as collected",
   expect_equal(as.vector(row$LBSTRESU), "umol/L")
 })
 
+test_that("map_lb: an EDC standard value does not keep collected-unit ranges", {
+  refs <- tibble(USUBJID = "3021-101-001", RFSTDTC = "2024-04-01",
+                 RFENDTC = "2024-06-01")
+  # glucose collected already in mmol/L, EDC standard 5.0, ranges still
+  # the site's mg/dL 70/100. .conv is FALSE (mmol/L != MG/DL), .factor
+  # is 1: scaling ranges by .factor marks a normal glucose LOW.
+  lb_raw <- tibble(
+    Subject = "101-001", Folder = spec_synth01$visits$Folder[1],
+    LBPERF = "1", LBFAST = "0",
+    LBDAT_YYYY = "2024", LBDAT_MM = "03", LBDAT_DD = "20", LBTIM = NA,
+    GLUC_RAW = "5.0", GLUC_UN = "mmol/L",
+    GLUC_STD = "5.0", GLUC_STD_UN = NA,
+    GLUC_NRLO = "70", GLUC_NRHI = "100"
+  )
+  expect_warning(
+    lb <- map_lb(lb_raw, spec_synth01, refs),
+    "lb-std-unit-blank"
+  )
+  row <- lb[lb$LBTESTCD == "GLUC", ]
+  expect_equal(nrow(row), 1)
+  expect_equal(as.vector(row$LBSTRESN), 5)
+  expect_equal(as.vector(row$LBSTRESU), "mmol/L")
+  expect_true(is.na(as.vector(row$LBSTNRLO)))
+  expect_true(is.na(as.vector(row$LBSTNRHI)))
+  expect_true(is.na(as.vector(row$LBNRIND)))
+})
+
+test_that("map_lb: local conversion still scales collected ranges", {
+  refs <- tibble(USUBJID = "3021-101-001", RFSTDTC = "2024-04-01",
+                 RFENDTC = "2024-06-01")
+  lb_raw <- tibble(
+    Subject = "101-001", Folder = spec_synth01$visits$Folder[1],
+    LBPERF = "1", LBFAST = "0",
+    LBDAT_YYYY = "2024", LBDAT_MM = "03", LBDAT_DD = "20", LBTIM = NA,
+    GLUC_RAW = "90", GLUC_UN = "mg/dL",
+    GLUC_STD = NA, GLUC_STD_UN = NA,
+    GLUC_NRLO = "70", GLUC_NRHI = "100"
+  )
+  lb <- map_lb(lb_raw, spec_synth01, refs)
+  row <- lb[lb$LBTESTCD == "GLUC", ]
+  expect_equal(as.vector(row$LBNRIND), "NORMAL")
+  expect_equal(as.vector(row$LBSTNRLO), round(70 / 18.0156, 4))
+  expect_equal(as.vector(row$LBSTNRHI), round(100 / 18.0156, 4))
+})
+
+test_that("map_lb: EDC standard with a labelled unit keeps already-standard ranges", {
+  refs <- tibble(USUBJID = "3021-101-001", RFSTDTC = "2024-04-01",
+                 RFENDTC = "2024-06-01")
+  lb_raw <- tibble(
+    Subject = "101-001", Folder = spec_synth01$visits$Folder[1],
+    LBPERF = "1", LBFAST = "0",
+    LBDAT_YYYY = "2024", LBDAT_MM = "03", LBDAT_DD = "20", LBTIM = NA,
+    GLUC_RAW = "5.4", GLUC_UN = "mmol/L",
+    GLUC_STD = "5.4", GLUC_STD_UN = "mmol/L",
+    GLUC_NRLO = "3.9", GLUC_NRHI = "6.1"
+  )
+  lb <- map_lb(lb_raw, spec_synth01, refs)
+  row <- lb[lb$LBTESTCD == "GLUC", ]
+  expect_equal(as.vector(row$LBSTRESN), 5.4)
+  expect_equal(as.vector(row$LBSTRESU), "mmol/L")
+  expect_equal(as.vector(row$LBSTNRLO), 3.9)
+  expect_equal(as.vector(row$LBSTNRHI), 6.1)
+  expect_equal(as.vector(row$LBNRIND), "NORMAL")
+})
+
 test_that("validate_sdtm: an unconfigured collected unit is a WARN", {
   out <- file.path(tempdir(), "edc2cdisc-lb-unit")
   on.exit(unlink(out, recursive = TRUE, force = TRUE), add = TRUE)
