@@ -30,7 +30,7 @@
 #' forms <- suppressMessages(read_rave_extract(dir = ext))
 #' dm   <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
 #' qs   <- map_qs(forms$QS, spec_synth01, subject_ref(dm))
-#' head(qs[, c("USUBJID", "QSTESTCD", "QSORRES", "QSSTRESN", "QSBLFL")])
+#' head(qs[, c("USUBJID", "QSTESTCD", "QSORRES", "QSSTAT", "QSBLFL")])
 #' @export
 map_qs <- function(qs, spec, refs) {
   usubjid <- str_c(spec$study$STUDYID, qs$Subject, sep = "-")
