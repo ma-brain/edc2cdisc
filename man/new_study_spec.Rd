@@ -23,10 +23,10 @@ new_study_spec(
 \item{study, sites, arms, visits, codelists, supp, units, forms, tests, bds, variables}{Tibbles as described above.}
 
 \item{derivations}{Optional named list of extra derivation functions
-(signature \verb{function(data, spec, row)}) that this spec's \code{derivation}
-rows reference but that are only registered at map time, via
-\code{map_variables(derivations = )}. Declared here so the reference
-check can see them.}
+(signature \verb{function(data, spec, row)}). Stored on \code{spec$derivations}
+and read by \code{\link[=map_variables]{map_variables()}} by default; an explicit
+\code{map_variables(derivations = )} argument still overrides. Declared
+here so the reference check can see them.}
 }
 \value{
 A \code{study_spec} object (a validated named list).

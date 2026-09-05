@@ -96,6 +96,14 @@ test_that("new_study_spec validates references, not just shapes", {
     do.call(new_study_spec, c(local_ok, list(derivations = local_fns))),
     "study_spec"
   )
+  spec_local <- do.call(new_study_spec, c(local_ok, list(derivations = local_fns)))
+  expect_true("dmdy_local" %in% names(spec_local$derivations))
+  mapped <- map_variables(
+    tibble(Subject = "101-001"),
+    spec_local,
+    local_ok$variables[2, ]
+  )
+  expect_equal(mapped$ARM, 1L)
 
   # a decode row naming a codelist the spec does not carry
   bad_dec <- base
@@ -113,6 +121,39 @@ test_that("new_study_spec validates references, not just shapes", {
   bad_dom <- base
   bad_dom$variables$domain <- "ZZ"
   expect_error(do.call(new_study_spec, bad_dom), "unbuildable domain")
+})
+
+test_that("new_study_spec requires crf_field on field-dependent derivations", {
+  base <- list(
+    study = tibble(STUDYID = "S", PROJECT = "P", seed = 1, n = 1L,
+                   age_min = 18, age_max = 100),
+    sites = tibble(SiteNumber = "1", siteid = "1", Site = "s",
+                   SiteGroup = "g", StudySiteId = "1", COUNTRY = "ROU"),
+    arms = tibble(ARMCD_DECODE = "d", ARMCD = "A", ARM = "a"),
+    visits = tibble(Folder = "F", VISITNUM = 1L, VISIT = "V", EPOCH = "E",
+                    TargetDays = 0L),
+    codelists = tibble(ct = "X", rave_decode = "r", cdisc_term = "c"),
+    supp = tibble(rdomain = "DM", idvar = NA, qnam = "Q", qlabel = "ql",
+                  src = "Q", transform = "yn", qorig = "CRF", qeval = NA),
+    units = tibble(testcd = "T", conv_from = "A", conv_to = "B",
+                   conv_factor = 1),
+    forms = tibble(form_oid = "DM", type = "event", scheduled = TRUE),
+    tests = tibble(domain = "VS", field = "F", testcd = "T", test = "t",
+                   cat = NA, specimen = NA),
+    bds = tibble(domain = "ADVS", paramcd = "SYSBP", paramn = 1,
+                 anrlo = 90, anrhi = 140),
+    variables = tibble(
+      domain    = "DM",
+      variable  = "USUBJID",
+      crf_field = NA_character_,
+      transform = "derivation",
+      ref       = "usubjid",
+      value     = NA, aux = NA, default = NA
+    )
+  )
+  expect_error(do.call(new_study_spec, base), "missing crf_field")
+  base$variables$crf_field <- "Subject"
+  expect_s3_class(do.call(new_study_spec, base), "study_spec")
 })
 
 test_that("ct_lookup returns named vectors and fails on unknown ct", {

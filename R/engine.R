@@ -25,7 +25,10 @@
 #'   derivation layer.
 #' @return A tibble with exactly the rows' variables, in table order.
 #' @keywords internal
-map_variables <- function(data, spec, rows, derivations = list()) {
+map_variables <- function(data, spec, rows, derivations = NULL) {
+  if (is.null(derivations)) {
+    derivations <- spec$derivations %||% list()
+  }
   registry <- c(.derivations, derivations)
 
   out <- data[, 0]           # zero-column frame carrying row.count

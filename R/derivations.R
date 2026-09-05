@@ -17,6 +17,13 @@
 #          vignette).
 # ============================================================================
 
+.derivations_need_field <- c(
+  "usubjid", "country", "dsdecod",
+  "enrtpt_ongoing", "enrf_ongoing",
+  "enrtpt_ongoing_cm", "enrf_ongoing_cm",
+  "enrtpt_ongoing_mh", "enrf_ongoing_mh"
+)
+
 .derivations <- list(
 
   study_id = function(data, spec, row) {

@@ -4,7 +4,7 @@
 \alias{map_variables}
 \title{Map one domain's variables through the spec table}
 \usage{
-map_variables(data, spec, rows, derivations = list())
+map_variables(data, spec, rows, derivations = NULL)
 }
 \arguments{
 \item{data}{The in-flight source frame: raw clinical view columns plus

@@ -66,10 +66,10 @@
 #' @param study,sites,arms,visits,codelists,supp,units,forms,tests,bds,variables
 #'   Tibbles as described above.
 #' @param derivations Optional named list of extra derivation functions
-#'   (signature `function(data, spec, row)`) that this spec's `derivation`
-#'   rows reference but that are only registered at map time, via
-#'   `map_variables(derivations = )`. Declared here so the reference
-#'   check can see them.
+#'   (signature `function(data, spec, row)`). Stored on `spec$derivations`
+#'   and read by [map_variables()] by default; an explicit
+#'   `map_variables(derivations = )` argument still overrides. Declared
+#'   here so the reference check can see them.
 #' @return A `study_spec` object (a validated named list).
 #' @export
 new_study_spec <- function(study, sites, arms, visits, codelists,
@@ -86,7 +86,8 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
     forms     = forms,
     tests     = tests,
     bds       = bds,
-    variables = variables
+    variables = variables,
+    derivations = derivations
   )
 
   required <- list(
@@ -139,6 +140,15 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
   if (length(unknown_der) > 0) {
     stop(sprintf("study spec: unknown derivation ref(s): %s",
                  str_flatten_comma(unknown_der)), call. = FALSE)
+  }
+
+  need_fld <- spec$variables$transform == "derivation" &
+    spec$variables$ref %in% .derivations_need_field &
+    (is.na(spec$variables$crf_field) | spec$variables$crf_field == "")
+  if (any(need_fld)) {
+    bad <- paste0(spec$variables$domain, "/", spec$variables$variable)[need_fld]
+    stop(sprintf("study spec: derivation row(s) missing crf_field: %s",
+                 str_flatten_comma(bad)), call. = FALSE)
   }
 
   dec_refs <- spec$variables$ref[spec$variables$transform == "decode"]
