@@ -20,6 +20,9 @@
 #' `build_all(extract, spec = spec_synth02)` on the SYNTH02 extract and the
 #' whole pipeline validates cleanly. Anything the two studies share is the
 #' CRF family; anything that differs is a row in one of these tables.
+#' The trial design tables follow the same rule: four arms x two elements,
+#' two elements, six criteria and seven trial summary parameters, all
+#' different from SYNTH01 without a mapper change.
 #'
 #' @format A `study_spec` object (a validated named list of tibbles).
 #' @source Assembled from the SYNTH02 CRF design; see `?new_study_spec`
@@ -59,6 +62,47 @@ spec_synth02 <- new_study_spec(
     "WK08",  4,         "WEEK 8",           "TREATMENT", 56L,
     "WK12",  5,         "WEEK 12",          "TREATMENT", 84L,
     "EOT",   6,         "END OF TREATMENT", "TREATMENT", 112L
+  ),
+
+  # Trial design, SYNTH02 flavour: four arms of SYN-201 in COPD, a 16-week
+  # treatment element (EOT sits at day 112), and its own criteria set.
+  elements = tribble(
+    ~ETCD,   ~ELEMENT,    ~TESTRL,                     ~TEENRL,                            ~TEDUR,
+    "SCRN",  "Screening", "Informed consent obtained", "Randomised or screen failure",     "P2W",
+    "TREAT", "Treatment", "First dose of study drug",  "End of treatment visit completed", "P16W"
+  ),
+
+  ta = tribble(
+    ~ARMCD,   ~ETCD,   ~TAETORD, ~EPOCH,      ~TABRANCH,                        ~TATRANSAC,
+    "PBO",    "SCRN",  1L,       "SCREENING", NA,                               "Randomised",
+    "PBO",    "TREAT", 2L,       "TREATMENT", "Randomised to Placebo",          NA,
+    "SYN25",  "SCRN",  1L,       "SCREENING", NA,                               "Randomised",
+    "SYN25",  "TREAT", 2L,       "TREATMENT", "Randomised to SYN-201 25 mg",    NA,
+    "SYN50",  "SCRN",  1L,       "SCREENING", NA,                               "Randomised",
+    "SYN50",  "TREAT", 2L,       "TREATMENT", "Randomised to SYN-201 50 mg",    NA,
+    "SYN100", "SCRN",  1L,       "SCREENING", NA,                               "Randomised",
+    "SYN100", "TREAT", 2L,       "TREATMENT", "Randomised to SYN-201 100 mg",   NA
+  ),
+
+  ie = tribble(
+    ~IETESTCD, ~IETEST,                                                                   ~IECAT,
+    "INC1",    "Age 18 to 100 years, inclusive",                                          "INCLUSION",
+    "INC2",    "Diagnosis of chronic obstructive pulmonary disease per protocol section 4.1", "INCLUSION",
+    "INC3",    "Written informed consent obtained before any study procedure",            "INCLUSION",
+    "EXC1",    "Treatment with an investigational drug within 30 days before screening",  "EXCLUSION",
+    "EXC2",    "Pregnant or breastfeeding",                                               "EXCLUSION",
+    "EXC3",    "Clinically significant laboratory abnormality at screening",              "EXCLUSION"
+  ),
+
+  ts = tribble(
+    ~TSPARMCD, ~TSPARM,                              ~TSVAL,                                                                   ~TSVALNF,
+    "TITLE",   "Trial Title",                        "A Phase II randomised, double-blind, placebo-controlled study of SYN-201", NA,
+    "PHASE",   "Trial Phase Classification",         "PHASE II",                                                                NA,
+    "SPONSOR", "Clinical Study Sponsor",             "SYNTH Pharmaceuticals",                                                   NA,
+    "INDIC",   "Trial Indication",                   "Chronic Obstructive Pulmonary Disease",                                   NA,
+    "TRT",     "Investigational Therapy or Treatment", "SYN-201; Placebo",                                                      NA,
+    "NARMS",   "Planned Number of Arms",             "4",                                                                       NA,
+    "PLANSUB", "Planned Number of Subjects",         "18",                                                                      NA
   ),
 
   codelists = tribble(
