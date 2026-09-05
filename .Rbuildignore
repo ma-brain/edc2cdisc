@@ -12,3 +12,4 @@
 ^REVIEW-.*\.md$
 ^docs$
 ^\.worktrees$
+^\.superpowers$

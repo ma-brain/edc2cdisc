@@ -20,5 +20,8 @@ three arms, a six-visit schedule, the controlled-terminology mappings for
 AE outcome / action / severity / causality and disposition reason, the
 SUPP-- qualifiers, the LB conventional-to-SI conversions, form typing,
 the VS/LB per-test pivot specs, and the variable-level mapping table for
-the event/log forms.
+the event/log forms. The trial design domains are built from the
+\code{elements}, \code{ta}, \code{ie} and \code{ts} tables (two elements, a 3-arm x 2-element
+plan, six criteria and seven trial summary parameters); TV comes from the
+\code{visits} table.
 }

@@ -16,11 +16,22 @@ new_study_spec(
   tests,
   bds,
   variables,
+  elements = NULL,
+  ta = NULL,
+  ie = NULL,
+  ts = NULL,
   derivations = list()
 )
 }
 \arguments{
 \item{study, sites, arms, visits, codelists, supp, units, forms, tests, bds, variables}{Tibbles as described above.}
+
+\item{elements, ta, ie, ts}{Optional trial design tibbles: \code{elements}
+(ETCD, ELEMENT, TESTRL, TEENRL, TEDUR), \code{ta} (ARMCD, ETCD, TAETORD,
+EPOCH, TABRANCH, TATRANS), \code{ie} (IETESTCD, IETEST, IECAT) and \code{ts}
+(TSPARMCD, TSPARM, TSVAL, TSVALNF). Missing ones default to zero-row
+tables; the trial design domains built from them (see
+\code{\link[=map_te]{map_te()}}) then come out empty.}
 
 \item{derivations}{Optional named list of extra derivation functions
 (signature \verb{function(data, spec, row)}). Stored on \code{spec$derivations}
@@ -67,6 +78,15 @@ domain: \code{domain}, \code{variable}, \code{crf_field}, \code{transform}, \cod
 companion of a --DTC), \code{default} (decode fallback). \code{transform}
 names a member of the fixed vocabulary; \code{derivation} rows name a
 registered derivation in \code{ref}.
+\item \code{elements}  - trial elements: \code{ETCD} (<=8 chars, unique), \code{ELEMENT}
+(<=40 chars), \code{TESTRL} / \code{TEENRL} (start/end rules), \code{TEDUR} (ISO 8601
+duration, e.g. \code{P2W}; NA allowed)
+\item \code{ta}        - planned arm x element order: \code{ARMCD}, \code{ETCD}, \code{TAETORD}
+(integer), \code{EPOCH}, \code{TABRANCH}, \code{TATRANS}
+\item \code{ie}        - inclusion/exclusion criteria: \code{IETESTCD}, \code{IETEST},
+\code{IECAT} (INCLUSION / EXCLUSION)
+\item \code{ts}        - trial summary parameters: \code{TSPARMCD} (unique),
+\code{TSPARM}, \code{TSVAL}, \code{TSVALNF} - exactly one of TSVAL/TSVALNF filled
 }
 
 The constructor validates references as well as shapes: every

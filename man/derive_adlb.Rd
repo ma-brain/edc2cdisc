@@ -19,8 +19,9 @@ The labelled ADLB tibble.
 }
 \description{
 ANRIND is the SDTM comparison carried forward, checkable against the
-row's own limits (LBSTNRLO/LBSTNRHI, standardised by the same factor as
-the result). Screen failures have no baseline record, so their
+row's own limits (LBSTNRLO/LBSTNRHI follow the local factor only when
+\code{.conv} applied; an EDC standard without \code{RAVE_STDU} leaves them missing).
+Screen failures have no baseline record, so their
 BASE/BNRIND/CHG stay missing while ANRIND still computes - the record's
 own range needs no study-day anchor.
 }

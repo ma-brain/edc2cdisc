@@ -20,7 +20,7 @@ and a \code{define.xml} stub is written alongside.}
 like \code{sdtm_dir}.}
 }
 \value{
-A list with \code{sdtm} (named list of the 14 mapped domains) and
+A list with \code{sdtm} (named list of the 19 mapped domains) and
 \code{adam} (ADSL, ADAE, ADVS, ADLB), invisibly.
 }
 \description{

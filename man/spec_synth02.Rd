@@ -22,4 +22,7 @@ qualifiers through the same mappers as \link{spec_synth01} - run
 \code{build_all(extract, spec = spec_synth02)} on the SYNTH02 extract and the
 whole pipeline validates cleanly. Anything the two studies share is the
 CRF family; anything that differs is a row in one of these tables.
+The trial design tables follow the same rule: four arms x two elements,
+two elements, six criteria and seven trial summary parameters, all
+different from SYNTH01 without a mapper change.
 }
