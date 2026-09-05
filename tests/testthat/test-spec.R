@@ -257,3 +257,88 @@ test_that("the DS screen-failure reclassification derivation fires", {
   expect_true(all(out$DSCAT[out$DSDECOD != "SCREEN FAILURE"] ==
                     "DISPOSITION EVENT"))
 })
+
+# Trial design tables ----------------------------------------------------
+# Optional at construction, always present on the spec: a spec without
+# trial design still builds, one with trial design is checked here rather
+# than halfway through a build.
+
+td_spec <- function(...) {
+  new_study_spec(
+    study     = spec_synth01$study,
+    sites     = spec_synth01$sites,
+    arms      = spec_synth01$arms,
+    visits    = spec_synth01$visits,
+    codelists = spec_synth01$codelists,
+    supp      = spec_synth01$supp,
+    units     = spec_synth01$units,
+    forms     = spec_synth01$forms,
+    tests     = spec_synth01$tests,
+    bds       = spec_synth01$bds,
+    variables = spec_synth01$variables,
+    ...
+  )
+}
+
+test_that("trial design tables default to empty typed tibbles", {
+  s <- td_spec()
+  expect_equal(nrow(s$elements), 0)
+  expect_setequal(names(s$elements),
+                  c("ETCD", "ELEMENT", "TESTRL", "TEENRL", "TEDUR"))
+  expect_setequal(names(s$ta),
+                  c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANSAC"))
+  expect_setequal(names(s$ie), c("IETESTCD", "IETEST", "IECAT"))
+  expect_setequal(names(s$ts), c("TSPARMCD", "TSPARM", "TSVAL", "TSVALNF"))
+})
+
+test_that("a well-formed trial design spec constructs", {
+  s <- td_spec(
+    elements = tibble(ETCD = "A", ELEMENT = "Element A", TESTRL = "consent",
+                      TEENRL = "randomised", TEDUR = "P2W"),
+    ta = tibble(ARMCD = "PBO", ETCD = "A", TAETORD = 1L, EPOCH = "SCREENING",
+                TABRANCH = NA_character_, TATRANSAC = "Randomised"),
+    ie = tibble(IETESTCD = "INC1", IETEST = "Age 18-100", IECAT = "INCLUSION"),
+    ts = tibble(TSPARMCD = "PHASE", TSPARM = "Trial Phase",
+                TSVAL = "PHASE II", TSVALNF = NA_character_)
+  )
+  expect_equal(nrow(s$ta), 1)
+})
+
+test_that("trial design shape errors fire at construction", {
+  expect_error(td_spec(ta = tibble(ARMCD = "NOPE", ETCD = "A", TAETORD = 1L,
+                                   EPOCH = "SCREENING", TABRANCH = NA,
+                                   TATRANSAC = NA)),
+               "ta: ARMCD not in spec\\$arms")
+  expect_error(td_spec(elements = tibble(ETCD = "A", ELEMENT = "Element A",
+                                         TESTRL = "r", TEENRL = "r",
+                                         TEDUR = "P2W"),
+                       ta = tibble(ARMCD = "PBO", ETCD = "B", TAETORD = 1L,
+                                   EPOCH = "SCREENING", TABRANCH = NA,
+                                   TATRANSAC = NA)),
+               "ta: ETCD not in spec\\$elements")
+  expect_error(td_spec(elements = tibble(ETCD = c("A", "A"), ELEMENT = c("x", "y"),
+                                         TESTRL = "r", TEENRL = "r",
+                                         TEDUR = "P2W")),
+               "duplicate ETCD")
+  expect_error(td_spec(elements = tibble(ETCD = "TOOLONGCD", ELEMENT = "x",
+                                         TESTRL = "r", TEENRL = "r",
+                                         TEDUR = "P2W")),
+               "ETCD longer than 8")
+  expect_error(td_spec(elements = tibble(ETCD = "A", ELEMENT = "x",
+                                         TESTRL = "r", TEENRL = "r",
+                                         TEDUR = "2 weeks")),
+               "TEDUR is not an ISO 8601 duration")
+  expect_error(td_spec(ta = tibble(ARMCD = c("PBO", "PBO"), ETCD = c("A", "A"),
+                                   TAETORD = c(1L, 1L), EPOCH = "SCREENING",
+                                   TABRANCH = NA, TATRANSAC = NA)),
+               "duplicated ARMCD/TAETORD")
+  expect_error(td_spec(ie = tibble(IETESTCD = "INC1", IETEST = "x",
+                                   IECAT = "MAYBE")),
+               "ie: IECAT not INCLUSION/EXCLUSION")
+  expect_error(td_spec(ts = tibble(TSPARMCD = "X", TSPARM = "x", TSVAL = "v",
+                                   TSVALNF = "N/A")),
+               "both TSVAL and TSVALNF")
+  expect_error(td_spec(ts = tibble(TSPARMCD = "X", TSPARM = "x", TSVAL = NA,
+                                   TSVALNF = NA)),
+               "neither TSVAL nor TSVALNF")
+})
