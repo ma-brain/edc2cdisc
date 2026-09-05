@@ -17,7 +17,8 @@
 #' @param rows The variables-table rows for one domain, in order (usually
 #'   `filter(spec$variables, domain == "XX")`)
 #' @param derivations Additional named derivation functions with signature
-#'   `function(data, spec, row)`; they extend the shared registry.
+#'   `function(data, spec, row)`. Omit to use `spec$derivations`; pass a
+#'   list to override. They extend the shared registry.
 #' @details Derivations receive the spec row they run for: a study's
 #'   collected source for a derivation-mapped variable must be read
 #'   through `row$crf_field` (or `row$aux`), never a literal column name.
@@ -27,7 +28,10 @@
 #' @keywords internal
 map_variables <- function(data, spec, rows, derivations = NULL) {
   if (is.null(derivations)) {
-    derivations <- spec$derivations %||% list()
+    derivations <- spec$derivations
+    if (is.null(derivations)) {
+      derivations <- list()
+    }
   }
   registry <- c(.derivations, derivations)
 

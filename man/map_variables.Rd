@@ -16,7 +16,8 @@ whatever glue columns the mapper joined on before calling this.}
 \code{filter(spec$variables, domain == "XX")})}
 
 \item{derivations}{Additional named derivation functions with signature
-\verb{function(data, spec, row)}; they extend the shared registry.}
+\verb{function(data, spec, row)}. Omit to use \code{spec$derivations}; pass a
+list to override. They extend the shared registry.}
 }
 \value{
 A tibble with exactly the rows' variables, in table order.
