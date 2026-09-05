@@ -55,7 +55,15 @@
                   DS = .DS_FIELDS, LB = .LB_FIELDS,
                   QS = c("QSDAT_YYYY", "QSDAT_MM", "QSDAT_DD", "QSPERF",
                          "QSNRA", "MOS01_RAW", "MOS02_RAW", "MOS03_RAW",
-                         "MOS04_RAW")),
+                         "MOS04_RAW"),
+                  PE = c("PEDAT_YYYY", "PEDAT_MM", "PEDAT_DD", "PEPERF",
+                         "PENRA", "CARDIO_RAW", "CARDIO_DECODE",
+                         "RESPIR_RAW", "RESPIR_DECODE", "ABDO_RAW",
+                         "ABDO_DECODE", "NEURO_RAW", "NEURO_DECODE",
+                         "CVSPEC"),
+                  EG = c("EGDAT_YYYY", "EGDAT_MM", "EGDAT_DD", "EGTIM",
+                         "EGPERF", "EGNRA", "PR_RAW", "QRS_RAW", "QT_RAW",
+                         "QTCF_RAW", "RRI_RAW")),
     field_labels = .FIELD_LABELS,
     codelist_of = .CODELIST_OF,
     float_fields = .FLOAT_FIELDS,
@@ -71,6 +79,8 @@
     ex_lot = NULL,
 
     qs_n_items = 4L,
+    pe_systems = c("CARDIO", "RESPIR", "ABDO", "NEURO"),
+    eg_tests = c("PR", "QRS", "QT", "QTCF", "RRI"),
 
     idx = list(
       birth_day = 2L, birth_monthday = 9L,
@@ -82,7 +92,9 @@
       force_high = list(analyte = "ALT", idx = 4L, folder = "WK04",
                         value = 40 * 3.1),
       deaths = c(7L, 15L),
-      qs_not_done = c(7L, 4L)
+      qs_not_done = c(7L, 4L),
+      pe_not_done = c(12L, 2L), pe_abnormal = c(3L, 2L),
+      eg_not_done = c(9L, 5L), eg_late_time = c(2L, 3L)
     )
   )
 }
@@ -209,7 +221,15 @@
                   DS = .DS_FIELDS, LB = .lb_fields(lb_panel),
                   QS = c("QSDAT_YYYY", "QSDAT_MM", "QSDAT_DD", "QSPERF",
                          "QSNRA", "MOS01_RAW", "MOS02_RAW", "MOS03_RAW",
-                         "MOS04_RAW", "MOS05_RAW")),
+                         "MOS04_RAW", "MOS05_RAW"),
+                  PE = c("PEDAT_YYYY", "PEDAT_MM", "PEDAT_DD", "PEPERF",
+                         "PENRA", "CARDIO_RAW", "CARDIO_DECODE",
+                         "RESPIR_RAW", "RESPIR_DECODE", "ABDO_RAW",
+                         "ABDO_DECODE", "NEURO_RAW", "NEURO_DECODE",
+                         "SKIN_RAW", "SKIN_DECODE", "CVSPEC"),
+                  EG = c("EGDAT_YYYY", "EGDAT_MM", "EGDAT_DD", "EGTIM",
+                         "EGPERF", "EGNRA", "PR_RAW", "QRS_RAW", "QT_RAW",
+                         "QTCF_RAW", "RRI_RAW")),
     field_labels = field_labels,
     codelist_of = .CODELIST_OF,
     float_fields = float_fields,
@@ -225,6 +245,8 @@
     ex_lot = list(field = "EXLOT", prefix = "SY2-"),
 
     qs_n_items = 5L,
+    pe_systems = c("CARDIO", "RESPIR", "ABDO", "NEURO", "SKIN"),
+    eg_tests = c("PR", "QRS", "QT", "QTCF", "RRI"),
 
     idx = list(
       birth_day = 4L, birth_monthday = 11L,
@@ -236,7 +258,12 @@
       force_high = list(analyte = "AST", idx = 4L, folder = "WK08",
                         value = 45 * 3.1),
       deaths = c(10L, 16L),
-      qs_not_done = c(4L, 3L)
+      qs_not_done = c(4L, 3L),
+      # eg_not_done: the briefed idx 9 is an ET subject in this study
+      # (et = c(2L, 9L)), so its Week 12 visit (position 5) does not exist;
+      # idx 7 is COMPLETED with the full schedule.
+      pe_not_done = c(12L, 2L), pe_abnormal = c(3L, 2L),
+      eg_not_done = c(7L, 5L), eg_late_time = c(2L, 3L)
     )
   )
 }

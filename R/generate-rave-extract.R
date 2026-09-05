@@ -52,6 +52,11 @@
 # untouched by the form.
 .QS_TS_SEED       <- 20260905L
 
+# Private RNG streams for the physical-exam and ECG passes, on the same
+# contract as .QS_TS_SEED (distinct values so the two passes never share draws).
+.PE_TS_SEED       <- 20260906L
+.EG_TS_SEED       <- 20260907L
+
 # ---------------------------------------------------------------------------
 # Reference tables
 # ---------------------------------------------------------------------------
@@ -160,7 +165,8 @@
              "4" = "LOST TO FOLLOW-UP",
              "5" = "PROTOCOL DEVIATION",
              "6" = "DEATH"),
-  ARM    = c("1" = "Placebo", "2" = "SYN-101 50 mg", "3" = "SYN-101 100 mg")
+  ARM    = c("1" = "Placebo", "2" = "SYN-101 50 mg", "3" = "SYN-101 100 mg"),
+  PEFIND = c("Normal" = "NORMAL", "Abnormal" = "ABNORMAL")
 )
 
 # ---------------------------------------------------------------------------
@@ -185,7 +191,7 @@ id_gen <- function(start) {
 # not portable; a lookup keeps the surrogate keys stable run to run)
 .FORM_ID_OFFSET <- c(DM = 1000L, VS = 12000L, AE = 23000L,
                      CM = 34000L, EX = 45000L, DS = 56000L, LB = 67000L,
-                     MH = 78000L, QS = 89000L)
+                     MH = 78000L, QS = 89000L, PE = 91000L, EG = 93000L)
 
 iso_dt <- function(d, hh = 9L, mm = 30L, ss = 0L) {
   sprintf("%sT%02d:%02d:%02d", format(as.Date(d), "%Y-%m-%d"), hh, mm, ss)
@@ -526,6 +532,8 @@ populate <- function(subjects, cfg) {
   ds <- new_form("DS", "End of Study", cfg$fields$DS, cfg)
   lb <- new_form("LB", "Laboratory", cfg$fields$LB, cfg)
   qs <- new_form("QS", "Questionnaires", cfg$fields$QS, cfg)
+  pe <- new_form("PE", "Physical Exam", cfg$fields$PE, cfg)
+  eg <- new_form("EG", "ECG", cfg$fields$EG, cfg)
 
   for (idx in seq_along(subjects) - 1L) {
     sub <- subjects[[idx + 1L]]
@@ -883,9 +891,67 @@ populate <- function(subjects, cfg) {
       form_add(qs, sub, folder, vdate, qs_fields)
     }
     assign(".Random.seed", qs_seed_hold, envir = globalenv()) # nolint: object_name_linter. (.Random.seed is a required base name)
+
+    # ---- PE (physical exam) ------------------------------------------------
+    # Same private-stream contract as the QS block above: form_add() stamps
+    # SaveTs and friends from the RNG, and a mid-loop draw on the main stream
+    # would silently move every later subject's data. The findings themselves
+    # are config-driven (the seeded not-done and abnormal rows) plus index
+    # arithmetic, so only the bookkeeping stamps draw - from a per-subject
+    # private stream, restored immediately after this form's folder loop.
+    pe_seed_hold <- .Random.seed # nolint: object_name_linter. (.Random.seed is a required base name)
+    set.seed(.PE_TS_SEED + idx)
+    for (folder in cfg$visit_folders) {
+      if (is.null(vdates[[folder]])) next
+      vdate <- vdates[[folder]]
+      vpos <- match(folder, cfg$visit_folders)
+      pe_perf  <- !(idx == cfg$idx$pe_not_done[1] && vpos == cfg$idx$pe_not_done[2])
+      abnormal <- idx == cfg$idx$pe_abnormal[1] && vpos == cfg$idx$pe_abnormal[2]
+      pe_fields <- c(list(PEPERF = if (pe_perf) "1" else "0", CVSPEC = ""),
+                     date_cols("PEDAT", vdate))
+      if (!pe_perf) pe_fields$PENRA <- "Subject unwell"
+      for (sys in cfg$pe_systems) {
+        finding <- if (pe_perf && abnormal && sys == "CARDIO") "Abnormal" else "Normal"
+        pe_fields <- modifyList(pe_fields, coded_cols(cfg, sys, "PEFIND", finding))
+      }
+      if (pe_perf && abnormal) pe_fields$CVSPEC <- "Systolic murmur"
+      form_add(pe, sub, folder, vdate, pe_fields)
+    }
+    assign(".Random.seed", pe_seed_hold, envir = globalenv()) # nolint: object_name_linter. (.Random.seed is a required base name)
+
+    # ---- EG (ECG) -----------------------------------------------------------
+    # Same private-stream contract as the PE block above (see there).
+    eg_seed_hold <- .Random.seed # nolint: object_name_linter. (.Random.seed is a required base name)
+    set.seed(.EG_TS_SEED + idx)
+    for (folder in cfg$visit_folders) {
+      if (is.null(vdates[[folder]])) next
+      vdate <- vdates[[folder]]
+      vpos <- match(folder, cfg$visit_folders)
+      eg_perf <- !(idx == cfg$idx$eg_not_done[1] && vpos == cfg$idx$eg_not_done[2])
+      eg_fields <- c(list(EGPERF = if (eg_perf) "1" else "0"),
+                     date_cols("EGDAT", vdate))
+      # one ECG with the collection time left blank (reduced EGDTC precision
+      # downstream); the not-done row keeps the scheduled time stamped
+      eg_fields$EGTIM <- if (idx == cfg$idx$eg_late_time[1] &&
+                               vpos == cfg$idx$eg_late_time[2]) "" else "09:30"
+      if (!eg_perf) eg_fields$EGNRA <- "Equipment failure"
+      if (eg_perf) {
+        base <- idx + vpos
+        eg_fields <- modifyList(eg_fields, list(
+          PR_RAW   = as.character(120 + (base %% 5L) * 4L),
+          QRS_RAW  = as.character(90 + (base %% 3L) * 4L),
+          QT_RAW   = as.character(380 + (base %% 4L) * 6L),
+          QTCF_RAW = as.character(400 + (base %% 4L) * 5L),
+          RRI_RAW  = as.character(900 + (base %% 6L) * 20L)
+        ))
+      }
+      form_add(eg, sub, folder, vdate, eg_fields)
+    }
+    assign(".Random.seed", eg_seed_hold, envir = globalenv()) # nolint: object_name_linter. (.Random.seed is a required base name)
   }
 
-  list(DM = dm, VS = vs, LB = lb, AE = ae, CM = cm, EX = ex, DS = ds, QS = qs)
+  list(DM = dm, VS = vs, LB = lb, AE = ae, CM = cm, EX = ex, DS = ds,
+       QS = qs, PE = pe, EG = eg)
 }
 
 # ---------------------------------------------------------------------------
@@ -980,7 +1046,16 @@ populate <- function(subjects, cfg) {
   QSDAT = "Date of Questionnaire",
   QSPERF = "Questionnaire Performed", QSNRA = "Reason Not Performed",
   MOS01 = "Mood: Cheerful", MOS02 = "Mood: Down",
-  MOS03 = "Sleep Quality", MOS04 = "Energy Level"
+  MOS03 = "Sleep Quality", MOS04 = "Energy Level",
+  PEDAT = "Date of Physical Exam",
+  PEPERF = "Exam Performed", PENRA = "Reason Not Performed",
+  CARDIO = "Cardiovascular", RESPIR = "Respiratory", ABDO = "Abdomen",
+  NEURO = "Neurological", SKIN = "Skin",
+  CVSPEC = "Specify Abnormality",
+  EGDAT = "Date of ECG", EGTIM = "ECG Time",
+  EGPERF = "ECG Performed", EGNRA = "Reason Not Performed",
+  PR = "PR Interval", QRS = "QRS Duration", QT = "QT Interval",
+  QTCF = "QTcF Interval", RRI = "RR Interval"
 )
 
 .CODELIST_OF <- list(
@@ -991,7 +1066,10 @@ populate <- function(subjects, cfg) {
   AESI = "YN", AEDISCON = "YN",
   CMONG = "YN", CMROUTE = "ROUTE", CMFRQ = "FRQ", EXOCCUR = "YN",
   EXROUTE = "ROUTE", DSCOMP = "YN", DSREAS = "DSREAS",
-  LBPERF = "YN", LBFAST = "YN", MHONG = "YN", QSPERF = "YN"
+  LBPERF = "YN", LBFAST = "YN", MHONG = "YN", QSPERF = "YN",
+  PEPERF = "YN", EGPERF = "YN",
+  CARDIO = "PEFIND", RESPIR = "PEFIND", ABDO = "PEFIND",
+  NEURO = "PEFIND", SKIN = "PEFIND"
 )
 
 .SUFFIX_META <- list(
