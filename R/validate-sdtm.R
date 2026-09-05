@@ -524,10 +524,12 @@ validate_sdtm <- function(domains, spec = NULL) {
         add("TA", "ERROR", "ta-armcd-not-in-arms",
             str_flatten_comma(unknown_arm))
       }
-      unknown_ep <- setdiff(unique(ta_df$EPOCH), unique(spec$visits$EPOCH))
-      if (length(unknown_ep) > 0) {
-        add("TA", "ERROR", "ta-epoch-not-in-visits",
-            str_flatten_comma(unknown_ep))
+      if ("EPOCH" %in% names(ta_df)) {
+        unknown_ep <- setdiff(unique(ta_df$EPOCH), unique(spec$visits$EPOCH))
+        if (length(unknown_ep) > 0) {
+          add("TA", "ERROR", "ta-epoch-not-in-visits",
+              str_flatten_comma(unknown_ep))
+        }
       }
     }
   }
