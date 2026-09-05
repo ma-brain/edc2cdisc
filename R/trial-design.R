@@ -46,7 +46,7 @@ map_te <- function(spec) {
 #' @export
 map_ta <- function(spec) {
   spec$ta |>
-    left_join(spec$arms |> select(ARMCD_DECODE, ARMCD, ARM),
+    left_join(spec$arms |> select(ARMCD, ARM),
               by = "ARMCD") |>
     left_join(spec$elements |> select(ETCD, ELEMENT), by = "ETCD") |>
     mutate(STUDYID = spec$study$STUDYID, DOMAIN = "TA") |>
