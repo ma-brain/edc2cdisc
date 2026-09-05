@@ -55,3 +55,18 @@ test_that("XPT output round-trips", {
   expect_setequal(names(xpt), names(built$sdtm$DM))
   expect_equal(xpt$USUBJID, built$sdtm$DM$USUBJID)
 })
+
+test_that("build_define_xml errors when the ValueList parent ItemRef is missing", {
+  out <- file.path(tempdir(), "edc2cdisc-define-missing-ref")
+  on.exit(unlink(out, recursive = TRUE, force = TRUE), add = TRUE)
+  ext <- file.path(out, "rave")
+  suppressMessages(generate_rave_extract(out = ext))
+  built <- suppressMessages(build_all(ext))
+
+  domains <- built$sdtm
+  domains$VS$VSSTRESN <- NULL
+  expect_error(
+    build_define_xml(domains, spec_synth01, file.path(out, "define.xml")),
+    "IT.VS.VSSTRESN"
+  )
+})

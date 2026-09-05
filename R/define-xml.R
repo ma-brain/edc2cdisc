@@ -265,6 +265,10 @@ build_define_xml <- function(domains, spec, path) {
     xpath <- str_c("//ItemGroupDef[@Name='", d,
                    "']/ItemRef[@ItemOID='IT.", d, ".", f$var, "']")
     parent_ref <- xml2::xml_find_first(mdv, xpath)
+    if (inherits(parent_ref, "xml_missing")) {
+      stop(sprintf("build_define_xml: no ItemRef for %s",
+                   str_c("IT.", d, ".", f$var)), call. = FALSE)
+    }
     xml2::xml_add_child(parent_ref, "def:ValueListRef",
                         ValueListOID = str_c("VL.", d, ".", f$var))
   }
