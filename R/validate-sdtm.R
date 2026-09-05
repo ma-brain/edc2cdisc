@@ -507,10 +507,14 @@ validate_sdtm <- function(domains, spec = NULL) {
   ta_df <- domains$TA
   te_df <- domains$TE
   if (!is.null(ta_df) && nrow(ta_df) > 0) {
-    dup <- ta_df |> count(ARMCD, TAETORD, name = ".n") |> filter(.n > 1)
-    if (nrow(dup) > 0) {
-      add("TA", "ERROR", "ta-dup-key",
-          sprintf("%d duplicated ARMCD/TAETORD key(s)", nrow(dup)))
+    # a missing column is already an ERROR via required-vars, so the key
+    # check can defer to it on a hand-crafted domain
+    if (all(c("ARMCD", "TAETORD") %in% names(ta_df))) {
+      dup <- ta_df |> count(ARMCD, TAETORD, name = ".n") |> filter(.n > 1)
+      if (nrow(dup) > 0) {
+        add("TA", "ERROR", "ta-dup-key",
+            sprintf("%d duplicated ARMCD/TAETORD key(s)", nrow(dup)))
+      }
     }
     if (!is.null(te_df)) {
       orphan <- setdiff(unique(ta_df$ETCD), unique(te_df$ETCD))
@@ -539,23 +543,31 @@ validate_sdtm <- function(domains, spec = NULL) {
 
   ti_df <- domains$TI
   if (!is.null(ti_df) && nrow(ti_df) > 0) {
-    if (anyDuplicated(ti_df$IETESTCD) > 0) {
+    # required-vars already reports a missing column as an ERROR: the value
+    # checks below only run when their column is there
+    if ("IETESTCD" %in% names(ti_df) && anyDuplicated(ti_df$IETESTCD) > 0) {
       add("TI", "ERROR", "ti-testcd-not-unique", "duplicated IETESTCD")
     }
-    bad_cat <- setdiff(unique(ti_df$IECAT), c("INCLUSION", "EXCLUSION"))
-    if (length(bad_cat) > 0) {
-      add("TI", "ERROR", "iecat-bad-value", str_flatten_comma(bad_cat))
+    if ("IECAT" %in% names(ti_df)) {
+      bad_cat <- setdiff(unique(ti_df$IECAT), c("INCLUSION", "EXCLUSION"))
+      if (length(bad_cat) > 0) {
+        add("TI", "ERROR", "iecat-bad-value", str_flatten_comma(bad_cat))
+      }
     }
   }
 
   tv_df <- domains$TV
   if (!is.null(tv_df) && nrow(tv_df) > 0) {
-    dup <- tv_df |> count(VISITNUM, name = ".n") |> filter(.n > 1)
-    if (nrow(dup) > 0) {
-      add("TV", "ERROR", "tv-visit-not-unique",
-          sprintf("%d duplicated VISITNUM key(s)", nrow(dup)))
+    # missing columns are reported by required-vars; the checks defer to it
+    if ("VISITNUM" %in% names(tv_df)) {
+      dup <- tv_df |> count(VISITNUM, name = ".n") |> filter(.n > 1)
+      if (nrow(dup) > 0) {
+        add("TV", "ERROR", "tv-visit-not-unique",
+            sprintf("%d duplicated VISITNUM key(s)", nrow(dup)))
+      }
     }
-    if (!is.null(spec)) {
+    if (!is.null(spec) &&
+          all(c("VISITNUM", "VISIT", "VISITDY") %in% names(tv_df))) {
       planned <- spec$visits |>
         transmute(
           VISITNUM, VISIT,
@@ -571,7 +583,8 @@ validate_sdtm <- function(domains, spec = NULL) {
       }
     }
   }
-  if (!is.null(domains$SV) && !is.null(tv_df)) {
+  if (!is.null(domains$SV) && !is.null(tv_df) &&
+        "VISITNUM" %in% names(tv_df)) {
     unplanned <- domains$SV |> distinct(VISITNUM) |> anti_join(tv_df, by = "VISITNUM")
     if (nrow(unplanned) > 0) {
       add("SV", "ERROR", "sv-visit-not-in-tv",
@@ -581,28 +594,38 @@ validate_sdtm <- function(domains, spec = NULL) {
 
   ts_df <- domains$TS
   if (!is.null(ts_df) && nrow(ts_df) > 0) {
-    dup <- ts_df |> count(TSPARMCD, name = ".n") |> filter(.n > 1)
-    if (nrow(dup) > 0) {
-      add("TS", "ERROR", "ts-parmcd-not-unique",
-          sprintf("%d duplicated TSPARMCD key(s)", nrow(dup)))
+    # required-vars flags any missing TS column as an ERROR, so each check
+    # below only runs once its columns are present
+    if ("TSPARMCD" %in% names(ts_df)) {
+      dup <- ts_df |> count(TSPARMCD, name = ".n") |> filter(.n > 1)
+      if (nrow(dup) > 0) {
+        add("TS", "ERROR", "ts-parmcd-not-unique",
+            sprintf("%d duplicated TSPARMCD key(s)", nrow(dup)))
+      }
     }
-    both_filled <- ts_df |>
-      filter(!is.na(TSVAL) & TSVAL != "", !is.na(TSVALNF) & TSVALNF != "")
-    both_blank <- ts_df |>
-      filter(is.na(TSVAL) | TSVAL == "", is.na(TSVALNF) | TSVALNF == "")
-    if (nrow(both_filled) + nrow(both_blank) > 0) {
-      add("TS", "ERROR", "ts-valnf-xor",
-          "TSVAL and TSVALNF: exactly one must be filled per row")
+    if (all(c("TSVAL", "TSVALNF") %in% names(ts_df))) {
+      both_filled <- ts_df |>
+        filter(!is.na(TSVAL) & TSVAL != "", !is.na(TSVALNF) & TSVALNF != "")
+      both_blank <- ts_df |>
+        filter(is.na(TSVAL) | TSVAL == "", is.na(TSVALNF) | TSVALNF == "")
+      if (nrow(both_filled) + nrow(both_blank) > 0) {
+        add("TS", "ERROR", "ts-valnf-xor",
+            "TSVAL and TSVALNF: exactly one must be filled per row")
+      }
     }
-    if (!is.null(spec)) {
+    if (!is.null(spec) && all(c("TSPARMCD", "TSVAL") %in% names(ts_df))) {
       narms <- ts_df$TSVAL[ts_df$TSPARMCD == "NARMS"]
-      if (length(narms) >= 1 && narms[1] != as.character(nrow(spec$arms))) {
+      # a null-flavor NARMS has no value to recompute against
+      if (length(narms) >= 1 && !is.na(narms[1]) &&
+            narms[1] != as.character(nrow(spec$arms))) {
         add("TS", "ERROR", "ts-narms-mismatch",
             sprintf("TS NARMS '%s' but spec$arms has %d row(s)",
                     narms[1], nrow(spec$arms)))
       }
       plansub <- ts_df$TSVAL[ts_df$TSPARMCD == "PLANSUB"]
-      if (length(plansub) >= 1 && plansub[1] != as.character(spec$study$n)) {
+      # a null-flavor PLANSUB has no value to recompute against
+      if (length(plansub) >= 1 && !is.na(plansub[1]) &&
+            plansub[1] != as.character(spec$study$n)) {
         add("TS", "ERROR", "ts-plansub-mismatch",
             sprintf("TS PLANSUB '%s' but spec$study$n is %d",
                     plansub[1], spec$study$n))

@@ -136,6 +136,22 @@ test_that("a PLANSUB row disagreeing with study$n trips ts-plansub-mismatch", {
   expect_true("ts-plansub-mismatch" %in% issues$check)
 })
 
+test_that("a null-flavor NARMS row does not crash the TS mismatch check", {
+  domains <- td_fixture()$sdtm
+  hit <- domains$TS$TSPARMCD == "NARMS"
+  domains$TS$TSVAL[hit] <- NA_character_
+  domains$TS$TSVALNF[hit] <- "N/A"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_false("ts-narms-mismatch" %in% issues$check)
+})
+
+test_that("a TS row with both TSVAL and TSVALNF blank trips ts-valnf-xor", {
+  domains <- td_fixture()$sdtm
+  hit <- domains$TS$TSPARMCD == "PLANSUB"
+  domains$TS$TSVAL[hit] <- NA_character_
+  expect_true("ts-valnf-xor" %in% validate_sdtm(domains, spec_synth01)$check)
+})
+
 test_that("TV drifting from spec$visits trips tv-vs-spec-visits", {
   domains <- td_fixture()$sdtm
   domains$TV$VISITDY[1] <- 99L
