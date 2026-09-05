@@ -5,7 +5,7 @@
 \title{Load every form in the extract at once}
 \usage{
 read_rave_extract(
-  form_oids = c("DM", "VS", "LB", "AE", "CM", "EX", "DS", "MH"),
+  form_oids = c("DM", "VS", "LB", "AE", "CM", "EX", "DS", "MH", "QS"),
   dir
 )
 }
