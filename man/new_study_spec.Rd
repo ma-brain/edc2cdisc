@@ -67,8 +67,9 @@ derive QVAL from \code{src}), \code{qorig}, \code{qeval}
 \item \code{forms}     - form typing: \code{form_oid}, \code{type} ("event" / "log"),
 \code{scheduled} (does the form sit on a real scheduled folder and thus
 contribute an SV visit?)
-\item \code{tests}     - per-test pivot specs for the findings domains VS/LB/QS:
-\code{domain}, \code{field} (raw field OID), \code{testcd}, \code{test}, \code{cat}, \code{specimen}
+\item \code{tests}     - per-test pivot specs for the findings domains
+VS/LB/QS/PE/EG: \code{domain}, \code{field} (raw field OID), \code{testcd}, \code{test},
+\code{cat}, \code{specimen}
 \item \code{bds}       - ADaM BDS parameter configuration: \code{domain} (ADVS / ADLB),
 \code{paramcd}, \code{paramn} (order), \code{anrlo}, \code{anrhi} (declared reference
 ranges; NA where a parameter has no absolute range)
