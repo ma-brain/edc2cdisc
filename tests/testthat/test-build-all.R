@@ -44,6 +44,13 @@ test_that("the define.xml stub is well-formed and complete", {
   # ARMCD carries KeySequence 2 now that key_spec knows TA
   ta_ref <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='TA']/d1:ItemRef[@ItemOID='IT.TA.ARMCD']", ns)
   expect_equal(xml2::xml_attr(ta_ref, "KeySequence"), "2")
+  # QS is documented like the other tabulations: structure string on the
+  # ItemGroupDef, and QSSEQ keyed third
+  igd_qs <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='QS']", ns)
+  expect_equal(xml2::xml_attr(igd_qs, "def:Structure", ns = ns),
+               "One record per subject per questionnaire item per visit")
+  qs_ref <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='QS']/d1:ItemRef[@ItemOID='IT.QS.QSSEQ']", ns)
+  expect_equal(xml2::xml_attr(qs_ref, "KeySequence"), "3")
   # value-level metadata hooked onto VSSTRESN / LBSTRESN
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 2)
   # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no
