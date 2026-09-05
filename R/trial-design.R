@@ -66,3 +66,56 @@ map_ta <- function(spec) {
       EPOCH     = "Epoch"
     ))
 }
+
+#' Map the Trial Inclusion/Exclusion Criteria domain
+#'
+#' One record per criterion, straight from `spec$ie`.
+#'
+#' @param spec A `study_spec` (see [new_study_spec()])
+#' @return The labelled SDTM TI tibble.
+#' @examples
+#' ti <- map_ti(spec_synth01)
+#' ti[, c("IETESTCD", "IECAT")]
+#' @export
+map_ti <- function(spec) {
+  spec$ie |>
+    mutate(STUDYID = spec$study$STUDYID, DOMAIN = "TI") |>
+    transmute(STUDYID, DOMAIN, IETESTCD, IETEST, IECAT) |>
+    apply_labels(c(
+      STUDYID   = "Study Identifier",
+      DOMAIN    = "Domain Abbreviation",
+      IETESTCD  = "Incl/Excl Criterion Short Name",
+      IETEST    = "Incl/Excl Criterion Test",
+      IECAT     = "Incl/Excl Criterion Category"
+    ))
+}
+
+#' Map the Trial Summary domain
+#'
+#' One record per trial summary parameter, straight from `spec$ts`. The
+#' value lives in TSVAL and TSVALNF is the null flavor when no value can
+#' be provided - exactly one of the two is filled per row (checked at
+#' construction). NARMS and PLANSUB are cross-checked against `spec$arms`
+#' and `spec$study$n` by `validate_sdtm()`, not recomputed here: the
+#' output is the spec, and the validator catches a spec that disagrees
+#' with itself.
+#'
+#' @param spec A `study_spec` (see [new_study_spec()])
+#' @return The labelled SDTM TS tibble.
+#' @examples
+#' ts <- map_ts(spec_synth01)
+#' ts[, c("TSPARMCD", "TSVAL")]
+#' @export
+map_ts <- function(spec) {
+  spec$ts |>
+    mutate(STUDYID = spec$study$STUDYID, DOMAIN = "TS") |>
+    transmute(STUDYID, DOMAIN, TSPARMCD, TSPARM, TSVAL, TSVALNF) |>
+    apply_labels(c(
+      STUDYID  = "Study Identifier",
+      DOMAIN   = "Domain Abbreviation",
+      TSPARMCD = "Trial Summary Parameter Short Name",
+      TSPARM   = "Trial Summary Parameter",
+      TSVAL    = "Parameter Value",
+      TSVALNF  = "Null Flavor"
+    ))
+}

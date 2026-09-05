@@ -40,3 +40,26 @@ test_that("trial design builders emit XPT-safe names and labels", {
     expect_length(long, 0)
   }
 })
+
+test_that("map_ti returns the SYNTH01 criteria with CT categories", {
+  ti <- map_ti(spec_synth01)
+  expect_equal(nrow(ti), 6)
+  expect_setequal(unique(ti$IECAT), c("INCLUSION", "EXCLUSION"))
+  expect_equal(sum(ti$IECAT == "INCLUSION"), 3)
+  expect_equal(sum(ti$IECAT == "EXCLUSION"), 3)
+  expect_equal(ti$IETESTCD[1], "INC1")
+  expect_equal(attr(ti$IETESTCD, "label"), "Incl/Excl Criterion Short Name")
+})
+
+test_that("map_ts returns the SYNTH01 parameters with values", {
+  ts <- map_ts(spec_synth01)
+  expect_equal(nrow(ts), 7)
+  expect_setequal(ts$TSPARMCD,
+                  c("TITLE", "PHASE", "SPONSOR", "INDIC", "TRT",
+                    "NARMS", "PLANSUB"))
+  expect_equal(ts$TSVAL[ts$TSPARMCD == "NARMS"], "3")
+  expect_equal(ts$TSVAL[ts$TSPARMCD == "PLANSUB"], "24")
+  # exactly one of TSVAL / TSVALNF is filled on every row
+  expect_true(all(!is.na(ts$TSVAL) & ts$TSVAL != ""))
+  expect_true(all(is.na(ts$TSVALNF) | ts$TSVALNF == ""))
+})
