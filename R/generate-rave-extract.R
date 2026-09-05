@@ -1274,12 +1274,15 @@ generate_rave_extract <- function(out, seed = NULL, n = NULL,
   rng_hold <- if (exists(".Random.seed", envir = globalenv())) {
     .Random.seed # nolint: object_name_linter. (.Random.seed is a required base name)
   }
-  on.exit(
-    if (!is.null(rng_hold)) {
+  on.exit({
+    if (is.null(rng_hold)) {
+      if (exists(".Random.seed", envir = globalenv())) {
+        rm(".Random.seed", envir = globalenv()) # nolint: object_name_linter. (.Random.seed is a required base name)
+      }
+    } else {
       assign(".Random.seed", rng_hold, envir = globalenv()) # nolint: object_name_linter. (.Random.seed is a required base name)
-    },
-    add = TRUE
-  )
+    }
+  }, add = TRUE)
 
   cfg <- .gen_cfg(study)
   if (is.null(seed)) seed <- cfg$seed

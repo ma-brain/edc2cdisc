@@ -235,6 +235,27 @@ test_that("generate_rave_extract leaves the caller's RNG stream alone", {
   expect_identical(.Random.seed, seed_before) # nolint: object_name_linter. (.Random.seed is a required base name)
 })
 
+test_that("generate_rave_extract does not create a seed the caller lacked", {
+  out <- file.path(tempdir(), "edc2cdisc-rng-absent")
+  on.exit(unlink(out, recursive = TRUE, force = TRUE), add = TRUE)
+
+  had_seed <- exists(".Random.seed", envir = globalenv())
+  seed_hold <- if (had_seed) .Random.seed # nolint: object_name_linter.
+  if (had_seed) {
+    rm(".Random.seed", envir = globalenv()) # nolint: object_name_linter.
+  }
+  on.exit({
+    if (had_seed) {
+      assign(".Random.seed", seed_hold, envir = globalenv()) # nolint: object_name_linter.
+    } else if (exists(".Random.seed", envir = globalenv())) {
+      rm(".Random.seed", envir = globalenv()) # nolint: object_name_linter.
+    }
+  }, add = TRUE)
+
+  suppressMessages(generate_rave_extract(out = file.path(out, "rave")))
+  expect_false(exists(".Random.seed", envir = globalenv()))
+})
+
 # ADVS/ADLB derivation edges (finding 15) --------------------------------
 
 vs_row <- function(testcd, test, stresn, stresu) {
