@@ -110,6 +110,16 @@ a "specify" field appears only for subjects who triggered it. Free-text
 investigator comments go to CO, not SUPP — structured name/value pairs
 versus narrative tied to a record.
 
+## Trial design is pure spec
+
+TA, TE, TI, TV and TS never touch the mapping engine. Four optional spec
+tables hold the protocol; TV is derived from the `visits` table the
+scheduled-visit domains already read. The validators re-read the same
+tables — NARMS against `spec$arms`, PLANSUB against `spec$study$n`, TV
+against `spec$visits`, SV against TV — so a spec that lies about its own
+design cannot pass both readers, which is the same discipline the ADaM
+checks apply to the SDTM layer.
+
 ## The honest limit
 
 "A new study is a spec change" is true for studies in the same CRF family:

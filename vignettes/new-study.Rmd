@@ -42,6 +42,18 @@ Each table carries one kind of configuration: `study` (constants),
 and `variables` (one row per SDTM variable per domain: source CRF field,
 transform, derivation reference).
 
+## Trial design (TA, TE, TI, TV, TS)
+
+The trial design domains are protocol facts, so they live in the spec, not
+in the mapping table. Four optional tables carry them: `elements` (ETCD,
+ELEMENT, start/end rules, planned duration), `ta` (one row per arm per
+element, with the branch and transition rules), `ie` (the criteria) and
+`ts` (trial summary parameters). TV has no table: it is derived from the
+`visits` table you already maintain, VISITDY included. Leave the tables
+out and the domains come out empty (a validator warning tells you); fill
+them in and `validate_sdtm()` cross-checks what it can — NARMS against
+your `arms` table, PLANSUB against `study$n`, TV against `visits`.
+
 ## Changing a controlled-terminology mapping
 
 Suppose the sponsor redefines causality so that only "Related" counts as

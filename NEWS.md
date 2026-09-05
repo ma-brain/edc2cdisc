@@ -1,3 +1,16 @@
+# edc2cdisc 0.3.1.9000
+
+## Added
+
+* The SDTMIG trial design family. Four optional spec tables (`elements`,
+  `ta`, `ie`, `ts`) drive `map_te()`, `map_ta()`, `map_ti()` and
+  `map_ts()`; `map_tv()` derives TV from the existing `visits` table.
+  `build_all()` returns 19 SDTM domains, `build_define_xml()` documents
+  them, and `validate_sdtm()` recomputes the derivable facts — NARMS
+  against `spec$arms`, PLANSUB against `spec$study$n`, TV against
+  `spec$visits`, and every SV visit planned in TV — instead of trusting
+  the builders.
+
 # edc2cdisc 0.3.1
 
 Closes REVIEW-2026-09-05.

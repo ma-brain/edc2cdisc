@@ -43,8 +43,11 @@ empty tibbles, so existing user specs keep constructing unchanged.
 | `ts` | TSPARMCD, TSPARM, TSVAL, TSVALNF | trial summary parameter; exactly one of TSVAL / TSVALNF filled |
 
 **TV has no new table.** It is a transform of the existing `visits` table:
-VISITNUM, VISIT, EPOCH carried over; VISITDY = TargetDays. "Two things read
-the spec" holds by construction.
+VISITNUM, VISIT, EPOCH carried over; VISITDY is TargetDays under the
+package's no-day-0 planned-day rule (`TargetDays >= 0` → `+1`), the same
+convention `map_sv()` already applies, so a planned day of 0 never
+appears and TV agrees with SV. "Two things read the spec" holds by
+construction.
 
 ### Constructor validation (`new_study_spec()`)
 
@@ -81,8 +84,10 @@ map_ts(spec), map_te(spec), map_ta(spec), map_ti(spec), map_tv(spec)
 ```
 
 Spec-only signatures — no forms, no `refs` — because trial design is
-protocol fact, not collected data. Each applies IG variable labels inline,
-like every existing mapper (see `map-dm.R`).
+protocol fact, not collected data. `map_ta()` joins ARM from `spec$arms`
+(an IG-required TA variable no `ta` table row should repeat) and ELEMENT
+from `spec$elements`. Each applies IG variable labels inline, like every
+existing mapper (see `map-dm.R`).
 
 `build_all()` maps them after RELREC and appends to the `sdtm` list in the
 order `TA, TE, TI, TV, TS`, so they flow through validation and writing
@@ -103,7 +108,7 @@ matching the existing loop style.
 **Required variables** via the existing `.sdtm_req_static` fallback (these
 domains have no `spec$variables` rows):
 
-- TA: STUDYID, DOMAIN, ARMCD, TAETORD, ETCD, ELEMENT, EPOCH
+- TA: STUDYID, DOMAIN, ARMCD, ARM, TAETORD, ETCD, ELEMENT, EPOCH
 - TE: STUDYID, DOMAIN, ETCD, ELEMENT
 - TI: STUDYID, DOMAIN, IETESTCD, IETEST, IECAT
 - TV: STUDYID, DOMAIN, VISITNUM, VISIT, VISITDY, EPOCH
@@ -147,10 +152,12 @@ Add entries to the two per-domain lookup tables (`key_spec`,
 - Origins: `var_origin()` is name-based, so only names unique to trial
   design go into the global `Protocol` list (TSPARMCD, TSPARM, TSVAL,
   TSVALNF, IETESTCD, IETEST, IECAT, ETCD, ELEMENT, TESTRL, TEENRL, TEDUR,
-  TAETORD, TABRANCH, TATRANS, VISITDY) — a global ARMCD entry would
+  TAETORD, TABRANCH, TATRANS) — a global ARMCD entry would
   mislabel DM's ARMCD. Names shared with other domains (ARMCD, ARM, EPOCH
   in TA; VISITNUM, VISIT in TV) get a small per-domain override map so TA/TV
-  carry `Protocol` without touching what DM/SV declare.
+  carry `Protocol` without touching what DM/SV declare. `VISITDY` stays on
+  the existing `DY` suffix rule (`Derived`), which is what SV's VISITDY
+  already gets.
 
 ## Write path
 
