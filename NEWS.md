@@ -93,6 +93,7 @@ alternative deferred to a future release (#5).
   first-dose *date* (RFSTDTC carries no time), so a same-day post-dose
   measurement stays baseline-eligible - a recorded SAP choice.
 
+# edc2cdisc 0.2.0
 
 Proved the package's central claim - "a new study is a spec change" - with
 a real second study, and fixed the hard-coded spots the exercise exposed.
