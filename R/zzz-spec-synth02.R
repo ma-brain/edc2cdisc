@@ -167,6 +167,7 @@ spec_synth02 <- new_study_spec(
     "EX",      "event",  TRUE,
     "DS",      "event",  TRUE,
     "LB",      "event",  TRUE,
+    "QS",      "event",  TRUE,
     "AE",      "log",    FALSE,
     "CM",      "log",    FALSE,
     "MH",      "log",    FALSE
@@ -188,7 +189,12 @@ spec_synth02 <- new_study_spec(
     "LB",     "POT",    "K",      "Potassium",                  "CHEMISTRY",  "SERUM",
     "LB",     "ALT",    "ALT",    "Alanine Aminotransferase",   "CHEMISTRY",  "SERUM",
     # and an AST analyte in the central lab panel
-    "LB",     "AST",    "AST",    "Aspartate Aminotransferase", "CHEMISTRY",  "SERUM"
+    "LB",     "AST",    "AST",    "Aspartate Aminotransferase", "CHEMISTRY",  "SERUM",
+    "QS",     "MOS01",  "MOS01",  "Mood: Cheerful",             "MOOD SCALE", NA,
+    "QS",     "MOS02",  "MOS02",  "Mood: Down",                 "MOOD SCALE", NA,
+    "QS",     "MOS03",  "MOS03",  "Sleep Quality",              "MOOD SCALE", NA,
+    "QS",     "MOS04",  "MOS04",  "Energy Level",               "MOOD SCALE", NA,
+    "QS",     "MOS05",  "MOS05",  "Concentration",              "MOOD SCALE", NA
   ),
 
   bds = tribble(

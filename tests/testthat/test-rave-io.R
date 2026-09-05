@@ -65,7 +65,7 @@ test_that("read_codelists returns the long reference", {
 test_that("read_rave_extract loads every form labelled", {
   forms <- suppressMessages(read_rave_extract(dir = extract_dir))
   expect_setequal(names(forms),
-                  c("DM", "VS", "LB", "AE", "CM", "EX", "DS", "MH"))
+                  c("DM", "VS", "LB", "AE", "CM", "EX", "DS", "MH", "QS"))
   for (f in forms) expect_gt(nrow(f), 0)
   expect_equal(attr(forms$AE$AETERM, "label"), "Adverse Event Verbatim Term")
 })

@@ -872,7 +872,9 @@ populate <- function(subjects, cfg) {
       vpos <- match(folder, cfg$visit_folders)
       not_done <- cfg$idx$qs_not_done
       qs_perf <- !(idx == not_done[1] && vpos == not_done[2])
-      qs_fields <- list(QSPERF = if (qs_perf) "1" else "0")
+      # the visit date, exactly as VS dates its rows (not-done visits included)
+      qs_fields <- c(list(QSPERF = if (qs_perf) "1" else "0"),
+                     date_cols("QSDAT", vdate))
       if (!qs_perf) qs_fields$QSNRA <- "Subject refused"
       for (it in seq_len(cfg$qs_n_items)) {
         val <- as.character((idx + vpos + it - 1L) %% 4L)
@@ -975,6 +977,7 @@ populate <- function(subjects, cfg) {
   LBFAST = "Fasting Status",
   GLUC = "Glucose", CREAT = "Creatinine", HGB = "Hemoglobin",
   POT = "Potassium", ALT = "Alanine Aminotransferase",
+  QSDAT = "Date of Questionnaire",
   QSPERF = "Questionnaire Performed", QSNRA = "Reason Not Performed",
   MOS01 = "Mood: Cheerful", MOS02 = "Mood: Down",
   MOS03 = "Sleep Quality", MOS04 = "Energy Level"
@@ -988,7 +991,7 @@ populate <- function(subjects, cfg) {
   AESI = "YN", AEDISCON = "YN",
   CMONG = "YN", CMROUTE = "ROUTE", CMFRQ = "FRQ", EXOCCUR = "YN",
   EXROUTE = "ROUTE", DSCOMP = "YN", DSREAS = "DSREAS",
-  LBPERF = "YN", LBFAST = "YN", MHONG = "YN"
+  LBPERF = "YN", LBFAST = "YN", MHONG = "YN", QSPERF = "YN"
 )
 
 .SUFFIX_META <- list(

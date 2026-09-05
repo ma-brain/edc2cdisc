@@ -162,6 +162,7 @@ spec_synth01 <- new_study_spec(
     "EX",      "event",  TRUE,
     "DS",      "event",  TRUE,
     "LB",      "event",  TRUE,
+    "QS",      "event",  TRUE,
     "AE",      "log",    FALSE,
     "CM",      "log",    FALSE,
     "MH",      "log",    FALSE
@@ -179,7 +180,11 @@ spec_synth01 <- new_study_spec(
     "LB",     "CREAT",  "CREAT",  "Creatinine",                 "CHEMISTRY",  "SERUM",
     "LB",     "HGB",    "HGB",    "Hemoglobin",                 "HEMATOLOGY", "BLOOD",
     "LB",     "POT",    "K",      "Potassium",                  "CHEMISTRY",  "SERUM",
-    "LB",     "ALT",    "ALT",    "Alanine Aminotransferase",   "CHEMISTRY",  "SERUM"
+    "LB",     "ALT",    "ALT",    "Alanine Aminotransferase",   "CHEMISTRY",  "SERUM",
+    "QS",     "MOS01",  "MOS01",  "Mood: Cheerful",             "MOOD SCALE", NA,
+    "QS",     "MOS02",  "MOS02",  "Mood: Down",                 "MOOD SCALE", NA,
+    "QS",     "MOS03",  "MOS03",  "Sleep Quality",              "MOOD SCALE", NA,
+    "QS",     "MOS04",  "MOS04",  "Energy Level",               "MOOD SCALE", NA
   ),
 
   bds = tribble(

@@ -17,7 +17,7 @@
 
 # The domains build_all() can produce; variables rows must name one of these
 .sdtm_domains <- c("DM", "EX", "VS", "AE", "CM", "DS", "SV", "LB", "MH",
-                   "SUPPDM", "SUPPAE", "SUPPEX", "CO", "RELREC")
+                   "QS", "SUPPDM", "SUPPAE", "SUPPEX", "CO", "RELREC")
 
 # Trial design tables: optional constructor arguments, always present on
 # the built spec so the builders can rely on their columns. Protocol fact,
@@ -59,7 +59,7 @@
 #' * `forms`     - form typing: `form_oid`, `type` ("event" / "log"),
 #'   `scheduled` (does the form sit on a real scheduled folder and thus
 #'   contribute an SV visit?)
-#' * `tests`     - per-test pivot specs for the findings domains VS/LB:
+#' * `tests`     - per-test pivot specs for the findings domains VS/LB/QS:
 #'   `domain`, `field` (raw field OID), `testcd`, `test`, `cat`, `specimen`
 #' * `bds`       - ADaM BDS parameter configuration: `domain` (ADVS / ADLB),
 #'   `paramcd`, `paramn` (order), `anrlo`, `anrhi` (declared reference
