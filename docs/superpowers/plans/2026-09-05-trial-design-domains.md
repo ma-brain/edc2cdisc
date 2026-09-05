@@ -1215,18 +1215,18 @@ git commit -m "feat(validate): trial design integrity checks"
 
 - [ ] **Step 1: Write the failing assertions**
 
-In `tests/testthat/test-build-all.R`, update the define test: line 35 moves from 14 to 19,
-
-```r
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 19)
-```
-
-and extend the same `test_that` with the trial design expectations:
+Task 7 already moved the ItemGroupDef count to 19 (the define loop is generic
+over domains), so only extend the define `test_that` with what Task 9 really
+adds - keys, structures and the IECAT codelist:
 
 ```r
   # the trial design domains carry keys and structures like the rest
   igd_ta <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='TA']", ns)
   expect_equal(xml2::xml_attr(igd_ta, "Domain"), "TA")
+  # ARMCD carries KeySequence 2 now that key_spec knows TA
+  expect_equal(xml2::xml_attr(xml2::xml_find_first(
+    doc, "//d1:ItemGroupDef[@Name='TA']/d1:ItemRef[@ItemOID='IT.TA.ARMCD']", ns),
+    "KeySequence"), "2")
   expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 10)
 ```
 
