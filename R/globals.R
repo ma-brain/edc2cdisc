@@ -40,7 +40,7 @@ utils::globalVariables(c(
   "RAVE_STD", "RAVE_STDU", "RDOMAIN", "RECDT", "RELID", "RELTYPE", "RFENDTC", "RFICDTC",
   "RFPENDTC", "RFSTDTC", "RecordActive", "RecordDate", "SAFFL", "SEX",
   "SITEID", "STUDYID", "SUBJID", "SVENDTC", "SVENDY", "SVSTDTC", "SVSTDY",
-  "SaveTs", "Subject", "TABRANCH", "TAETORD", "TATRANSAC", "TEDUR",
+  "SaveTs", "Subject", "TABRANCH", "TAETORD", "TATRANS", "TEDUR",
   "TEENRL", "TESTRL", "TRT01A", "TRT01ACD", "TRT01P", "TRT01PCD", "TRTDURD",
   "TRTEDT", "TRTEDTF", "TRTEMFL", "TRTSDT", "TRTSDTF", "TargetDays",
   "USUBJID", "VISIT", "VISITDY", "VISITNUM", "VISIT_SV", "VSBLFL",

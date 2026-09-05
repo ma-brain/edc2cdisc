@@ -286,7 +286,7 @@ test_that("trial design tables default to empty typed tibbles", {
   expect_setequal(names(s$elements),
                   c("ETCD", "ELEMENT", "TESTRL", "TEENRL", "TEDUR"))
   expect_setequal(names(s$ta),
-                  c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANSAC"))
+                  c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANS"))
   expect_setequal(names(s$ie), c("IETESTCD", "IETEST", "IECAT"))
   expect_setequal(names(s$ts), c("TSPARMCD", "TSPARM", "TSVAL", "TSVALNF"))
 })
@@ -296,7 +296,7 @@ test_that("a well-formed trial design spec constructs", {
     elements = tibble(ETCD = "A", ELEMENT = "Element A", TESTRL = "consent",
                       TEENRL = "randomised", TEDUR = "P2W"),
     ta = tibble(ARMCD = "PBO", ETCD = "A", TAETORD = 1L, EPOCH = "SCREENING",
-                TABRANCH = NA_character_, TATRANSAC = "Randomised"),
+                TABRANCH = NA_character_, TATRANS = "Randomised"),
     ie = tibble(IETESTCD = "INC1", IETEST = "Age 18-100", IECAT = "INCLUSION"),
     ts = tibble(TSPARMCD = "PHASE", TSPARM = "Trial Phase",
                 TSVAL = "PHASE II", TSVALNF = NA_character_)
@@ -307,14 +307,14 @@ test_that("a well-formed trial design spec constructs", {
 test_that("trial design shape errors fire at construction", {
   expect_error(td_spec(ta = tibble(ARMCD = "NOPE", ETCD = "A", TAETORD = 1L,
                                    EPOCH = "SCREENING", TABRANCH = NA,
-                                   TATRANSAC = NA)),
+                                   TATRANS = NA)),
                "ta: ARMCD not in spec\\$arms")
   expect_error(td_spec(elements = tibble(ETCD = "A", ELEMENT = "Element A",
                                          TESTRL = "r", TEENRL = "r",
                                          TEDUR = "P2W"),
                        ta = tibble(ARMCD = "PBO", ETCD = "B", TAETORD = 1L,
                                    EPOCH = "SCREENING", TABRANCH = NA,
-                                   TATRANSAC = NA)),
+                                   TATRANS = NA)),
                "ta: ETCD not in spec\\$elements")
   expect_error(td_spec(elements = tibble(ETCD = c("A", "A"), ELEMENT = c("x", "y"),
                                          TESTRL = "r", TEENRL = "r",
@@ -330,7 +330,7 @@ test_that("trial design shape errors fire at construction", {
                "TEDUR is not an ISO 8601 duration")
   expect_error(td_spec(ta = tibble(ARMCD = c("PBO", "PBO"), ETCD = c("A", "A"),
                                    TAETORD = c(1L, 1L), EPOCH = "SCREENING",
-                                   TABRANCH = NA, TATRANSAC = NA)),
+                                   TABRANCH = NA, TATRANS = NA)),
                "duplicated ARMCD/TAETORD")
   expect_error(td_spec(ie = tibble(IETESTCD = "INC1", IETEST = "x",
                                    IECAT = "MAYBE")),

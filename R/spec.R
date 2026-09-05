@@ -28,7 +28,7 @@
                     TEDUR = character()),
   ta = tibble(ARMCD = character(), ETCD = character(), TAETORD = integer(),
               EPOCH = character(), TABRANCH = character(),
-              TATRANSAC = character()),
+              TATRANS = character()),
   ie = tibble(IETESTCD = character(), IETEST = character(),
               IECAT = character()),
   ts = tibble(TSPARMCD = character(), TSPARM = character(),
@@ -74,7 +74,7 @@
 #'   (<=40 chars), `TESTRL` / `TEENRL` (start/end rules), `TEDUR` (ISO 8601
 #'   duration, e.g. `P2W`; NA allowed)
 #' * `ta`        - planned arm x element order: `ARMCD`, `ETCD`, `TAETORD`
-#'   (integer), `EPOCH`, `TABRANCH`, `TATRANSAC`
+#'   (integer), `EPOCH`, `TABRANCH`, `TATRANS`
 #' * `ie`        - inclusion/exclusion criteria: `IETESTCD`, `IETEST`,
 #'   `IECAT` (INCLUSION / EXCLUSION)
 #' * `ts`        - trial summary parameters: `TSPARMCD` (unique),
@@ -92,7 +92,7 @@
 #'   Tibbles as described above.
 #' @param elements,ta,ie,ts Optional trial design tibbles: `elements`
 #'   (ETCD, ELEMENT, TESTRL, TEENRL, TEDUR), `ta` (ARMCD, ETCD, TAETORD,
-#'   EPOCH, TABRANCH, TATRANSAC), `ie` (IETESTCD, IETEST, IECAT) and `ts`
+#'   EPOCH, TABRANCH, TATRANS), `ie` (IETESTCD, IETEST, IECAT) and `ts`
 #'   (TSPARMCD, TSPARM, TSVAL, TSVALNF). Missing ones default to zero-row
 #'   tables; the trial design domains built from them (see
 #'   [map_te()]) then come out empty.
@@ -148,7 +148,7 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
     variables = c("domain", "variable", "crf_field", "transform", "ref",
                   "value", "aux", "default"),
     elements  = c("ETCD", "ELEMENT", "TESTRL", "TEENRL", "TEDUR"),
-    ta        = c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANSAC"),
+    ta        = c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANS"),
     ie        = c("IETESTCD", "IETEST", "IECAT"),
     ts        = c("TSPARMCD", "TSPARM", "TSVAL", "TSVALNF")
   )

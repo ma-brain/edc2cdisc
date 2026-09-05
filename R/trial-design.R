@@ -51,10 +51,8 @@ map_ta <- function(spec) {
     left_join(spec$elements |> select(ETCD, ELEMENT), by = "ETCD") |>
     mutate(STUDYID = spec$study$STUDYID, DOMAIN = "TA") |>
     arrange(ARMCD, TAETORD) |>
-    # SDTMIG spells the transition rule TATRANS (8 chars); the spec table
-    # may use a longer internal name.
     transmute(STUDYID, DOMAIN, ARMCD, ARM, TAETORD, ETCD, ELEMENT,
-              TABRANCH, TATRANS = TATRANSAC, EPOCH) |>
+              TABRANCH, TATRANS, EPOCH) |>
     apply_labels(c(
       STUDYID   = "Study Identifier",
       DOMAIN    = "Domain Abbreviation",

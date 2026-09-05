@@ -70,7 +70,7 @@ spec_synth01 <- new_study_spec(
   ),
 
   ta = tribble(
-    ~ARMCD,   ~ETCD,   ~TAETORD, ~EPOCH,      ~TABRANCH,                       ~TATRANSAC,
+    ~ARMCD,   ~ETCD,   ~TAETORD, ~EPOCH,      ~TABRANCH,                       ~TATRANS,
     "PBO",    "SCRN",  1L,       "SCREENING", NA,                              "Randomised",
     "PBO",    "TREAT", 2L,       "TREATMENT", "Randomised to Placebo",         NA,
     "SYN50",  "SCRN",  1L,       "SCREENING", NA,                              "Randomised",
