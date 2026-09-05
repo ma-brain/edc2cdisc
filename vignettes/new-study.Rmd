@@ -38,7 +38,7 @@ names(spec_synth01)
 Each table carries one kind of configuration: `study` (constants),
 `sites`, `arms`, `visits`, `codelists` (collected decode -> CDISC term),
 `supp` (SUPP-- qualifiers), `units` (LB conventional-to-SI factors),
-`forms` (event vs log typing), `tests` (per-test pivot specs for VS/LB)
+`forms` (event vs log typing), `tests` (per-test pivot specs for VS/LB/QS)
 and `variables` (one row per SDTM variable per domain: source CRF field,
 transform, derivation reference).
 

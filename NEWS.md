@@ -1,3 +1,14 @@
+# edc2cdisc 0.4.0.9000
+
+## Added
+
+* The QS (Questionnaires) domain. A deterministic scheduled `QS` CRF form
+  (MOOD SCALE ordinal items) feeds `map_qs()`, a `map_vs()`-style findings
+  mapper with NOT DONE rows and baseline flags. `build_all()` returns 20
+  SDTM domains; `validate_sdtm()` gains `qscat-not-in-spec` and a reusable
+  `stat-reason` coherence check; define.xml documents QS with keys and
+  structure.
+
 # edc2cdisc 0.4.0
 
 ## Added

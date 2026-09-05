@@ -17,6 +17,10 @@ Flagged because you were resting; each is reversible with one design-doc edit.
    This is the load-bearing decision: consuming main-stream RNG draws would
    change every existing subject's data and move all 10 existing digest files;
    config-driven content keeps them byte-identical (provable, reviewed).
+   Task 1 discovered `form_add()` itself draws SaveTs values from the main
+   stream, so QS rows are emitted inside a per-subject private seeded stream
+   (`apply_mh` contract, save/restore) — the zero-RNG property is byte-proven,
+   the mechanism is a private stream.
 3. **Scheduled event form on existing folders.** QS sits on the same visit
    folders as VS with the same `vdates`, so SV is untouched (min/max record
    dates per subject/folder cannot change).
@@ -48,8 +52,10 @@ Fields (wide, per subject per visit): `QSDAT_*` (date parts), `QSPERF`,
 STUDYID, DOMAIN, USUBJID, QSSEQ, QSCAT, QSTESTCD, QSTEST, QSORRES, QSSTAT,
 QSREASND, QSBLFL, VISITNUM, VISIT, QSDTC, QSDY.
 
-- QSORRES from `MOS0x_RAW`; QSSTRESN = as.numeric(QSORRES); QSSTRESU empty
-  (omitted); blank item → row dropped (map_vs idiom).
+- QSORRES from `MOS0x_RAW`; QSSTRESN exists only as a mapper-internal
+  intermediate for the baseline rank (it is not an output column of the
+  subset above); QSSTRESU empty (omitted); blank item → row dropped
+  (map_vs idiom).
 - Not-done visit → one row per item with QSSTAT "NOT DONE", QSREASND populated,
   blank results.
 - QSBLFL: the VS baseline-rank block over numeric results.
@@ -74,10 +80,12 @@ QSREASND, QSBLFL, VISITNUM, VISIT, QSDTC, QSDY.
 ## define.xml
 
 key_spec `QS = c(STUDYID, USUBJID, QSSEQ)`; structure "One record per subject
-per questionnaire item per visit"; ValueListDef on QSSTRESN per item. The VLM
-description gains a unit-conditional tweak (QS has no units): "Item" alone when
-the unit is blank — VS/LB rendering unchanged (their units are never blank).
-Counts: ItemGroupDef 20, ValueListDef 3.
+per questionnaire item per visit". No value-level metadata: the pragmatic QS
+subset has no QSSTRESN column (numeric parsing happens inside the mapper for
+baseline ranking only), so the findings VLM loop does not apply. QS gets keys
+and a structure like SUPP's — define.xml declares it, with nothing per-item
+to annotate. Counts: ItemGroupDef 20, ValueListDef 2 (VS and LB — unchanged;
+QS adds none).
 
 ## Testing
 
