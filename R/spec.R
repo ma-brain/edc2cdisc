@@ -237,7 +237,8 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
     if (anyDuplicated(spec$elements$ETCD) > 0) {
       stop("study spec: duplicate ETCD in elements", call. = FALSE)
     }
-    long_etcd <- spec$elements$ETCD[nchar(spec$elements$ETCD) > 8]
+    long_etcd <- spec$elements$ETCD[!is.na(spec$elements$ETCD) &
+                                      nchar(spec$elements$ETCD) > 8]
     if (length(long_etcd) > 0) {
       stop(sprintf("study spec: ETCD longer than 8 characters: %s",
                    str_flatten_comma(long_etcd)), call. = FALSE)

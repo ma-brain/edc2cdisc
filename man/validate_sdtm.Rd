@@ -9,7 +9,7 @@ validate_sdtm(domains, spec = NULL)
 \arguments{
 \item{domains}{A named list of mapped SDTM datasets, as built by
 \code{\link[=build_all]{build_all()}} (DM, EX, VS, AE, CM, DS, SV, LB, MH, SUPPDM, SUPPAE,
-SUPPEX, CO, RELREC)}
+SUPPEX, CO, RELREC, TA, TE, TI, TV, TS)}
 
 \item{spec}{Optional \code{study_spec}; when given, required-variable lists
 for the engine-mapped domains come from \code{spec$variables}.}

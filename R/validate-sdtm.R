@@ -70,7 +70,7 @@
 #'
 #' @param domains A named list of mapped SDTM datasets, as built by
 #'   [build_all()] (DM, EX, VS, AE, CM, DS, SV, LB, MH, SUPPDM, SUPPAE,
-#'   SUPPEX, CO, RELREC)
+#'   SUPPEX, CO, RELREC, TA, TE, TI, TV, TS)
 #' @param spec Optional `study_spec`; when given, required-variable lists
 #'   for the engine-mapped domains come from `spec$variables`.
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
