@@ -49,7 +49,7 @@
 - Consumes: nothing new.
 - Produces: `new_study_spec(..., variables, elements = NULL, ta = NULL, ie = NULL, ts = NULL, derivations = list())`; `spec$elements`, `spec$ta`, `spec$ie`, `spec$ts` are always present, defaulting to zero-row typed tibbles. Later tasks rely on those column sets:
   - `elements`: ETCD, ELEMENT, TESTRL, TEENRL, TEDUR (all character)
-  - `ta`: ARMCD, ETCD (character), TAETORD (integer), EPOCH, TABRANCH, TATRANSAC (character)
+  - `ta`: ARMCD, ETCD (character), TAETORD (integer), EPOCH, TABRANCH, TATRANS (character)
   - `ie`: IETESTCD, IETEST, IECAT (character)
   - `ts`: TSPARMCD, TSPARM, TSVAL, TSVALNF (character)
 
@@ -86,7 +86,7 @@ test_that("trial design tables default to empty typed tibbles", {
   expect_setequal(names(s$elements),
                   c("ETCD", "ELEMENT", "TESTRL", "TEENRL", "TEDUR"))
   expect_setequal(names(s$ta),
-                  c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANSAC"))
+                  c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANS"))
   expect_setequal(names(s$ie), c("IETESTCD", "IETEST", "IECAT"))
   expect_setequal(names(s$ts), c("TSPARMCD", "TSPARM", "TSVAL", "TSVALNF"))
 })
@@ -96,7 +96,7 @@ test_that("a well-formed trial design spec constructs", {
     elements = tibble(ETCD = "A", ELEMENT = "Element A", TESTRL = "consent",
                       TEENRL = "randomised", TEDUR = "P2W"),
     ta = tibble(ARMCD = "PBO", ETCD = "A", TAETORD = 1L, EPOCH = "SCREENING",
-                TABRANCH = NA_character_, TATRANSAC = "Randomised"),
+                TABRANCH = NA_character_, TATRANS = "Randomised"),
     ie = tibble(IETESTCD = "INC1", IETEST = "Age 18-100", IECAT = "INCLUSION"),
     ts = tibble(TSPARMCD = "PHASE", TSPARM = "Trial Phase",
                 TSVAL = "PHASE II", TSVALNF = NA_character_)
@@ -107,14 +107,14 @@ test_that("a well-formed trial design spec constructs", {
 test_that("trial design shape errors fire at construction", {
   expect_error(td_spec(ta = tibble(ARMCD = "NOPE", ETCD = "A", TAETORD = 1L,
                                    EPOCH = "SCREENING", TABRANCH = NA,
-                                   TATRANSAC = NA)),
+                                   TATRANS = NA)),
                "ta: ARMCD not in spec\\$arms")
   expect_error(td_spec(elements = tibble(ETCD = "A", ELEMENT = "Element A",
                                          TESTRL = "r", TEENRL = "r",
                                          TEDUR = "P2W"),
                        ta = tibble(ARMCD = "PBO", ETCD = "B", TAETORD = 1L,
                                    EPOCH = "SCREENING", TABRANCH = NA,
-                                   TATRANSAC = NA)),
+                                   TATRANS = NA)),
                "ta: ETCD not in spec\\$elements")
   expect_error(td_spec(elements = tibble(ETCD = c("A", "A"), ELEMENT = c("x", "y"),
                                          TESTRL = "r", TEENRL = "r",
@@ -130,7 +130,7 @@ test_that("trial design shape errors fire at construction", {
                "TEDUR is not an ISO 8601 duration")
   expect_error(td_spec(ta = tibble(ARMCD = c("PBO", "PBO"), ETCD = c("A", "A"),
                                    TAETORD = c(1L, 1L), EPOCH = "SCREENING",
-                                   TABRANCH = NA, TATRANSAC = NA)),
+                                   TABRANCH = NA, TATRANS = NA)),
                "duplicated ARMCD/TAETORD")
   expect_error(td_spec(ie = tibble(IETESTCD = "INC1", IETEST = "x",
                                    IECAT = "MAYBE")),
@@ -165,7 +165,7 @@ Expected: FAIL — `td_spec` errors with `unused arguments (elements = NULL, ...
                     TEDUR = character()),
   ta = tibble(ARMCD = character(), ETCD = character(), TAETORD = integer(),
               EPOCH = character(), TABRANCH = character(),
-              TATRANSAC = character()),
+              TATRANS = character()),
   ie = tibble(IETESTCD = character(), IETEST = character(),
               IECAT = character()),
   ts = tibble(TSPARMCD = character(), TSPARM = character(),
@@ -210,7 +210,7 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
 
 ```r
     elements  = c("ETCD", "ELEMENT", "TESTRL", "TEENRL", "TEDUR"),
-    ta        = c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANSAC"),
+    ta        = c("ARMCD", "ETCD", "TAETORD", "EPOCH", "TABRANCH", "TATRANS"),
     ie        = c("IETESTCD", "IETEST", "IECAT"),
     ts        = c("TSPARMCD", "TSPARM", "TSVAL", "TSVALNF")
 ```
@@ -299,7 +299,7 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
 ```r
 #' @param elements,ta,ie,ts Optional trial design tibbles: `elements`
 #'   (ETCD, ELEMENT, TESTRL, TEENRL, TEDUR), `ta` (ARMCD, ETCD, TAETORD,
-#'   EPOCH, TABRANCH, TATRANSAC), `ie` (IETESTCD, IETEST, IECAT) and `ts`
+#'   EPOCH, TABRANCH, TATRANS), `ie` (IETESTCD, IETEST, IECAT) and `ts`
 #'   (TSPARMCD, TSPARM, TSVAL, TSVALNF). Missing ones default to zero-row
 #'   tables; the trial design domains built from them (see
 #'   [map_te()]) then come out empty.
@@ -312,7 +312,7 @@ And four bullets after the `variables` bullet:
 #'   (<=40 chars), `TESTRL` / `TEENRL` (start/end rules), `TEDUR` (ISO 8601
 #'   duration, e.g. `P2W`; NA allowed)
 #' * `ta`        - planned arm x element order: `ARMCD`, `ETCD`, `TAETORD`
-#'   (integer), `EPOCH`, `TABRANCH`, `TATRANSAC`
+#'   (integer), `EPOCH`, `TABRANCH`, `TATRANS`
 #' * `ie`        - inclusion/exclusion criteria: `IETESTCD`, `IETEST`,
 #'   `IECAT` (INCLUSION / EXCLUSION)
 #' * `ts`        - trial summary parameters: `TSPARMCD` (unique),
@@ -357,7 +357,7 @@ git commit -m "feat(spec): four optional trial design tables with constructor ch
   ),
 
   ta = tribble(
-    ~ARMCD,   ~ETCD,   ~TAETORD, ~EPOCH,      ~TABRANCH,                       ~TATRANSAC,
+    ~ARMCD,   ~ETCD,   ~TAETORD, ~EPOCH,      ~TABRANCH,                       ~TATRANS,
     "PBO",    "SCRN",  1L,       "SCREENING", NA,                              "Randomised",
     "PBO",    "TREAT", 2L,       "TREATMENT", "Randomised to Placebo",         NA,
     "SYN50",  "SCRN",  1L,       "SCREENING", NA,                              "Randomised",
@@ -441,7 +441,7 @@ git commit -m "feat(spec): trial design content for SYNTH01"
   ),
 
   ta = tribble(
-    ~ARMCD,   ~ETCD,   ~TAETORD, ~EPOCH,      ~TABRANCH,                        ~TATRANSAC,
+    ~ARMCD,   ~ETCD,   ~TAETORD, ~EPOCH,      ~TABRANCH,                        ~TATRANS,
     "PBO",    "SCRN",  1L,       "SCREENING", NA,                               "Randomised",
     "PBO",    "TREAT", 2L,       "TREATMENT", "Randomised to Placebo",          NA,
     "SYN25",  "SCRN",  1L,       "SCREENING", NA,                               "Randomised",
@@ -512,7 +512,7 @@ git commit -m "feat(spec): trial design content for SYNTH02"
 - Consumes: `spec$elements`, `spec$ta`, `spec$arms`, `spec$study$STUDYID` (Tasks 1–3); `apply_labels()` from `R/helpers-format.R`.
 - Produces (used by Task 7's `build_all()` wiring):
   - `map_te(spec) -> tibble` with columns STUDYID, DOMAIN, ETCD, ELEMENT, TESTRL, TEENRL, TEDUR
-  - `map_ta(spec) -> tibble` with columns STUDYID, DOMAIN, ARMCD, ARM, TAETORD, ETCD, ELEMENT, TABRANCH, TATRANSAC, EPOCH
+  - `map_ta(spec) -> tibble` with columns STUDYID, DOMAIN, ARMCD, ARM, TAETORD, ETCD, ELEMENT, TABRANCH, TATRANS, EPOCH
   (ARM is joined from `spec$arms` — it is an IG-required TA variable that no `ta` table row needs to repeat.)
 
 - [ ] **Step 1: Write the failing builder tests**
@@ -544,8 +544,8 @@ test_that("map_ta joins the arm decode and element names", {
   expect_setequal(unique(ta$ARM), c("Placebo", "SYN-101 50 mg", "SYN-101 100 mg"))
   expect_equal(sum(ta$ELEMENT == "Treatment"), 3)
   # the transition rule sits on SCRN, the branch on TREAT
-  expect_equal(unique(ta$TATRANSAC[ta$ETCD == "SCRN"]), "Randomised")
-  expect_true(all(is.na(ta$TATRANSAC[ta$ETCD == "TREAT"])))
+  expect_equal(unique(ta$TATRANS[ta$ETCD == "SCRN"]), "Randomised")
+  expect_true(all(is.na(ta$TATRANS[ta$ETCD == "TREAT"])))
   expect_true(all(!is.na(ta$TABRANCH[ta$ETCD == "TREAT"])))
   # each arm walks its elements in order
   expect_true(all(ta$TAETORD[ta$ETCD == "SCRN"] == 1L))
@@ -624,7 +624,7 @@ map_ta <- function(spec) {
     mutate(STUDYID = spec$study$STUDYID, DOMAIN = "TA") |>
     arrange(ARMCD, TAETORD) |>
     transmute(STUDYID, DOMAIN, ARMCD, ARM, TAETORD, ETCD, ELEMENT,
-              TABRANCH, TATRANSAC, EPOCH) |>
+              TABRANCH, TATRANS, EPOCH) |>
     apply_labels(c(
       STUDYID   = "Study Identifier",
       DOMAIN    = "Domain Abbreviation",
@@ -634,7 +634,7 @@ map_ta <- function(spec) {
       ETCD      = "Element Code",
       ELEMENT   = "Description of Element",
       TABRANCH  = "Branch",
-      TATRANSAC = "Transition Rule",
+      TATRANS = "Transition Rule",
       EPOCH     = "Epoch"
     ))
 }
@@ -642,7 +642,7 @@ map_ta <- function(spec) {
 
 - [ ] **Step 4: Add the masked names to `R/globals.R`**
 
-In the `utils::globalVariables(c(...))` vector (alphabetical spots): add `EPOCH` is already present; add `ETCD`, `TAETORD`, `TABRANCH`, `TATRANSAC`, `ARMCD_DECODE` (used data-masked in the `left_join` `by` only — `by` is not data-masked, so ARMCD_DECODE is *not* needed; only add names appearing bare in `mutate`/`transmute`/`arrange`/`select` on a data frame: `ETCD`, `ELEMENT`, `TESTRL`, `TEENRL`, `TEDUR`, `TAETORD`, `TABRANCH`, `TATRANSAC`). Insert them alphabetically.
+In the `utils::globalVariables(c(...))` vector (alphabetical spots): add `EPOCH` is already present; add `ETCD`, `TAETORD`, `TABRANCH`, `TATRANS`, `ARMCD_DECODE` (used data-masked in the `left_join` `by` only — `by` is not data-masked, so ARMCD_DECODE is *not* needed; only add names appearing bare in `mutate`/`transmute`/`arrange`/`select` on a data frame: `ETCD`, `ELEMENT`, `TESTRL`, `TEENRL`, `TEDUR`, `TAETORD`, `TABRANCH`, `TATRANS`). Insert them alphabetically.
 
 - [ ] **Step 5: Run the builder tests**
 
@@ -1262,7 +1262,7 @@ Expected: FAIL (ItemGroupDef 14, CodeList 9).
 ```r
     ETCD = "Protocol", ELEMENT = "Protocol", TESTRL = "Protocol",
     TEENRL = "Protocol", TEDUR = "Protocol", TAETORD = "Protocol",
-    TABRANCH = "Protocol", TATRANSAC = "Protocol", IETESTCD = "Protocol",
+    TABRANCH = "Protocol", TATRANS = "Protocol", IETESTCD = "Protocol",
     IETEST = "Protocol", IECAT = "Protocol", TSPARMCD = "Protocol",
     TSPARM = "Protocol", TSVAL = "Protocol", TSVALNF = "Protocol"
 ```

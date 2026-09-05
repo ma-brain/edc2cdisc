@@ -38,7 +38,7 @@ empty tibbles, so existing user specs keep constructing unchanged.
 | Table | Columns | One row per |
 |---|---|---|
 | `elements` | ETCD (≤8 chars, unique), ELEMENT (≤40 chars), TESTRL, TEENRL, TEDUR (ISO 8601 duration string, e.g. `P2W`) | trial element |
-| `ta` | ARMCD, ETCD, TAETORD (integer), EPOCH, TABRANCH, TATRANSAC | arm per element in planned order |
+| `ta` | ARMCD, ETCD, TAETORD (integer), EPOCH, TABRANCH, TATRANS | arm per element in planned order |
 | `ie` | IETESTCD, IETEST, IECAT (INCLUSION / EXCLUSION) | criterion |
 | `ts` | TSPARMCD, TSPARM, TSVAL, TSVALNF | trial summary parameter; exactly one of TSVAL / TSVALNF filled |
 
@@ -65,7 +65,7 @@ every other spec table.
   TEDUR `P12W`), with prose TESTRL/TEENRL rules.
 - `ta`: 3 arms × 2 elements = 6 rows. Per SDTMIG semantics the transition
   rule sits on the element being left and the branch on the element the
-  branch leads to: SCRN rows carry TATRANSAC "Randomised"; TREAT rows carry
+  branch leads to: SCRN rows carry TATRANS "Randomised"; TREAT rows carry
   TABRANCH "Randomised to \<arm\>".
 - `ie`: 6 criteria (3 INCLUSION, 3 EXCLUSION; the first inclusion is the
   age 18–100 rule mirroring `study$age_min`/`age_max`).
@@ -147,7 +147,7 @@ Add entries to the two per-domain lookup tables (`key_spec`,
 - Origins: `var_origin()` is name-based, so only names unique to trial
   design go into the global `Protocol` list (TSPARMCD, TSPARM, TSVAL,
   TSVALNF, IETESTCD, IETEST, IECAT, ETCD, ELEMENT, TESTRL, TEENRL, TEDUR,
-  TAETORD, TABRANCH, TATRANSAC, VISITDY) — a global ARMCD entry would
+  TAETORD, TABRANCH, TATRANS, VISITDY) — a global ARMCD entry would
   mislabel DM's ARMCD. Names shared with other domains (ARMCD, ARM, EPOCH
   in TA; VISITNUM, VISIT in TV) get a small per-domain override map so TA/TV
   carry `Protocol` without touching what DM/SV declare.
@@ -156,7 +156,7 @@ Add entries to the two per-domain lookup tables (`key_spec`,
 
 `write_sdtm()` needs no changes: its guards are generic and every new
 variable name passes the 8-character XPT v5 limit (TSPARMCD, IETESTCD,
-TAETORD, TABRANCH, TATRANSAC, VISITDY, TSVALNF, TESTRL, TEENRL, TEDUR).
+TAETORD, TABRANCH, TATRANS, VISITDY, TSVALNF, TESTRL, TEENRL, TEDUR).
 
 ## Testing
 
