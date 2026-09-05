@@ -88,7 +88,7 @@ derive_adae <- function(ae, suppae, adsl) {
       ASTDY = derive_dy_d(ASTDT, TRTSDT),
       AENDY = derive_dy_d(AENDT, TRTSDT),
 
-      TRTEMFL = .rule_trtemfl(ASTDT, TRTSDT, TRTEDT),
+      TRTEMFL = .rule_trtemfl(ASTDT, TRTSDT, TRTEDT)
     ) |>
     arrange(USUBJID, ASEQ) |>
     apply_labels(c(

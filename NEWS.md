@@ -1,3 +1,35 @@
+# edc2cdisc 0.3.1
+
+Closes REVIEW-2026-09-05.
+
+## Fixed
+
+* `map_lb()` no longer scales collected reference ranges by the identity
+  factor when the EDC already supplied the standard result. If that
+  standard value has a blank standard unit, `LBSTNRLO/HI` stay missing
+  and `LBNRIND` stays blank rather than calling a mmol/L glucose LOW
+  against mg/dL bounds. A labelled EDC standard unit keeps already-
+  standard collected ranges. A blank EDC standard unit on a populated
+  standard value is a `lb-std-unit-blank` warning.
+* Four `validate_adam()` checks (`trtdurd-wrong`, `trtemfl-not-derivable`,
+  `astdy-wrong-anchor`, `advs-ady-wrong`) now treat an NA built column as
+  a disagreement. A blanked `TRTEMFL` is the corruption those checks exist
+  to catch.
+* `new_study_spec(derivations = )` stores the list on the spec, and
+  `map_variables()` reads `spec$derivations` by default, so a declared
+  map-time derivation survives `build_all()`.
+* Derivation rows whose registry entry reads `row$crf_field` must name
+  that field at construction time.
+* `build_define_xml()` errors when the ValueList parent `ItemRef` is
+  missing instead of silently orphaning the value list.
+* `generate_rave_extract()` restores a caller that had no `.Random.seed`
+  to that state.
+
+## Changed
+
+* SDTM `LBNRIND` (mapper and `validate_sdtm()`) calls the shared
+  `.rule_anrind()`.
+
 # edc2cdisc 0.3.0
 
 Closes out the first code review (REVIEW-2026-09-03): all fifteen findings
