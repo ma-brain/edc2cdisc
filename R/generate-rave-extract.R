@@ -46,6 +46,12 @@
 # Private RNG stream for the medical-history pass
 .gen_mh_seed      <- 20260903L
 
+# Private RNG stream for the questionnaire pass: only the record bookkeeping
+# form_add() stamps (SaveTs and friends) draws from it - the QS item values
+# are index arithmetic - so the main stream, and every pre-existing row, is
+# untouched by the form.
+.QS_TS_SEED       <- 20260905L
+
 # ---------------------------------------------------------------------------
 # Reference tables
 # ---------------------------------------------------------------------------
@@ -179,7 +185,7 @@ id_gen <- function(start) {
 # not portable; a lookup keeps the surrogate keys stable run to run)
 .FORM_ID_OFFSET <- c(DM = 1000L, VS = 12000L, AE = 23000L,
                      CM = 34000L, EX = 45000L, DS = 56000L, LB = 67000L,
-                     MH = 78000L)
+                     MH = 78000L, QS = 89000L)
 
 iso_dt <- function(d, hh = 9L, mm = 30L, ss = 0L) {
   sprintf("%sT%02d:%02d:%02d", format(as.Date(d), "%Y-%m-%d"), hh, mm, ss)
@@ -519,6 +525,7 @@ populate <- function(subjects, cfg) {
   ex <- new_form("EX", "Study Drug Administration", cfg$fields$EX, cfg)
   ds <- new_form("DS", "End of Study", cfg$fields$DS, cfg)
   lb <- new_form("LB", "Laboratory", cfg$fields$LB, cfg)
+  qs <- new_form("QS", "Questionnaires", cfg$fields$QS, cfg)
 
   for (idx in seq_along(subjects) - 1L) {
     sub <- subjects[[idx + 1L]]
@@ -848,9 +855,35 @@ populate <- function(subjects, cfg) {
       }
       form_add(lb, sub, folder, ldate, f)
     }
+
+    # ---- QS (questionnaires) ------------------------------------------------
+    # Deterministic by design: item values are index arithmetic and the one
+    # not-done visit comes from cfg$idx, so the QS rows consume nothing from
+    # the main RNG stream and every other form's bytes stay frozen. The
+    # record bookkeeping that form_add() stamps (SaveTs and friends) draws
+    # from a per-subject private stream, restored immediately - the same
+    # contract as apply_mh() - because a mid-loop draw on the main stream
+    # would silently move every later subject's data.
+    qs_seed_hold <- .Random.seed # nolint: object_name_linter. (.Random.seed is a required base name)
+    set.seed(.QS_TS_SEED + idx)
+    for (folder in cfg$visit_folders) {
+      if (is.null(vdates[[folder]])) next
+      vdate <- vdates[[folder]]
+      vpos <- match(folder, cfg$visit_folders)
+      not_done <- cfg$idx$qs_not_done
+      qs_perf <- !(idx == not_done[1] && vpos == not_done[2])
+      qs_fields <- list(QSPERF = if (qs_perf) "1" else "0")
+      if (!qs_perf) qs_fields$QSNRA <- "Subject refused"
+      for (it in seq_len(cfg$qs_n_items)) {
+        val <- as.character((idx + vpos + it - 1L) %% 4L)
+        qs_fields[[str_c("MOS0", it, "_RAW")]] <- if (qs_perf) val else ""
+      }
+      form_add(qs, sub, folder, vdate, qs_fields)
+    }
+    assign(".Random.seed", qs_seed_hold, envir = globalenv()) # nolint: object_name_linter. (.Random.seed is a required base name)
   }
 
-  list(DM = dm, VS = vs, LB = lb, AE = ae, CM = cm, EX = ex, DS = ds)
+  list(DM = dm, VS = vs, LB = lb, AE = ae, CM = cm, EX = ex, DS = ds, QS = qs)
 }
 
 # ---------------------------------------------------------------------------
@@ -941,7 +974,10 @@ populate <- function(subjects, cfg) {
   LBDAT = "Date of Sample Collection", LBTIM = "Time of Sample Collection",
   LBFAST = "Fasting Status",
   GLUC = "Glucose", CREAT = "Creatinine", HGB = "Hemoglobin",
-  POT = "Potassium", ALT = "Alanine Aminotransferase"
+  POT = "Potassium", ALT = "Alanine Aminotransferase",
+  QSPERF = "Questionnaire Performed", QSNRA = "Reason Not Performed",
+  MOS01 = "Mood: Cheerful", MOS02 = "Mood: Down",
+  MOS03 = "Sleep Quality", MOS04 = "Energy Level"
 )
 
 .CODELIST_OF <- list(
@@ -969,7 +1005,8 @@ populate <- function(subjects, cfg) {
 )
 
 .FLOAT_FIELDS <- c("SYSBP", "DIABP", "PULSE", "TEMP", "WEIGHT", "HEIGHT",
-                   "CMDOSE", "EXDOSE", "GLUC", "CREAT", "HGB", "POT", "ALT")
+                   "CMDOSE", "EXDOSE", "GLUC", "CREAT", "HGB", "POT", "ALT",
+                   "MOS01_RAW", "MOS02_RAW", "MOS03_RAW", "MOS04_RAW")
 
 .SASFORMAT_OF <- c(date = "DATE9.", datetime = "E8601DT19.",
                    float = "BEST8.", integer = "BEST8.")

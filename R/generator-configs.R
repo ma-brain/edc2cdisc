@@ -52,7 +52,10 @@
     lb_panel = .LB_PANEL,
     fields = list(DM = .DM_FIELDS, VS = .VS_FIELDS, AE = .AE_FIELDS,
                   CM = .CM_FIELDS, MH = .MH_FIELDS, EX = .EX_FIELDS,
-                  DS = .DS_FIELDS, LB = .LB_FIELDS),
+                  DS = .DS_FIELDS, LB = .LB_FIELDS,
+                  QS = c("QSDAT_YYYY", "QSDAT_MM", "QSDAT_DD", "QSPERF",
+                         "QSNRA", "MOS01_RAW", "MOS02_RAW", "MOS03_RAW",
+                         "MOS04_RAW")),
     field_labels = .FIELD_LABELS,
     codelist_of = .CODELIST_OF,
     float_fields = .FLOAT_FIELDS,
@@ -67,6 +70,8 @@
     vs_extra = NULL,
     ex_lot = NULL,
 
+    qs_n_items = 4L,
+
     idx = list(
       birth_day = 2L, birth_monthday = 9L,
       sf = c(5L, 17L), et = c(3L, 11L, 20L),
@@ -76,7 +81,8 @@
       lb_np = 10L, lb_np_folder = "WK08",
       force_high = list(analyte = "ALT", idx = 4L, folder = "WK04",
                         value = 40 * 3.1),
-      deaths = c(7L, 15L)
+      deaths = c(7L, 15L),
+      qs_not_done = c(7L, 4L)
     )
   )
 }
@@ -93,9 +99,10 @@
   # The CRF family's field metadata is shared; this study adds two fields.
   field_labels <- utils::modifyList(.FIELD_LABELS, list(
     RESP  = "Respiration Rate",
-    EXLOT = "Lot Number"
+    EXLOT = "Lot Number",
+    MOS05 = "Concentration"
   ))
-  float_fields <- union(.FLOAT_FIELDS, "RESP")
+  float_fields <- union(.FLOAT_FIELDS, c("RESP", "MOS05_RAW"))
 
   lb_panel <- list(
     list(oid = "GLUC",  std = TRUE,  f = 1 / 18.0156, un_us = "mg/dL",
@@ -199,7 +206,10 @@
     fields = list(DM = .DM_FIELDS, VS = vs_fields, AE = .AE_FIELDS,
                   CM = .CM_FIELDS, MH = .MH_FIELDS,
                   EX = c(.EX_FIELDS, "EXLOT"),
-                  DS = .DS_FIELDS, LB = .lb_fields(lb_panel)),
+                  DS = .DS_FIELDS, LB = .lb_fields(lb_panel),
+                  QS = c("QSDAT_YYYY", "QSDAT_MM", "QSDAT_DD", "QSPERF",
+                         "QSNRA", "MOS01_RAW", "MOS02_RAW", "MOS03_RAW",
+                         "MOS04_RAW", "MOS05_RAW")),
     field_labels = field_labels,
     codelist_of = .CODELIST_OF,
     float_fields = float_fields,
@@ -214,6 +224,8 @@
     vs_extra = list(field = "RESP", base = 16, sd = 2, unit = "breaths/min"),
     ex_lot = list(field = "EXLOT", prefix = "SY2-"),
 
+    qs_n_items = 5L,
+
     idx = list(
       birth_day = 4L, birth_monthday = 11L,
       sf = c(6L, 14L), et = c(2L, 9L),
@@ -223,7 +235,8 @@
       lb_np = 12L, lb_np_folder = "WK12",
       force_high = list(analyte = "AST", idx = 4L, folder = "WK08",
                         value = 45 * 3.1),
-      deaths = c(10L, 16L)
+      deaths = c(10L, 16L),
+      qs_not_done = c(4L, 3L)
     )
   )
 }
