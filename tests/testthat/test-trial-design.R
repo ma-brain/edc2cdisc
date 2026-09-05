@@ -103,3 +103,79 @@ test_that("build_all returns the trial design domains for both studies", {
   expect_equal(nrow(built2$sdtm$TV), 6)
   expect_equal(nrow(built2$sdtm$TS), 7)
 })
+
+# Meta-tests: corrupt a trial design domain, assert the validator trips ---
+
+td_fixture <- function() {
+  out <- file.path(tempdir(), "td-meta")
+  dir.create(out, showWarnings = FALSE)
+  ext <- file.path(out, "rave")
+  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
+  build_all(ext)
+}
+
+test_that("a TA element missing from TE trips ta-etcd-not-in-te", {
+  domains <- td_fixture()$sdtm
+  domains$TA$ETCD[1] <- "NOPE"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("ta-etcd-not-in-te" %in% issues$check)
+})
+
+test_that("a NARMS row disagreeing with spec$arms trips ts-narms-mismatch", {
+  domains <- td_fixture()$sdtm
+  domains$TS$TSVAL[domains$TS$TSPARMCD == "NARMS"] <- "9"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("ts-narms-mismatch" %in% issues$check)
+  expect_error(stop_on_error(issues, "meta"), "validation error")
+})
+
+test_that("a PLANSUB row disagreeing with study$n trips ts-plansub-mismatch", {
+  domains <- td_fixture()$sdtm
+  domains$TS$TSVAL[domains$TS$TSPARMCD == "PLANSUB"] <- "999"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("ts-plansub-mismatch" %in% issues$check)
+})
+
+test_that("TV drifting from spec$visits trips tv-vs-spec-visits", {
+  domains <- td_fixture()$sdtm
+  domains$TV$VISITDY[1] <- 99L
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("tv-vs-spec-visits" %in% issues$check)
+})
+
+test_that("an SV visit that TV never planned trips sv-visit-not-in-tv", {
+  domains <- td_fixture()$sdtm
+  ghost <- domains$SV[1, ] |> mutate(VISITNUM = 99L)
+  domains$SV <- bind_rows(domains$SV, ghost)
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("sv-visit-not-in-tv" %in% issues$check)
+})
+
+test_that("duplicate TS parameters and valflavor violations trip", {
+  domains <- td_fixture()$sdtm
+  domains$TS <- bind_rows(domains$TS, domains$TS[domains$TS$TSPARMCD == "NARMS", ])
+  expect_true("ts-parmcd-not-unique" %in%
+                validate_sdtm(domains, spec_synth01)$check)
+
+  domains <- td_fixture()$sdtm
+  domains$TS$TSVALNF[domains$TS$TSPARMCD == "NARMS"] <- "N/A"
+  expect_true("ts-valnf-xor" %in% validate_sdtm(domains, spec_synth01)$check)
+})
+
+test_that("a bad IECAT trips iecat-bad-value", {
+  domains <- td_fixture()$sdtm
+  domains$TI$IECAT[1] <- "MAYBE"
+  expect_true("iecat-bad-value" %in% validate_sdtm(domains, spec_synth01)$check)
+})
+
+test_that("dropping a required trial design variable trips required-vars", {
+  domains <- td_fixture()$sdtm
+  domains$TA$EPOCH <- NULL
+  expect_true(any(validate_sdtm(domains, spec_synth01)$check == "required-vars" &
+                    validate_sdtm(domains, spec_synth01)$domain == "TA"))
+})
+
+test_that("a clean build has zero trial design findings", {
+  domains <- td_fixture()$sdtm
+  expect_equal(nrow(validate_sdtm(domains, spec_synth01)), 0)
+})

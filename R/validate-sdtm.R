@@ -26,7 +26,13 @@
   SUPPEX = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
              "QNAM", "QLABEL", "QVAL", "QORIG", "QEVAL"),
   CO = c("STUDYID", "DOMAIN", "RDOMAIN", "USUBJID", "COSEQ",
-         "IDVAR", "IDVARVAL", "COVAL")
+         "IDVAR", "IDVARVAL", "COVAL"),
+  TA = c("STUDYID", "DOMAIN", "ARMCD", "ARM", "TAETORD", "ETCD", "ELEMENT",
+         "EPOCH"),
+  TE = c("STUDYID", "DOMAIN", "ETCD", "ELEMENT"),
+  TI = c("STUDYID", "DOMAIN", "IETESTCD", "IETEST", "IECAT"),
+  TV = c("STUDYID", "DOMAIN", "VISITNUM", "VISIT", "VISITDY", "EPOCH"),
+  TS = c("STUDYID", "DOMAIN", "TSPARMCD", "TSPARM", "TSVAL")
 )
 
 # ISO 8601: full or reduced precision, optional time; NA is allowed
@@ -56,8 +62,11 @@
 #' formats, no study day 0, baseline-flag uniqueness, LBNRIND coherence, SV
 #' visit uniqueness, VISITNUM reconciliation against SV, screen-failure
 #' study-day leaks, SUPP/CO related-record structure, death coherence across
-#' AE/DS/DM, MH onset before first dose, RELREC pair integrity and - when a
-#' spec is supplied - controlled-terminology values against `spec$codelists`.
+#' AE/DS/DM, MH onset before first dose, RELREC pair integrity, trial design
+#' integrity (TA→TE, TA against `spec$arms`/`spec$visits`, TV against
+#' `spec$visits`, SV visits planned in TV, TS parameter consistency against
+#' `spec$arms`/`spec$study$n`) and - when a spec is supplied - controlled
+#' terminology values against `spec$codelists`.
 #'
 #' @param domains A named list of mapped SDTM datasets, as built by
 #'   [build_all()] (DM, EX, VS, AE, CM, DS, SV, LB, MH, SUPPDM, SUPPAE,
@@ -480,6 +489,121 @@ validate_sdtm <- function(domains, spec = NULL) {
         add("RELREC", "ERROR", "relrec-parent-orphan",
             sprintf("%d %s-side link(s) with no matching %s record",
                     nrow(orphans), rd, rd))
+      }
+    }
+  }
+
+  # Trial design --------------------------------------------------------------
+  # TA/TE/TI/TV/TS are built from spec tables, so the checks recompute what
+  # the spec already knows instead of trusting the builders - the same
+  # "read the spec twice" discipline the CT and ADaM checks apply.
+  for (d in c("TA", "TE", "TI", "TV", "TS")) {
+    df <- domains[[d]]
+    if (is.null(df) || nrow(df) == 0) {
+      add(d, "WARN", "trial-design-empty", "0 rows")
+    }
+  }
+
+  ta_df <- domains$TA
+  te_df <- domains$TE
+  if (!is.null(ta_df) && nrow(ta_df) > 0) {
+    dup <- ta_df |> count(ARMCD, TAETORD, name = ".n") |> filter(.n > 1)
+    if (nrow(dup) > 0) {
+      add("TA", "ERROR", "ta-dup-key",
+          sprintf("%d duplicated ARMCD/TAETORD key(s)", nrow(dup)))
+    }
+    if (!is.null(te_df)) {
+      orphan <- setdiff(unique(ta_df$ETCD), unique(te_df$ETCD))
+      if (length(orphan) > 0) {
+        add("TA", "ERROR", "ta-etcd-not-in-te", str_flatten_comma(orphan))
+      }
+    }
+    if (!is.null(spec)) {
+      unknown_arm <- setdiff(unique(ta_df$ARMCD), unique(spec$arms$ARMCD))
+      if (length(unknown_arm) > 0) {
+        add("TA", "ERROR", "ta-armcd-not-in-arms",
+            str_flatten_comma(unknown_arm))
+      }
+      unknown_ep <- setdiff(unique(ta_df$EPOCH), unique(spec$visits$EPOCH))
+      if (length(unknown_ep) > 0) {
+        add("TA", "ERROR", "ta-epoch-not-in-visits",
+            str_flatten_comma(unknown_ep))
+      }
+    }
+  }
+  if (!is.null(te_df) && anyDuplicated(te_df$ETCD) > 0) {
+    add("TE", "ERROR", "te-etcd-not-unique", "duplicated ETCD")
+  }
+
+  ti_df <- domains$TI
+  if (!is.null(ti_df) && nrow(ti_df) > 0) {
+    if (anyDuplicated(ti_df$IETESTCD) > 0) {
+      add("TI", "ERROR", "ti-testcd-not-unique", "duplicated IETESTCD")
+    }
+    bad_cat <- setdiff(unique(ti_df$IECAT), c("INCLUSION", "EXCLUSION"))
+    if (length(bad_cat) > 0) {
+      add("TI", "ERROR", "iecat-bad-value", str_flatten_comma(bad_cat))
+    }
+  }
+
+  tv_df <- domains$TV
+  if (!is.null(tv_df) && nrow(tv_df) > 0) {
+    dup <- tv_df |> count(VISITNUM, name = ".n") |> filter(.n > 1)
+    if (nrow(dup) > 0) {
+      add("TV", "ERROR", "tv-visit-not-unique",
+          sprintf("%d duplicated VISITNUM key(s)", nrow(dup)))
+    }
+    if (!is.null(spec)) {
+      planned <- spec$visits |>
+        transmute(
+          VISITNUM, VISIT,
+          # the same no-day-0 rule map_tv() and map_sv() apply
+          VISITDY = if_else(TargetDays >= 0L, TargetDays + 1L, TargetDays)
+        )
+      drift <- planned |>
+        anti_join(tv_df, by = c("VISITNUM", "VISIT", "VISITDY")) |>
+        bind_rows(tv_df |> anti_join(planned, by = c("VISITNUM", "VISIT", "VISITDY")))
+      if (nrow(drift) > 0) {
+        add("TV", "ERROR", "tv-vs-spec-visits",
+            sprintf("%d TV row(s) disagree with spec$visits", nrow(drift)))
+      }
+    }
+  }
+  if (!is.null(domains$SV) && !is.null(tv_df)) {
+    unplanned <- domains$SV |> distinct(VISITNUM) |> anti_join(tv_df, by = "VISITNUM")
+    if (nrow(unplanned) > 0) {
+      add("SV", "ERROR", "sv-visit-not-in-tv",
+          str_flatten_comma(as.character(unplanned$VISITNUM)))
+    }
+  }
+
+  ts_df <- domains$TS
+  if (!is.null(ts_df) && nrow(ts_df) > 0) {
+    dup <- ts_df |> count(TSPARMCD, name = ".n") |> filter(.n > 1)
+    if (nrow(dup) > 0) {
+      add("TS", "ERROR", "ts-parmcd-not-unique",
+          sprintf("%d duplicated TSPARMCD key(s)", nrow(dup)))
+    }
+    both_filled <- ts_df |>
+      filter(!is.na(TSVAL) & TSVAL != "", !is.na(TSVALNF) & TSVALNF != "")
+    both_blank <- ts_df |>
+      filter(is.na(TSVAL) | TSVAL == "", is.na(TSVALNF) | TSVALNF == "")
+    if (nrow(both_filled) + nrow(both_blank) > 0) {
+      add("TS", "ERROR", "ts-valnf-xor",
+          "TSVAL and TSVALNF: exactly one must be filled per row")
+    }
+    if (!is.null(spec)) {
+      narms <- ts_df$TSVAL[ts_df$TSPARMCD == "NARMS"]
+      if (length(narms) >= 1 && narms[1] != as.character(nrow(spec$arms))) {
+        add("TS", "ERROR", "ts-narms-mismatch",
+            sprintf("TS NARMS '%s' but spec$arms has %d row(s)",
+                    narms[1], nrow(spec$arms)))
+      }
+      plansub <- ts_df$TSVAL[ts_df$TSPARMCD == "PLANSUB"]
+      if (length(plansub) >= 1 && plansub[1] != as.character(spec$study$n)) {
+        add("TS", "ERROR", "ts-plansub-mismatch",
+            sprintf("TS PLANSUB '%s' but spec$study$n is %d",
+                    plansub[1], spec$study$n))
       }
     }
   }
