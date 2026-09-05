@@ -107,6 +107,24 @@ test_that("map_lb: EDC standard with a labelled unit keeps already-standard rang
   expect_equal(as.vector(row$LBNRIND), "NORMAL")
 })
 
+test_that("map_lb LBNRIND matches .rule_anrind on the same triple", {
+  refs <- tibble(USUBJID = "3021-101-001", RFSTDTC = "2024-04-01",
+                 RFENDTC = "2024-06-01")
+  lb_raw <- tibble(
+    Subject = "101-001", Folder = spec_synth01$visits$Folder[1],
+    LBPERF = "1", LBFAST = "0",
+    LBDAT_YYYY = "2024", LBDAT_MM = "03", LBDAT_DD = "20", LBTIM = NA,
+    GLUC_RAW = "90", GLUC_UN = "mg/dL", GLUC_STD = NA, GLUC_STD_UN = NA,
+    GLUC_NRLO = "70", GLUC_NRHI = "100"
+  )
+  lb <- map_lb(lb_raw, spec_synth01, refs)
+  row <- lb[lb$LBTESTCD == "GLUC", ]
+  expect_identical(
+    as.vector(row$LBNRIND),
+    .rule_anrind(row$LBSTRESN, row$LBSTNRLO, row$LBSTNRHI)
+  )
+})
+
 test_that("validate_sdtm: an unconfigured collected unit is a WARN", {
   out <- file.path(tempdir(), "edc2cdisc-lb-unit")
   on.exit(unlink(out, recursive = TRUE, force = TRUE), add = TRUE)

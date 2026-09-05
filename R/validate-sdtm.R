@@ -163,13 +163,9 @@ validate_sdtm <- function(domains, spec = NULL) {
     add("LB", "ERROR", "lbnrind-bad-value", str_flatten_comma(lb_ind_vals))
   }
   lb_ind_bad <- domains$LB |>
-    filter(!is.na(LBSTRESN), !is.na(LBSTNRLO), !is.na(LBSTNRHI)) |>
-    mutate(expect = case_when(
-      LBSTRESN < LBSTNRLO ~ "LOW",
-      LBSTRESN > LBSTNRHI ~ "HIGH",
-      .default            = "NORMAL"
-    )) |>
-    filter(is.na(LBNRIND) | LBNRIND != expect)
+    mutate(expect = .rule_anrind(LBSTRESN, LBSTNRLO, LBSTNRHI)) |>
+    filter(xor(is.na(LBNRIND), is.na(expect)) |
+             (!is.na(LBNRIND) & !is.na(expect) & LBNRIND != expect))
   if (nrow(lb_ind_bad) > 0) {
     add("LB", "ERROR", "lbnrind-inconsistent",
         sprintf("%d row(s) where LBNRIND disagrees with the range comparison",

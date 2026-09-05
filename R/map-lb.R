@@ -102,12 +102,7 @@ map_lb <- function(lb, spec, refs) {
         .unfinished_std ~ NA_real_,
         .default = LBORNRHI
       ),
-      LBNRIND  = case_when(
-        is.na(LBSTRESN) | is.na(LBSTNRLO) | is.na(LBSTNRHI) ~ NA_character_,
-        LBSTRESN < LBSTNRLO                                  ~ "LOW",
-        LBSTRESN > LBSTNRHI                                  ~ "HIGH",
-        .default                                             = "NORMAL"
-      )
+      LBNRIND  = .rule_anrind(LBSTRESN, LBSTNRLO, LBSTNRHI)
     )
 
   if (any(lb$.unfinished_std)) {
