@@ -105,7 +105,14 @@
       # soft-deleted duplicate would inherit the comment).
       vs_comment = c(2L, 4L, "TEMP"),
       pe_not_done = c(12L, 2L), pe_abnormal = c(3L, 2L),
-      eg_not_done = c(9L, 5L), eg_late_time = c(2L, 3L)
+      eg_not_done = c(9L, 5L), eg_late_time = c(2L, 3L),
+      # eg_qt_high: idx 13 ("102-014") is COMPLETED with the full schedule, so
+      # Week 4 (position 4) is a performed ECG - where QT_RAW = "520" /
+      # QTCF_RAW = "537" seed on (the ADEG ANRIND = HIGH row; the SAP
+      # stand-in ranges make every deterministic value NORMAL). Clear of the
+      # eg_not_done and eg_late_time subjects. (Probed against the built
+      # extract; the deterministic values there were 386/405.)
+      eg_qt_high = c(13L, 4L)
     )
   )
 }
@@ -286,7 +293,14 @@
       # soft-deleted duplicate would inherit the comment).
       vs_comment = c(1L, 4L, "TEMP"),
       pe_not_done = c(12L, 2L), pe_abnormal = c(3L, 2L),
-      eg_not_done = c(7L, 5L), eg_late_time = c(2L, 3L)
+      eg_not_done = c(7L, 5L), eg_late_time = c(2L, 3L),
+      # eg_qt_high: idx 11 ("203-012") is COMPLETED with the full schedule, so
+      # Week 8 (position 4) is a performed ECG - where QT_RAW = "520" /
+      # QTCF_RAW = "537" seed on (the ADEG ANRIND = HIGH row; the SAP
+      # stand-in ranges make every deterministic value NORMAL). Clear of the
+      # eg_not_done and eg_late_time subjects. (Probed against the built
+      # extract; the deterministic values there were 398/415.)
+      eg_qt_high = c(11L, 4L)
     )
   )
 }

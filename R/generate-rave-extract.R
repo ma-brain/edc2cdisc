@@ -957,6 +957,13 @@ populate <- function(subjects, cfg) {
           QTCF_RAW = as.character(400 + (base %% 4L) * 5L),
           RRI_RAW  = as.character(900 + (base %% 6L) * 20L)
         ))
+        if (idx == cfg$idx$eg_qt_high[1] && vpos == cfg$idx$eg_qt_high[2]) {
+          # ADEG's ANRIND needs a classified row: the SAP stand-in ranges make
+          # every deterministic value NORMAL, so one visit runs QT/QTCF high
+          # (mirrors the LB force_high precedent).
+          eg_fields$QT_RAW <- "520"
+          eg_fields$QTCF_RAW <- "537"
+        }
       }
       form_add(eg, sub, folder, vdate, eg_fields)
     }
