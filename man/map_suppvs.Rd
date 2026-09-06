@@ -25,11 +25,13 @@ the temperature record. VSCOMT is a form-level field on the wide
 subject-visit row, so the raw data alone cannot say which test a comment
 belongs to and the mappers never see the config that seeds it - the
 hardcoded TEMP is the codified assumption. What the raw data CAN police
-is the link itself: the row-count guard fails loudly if any populated
-VSCOMT cannot be attached to exactly one built TEMP record, so a comment
-that drifts off the temperature record surfaces here instead of dropping
-or mis-attaching silently. A qualifier collected on a different test
-needs the join extended in code, exactly like SUPPPE's CV/ABNORMAL.
+is the link itself: the row-count guard fails loudly if a populated
+VSCOMT cannot be attached to exactly one built TEMP record at its visit,
+so a comment whose visit has no TEMP row fires here rather than dropping
+silently - but a comment collected on another test at a visit that does
+have a TEMP row still mis-attaches silently. A qualifier collected on a
+different test needs the join extended in code, exactly like SUPPPE's
+CV/ABNORMAL.
 }
 \examples{
 ext <- file.path(tempdir(), "ex-map-suppvs")

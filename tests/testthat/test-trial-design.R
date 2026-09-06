@@ -88,8 +88,9 @@ test_that("build_all returns the trial design domains for both studies", {
   built1 <- build_all(ext1)
   expect_setequal(names(built1$sdtm),
                   c("DM", "EX", "VS", "AE", "CM", "DS", "SV", "LB", "MH",
-                    "QS", "PE", "EG", "SUPPDM", "SUPPAE", "SUPPEX", "SUPPPE",
-                    "CO", "RELREC", "TA", "TE", "TI", "TV", "TS"))
+                    "QS", "PE", "EG", "SE", "SUPPDM", "SUPPAE", "SUPPEX",
+                    "SUPPPE", "SUPPMH", "SUPPVS", "CO", "RELREC", "TA", "TE",
+                    "TI", "TV", "TS"))
   expect_equal(nrow(built1$sdtm$TA), 6)
   expect_equal(nrow(built1$sdtm$TE), 2)
   expect_equal(nrow(built1$sdtm$TI), 6)
@@ -100,6 +101,12 @@ test_that("build_all returns the trial design domains for both studies", {
   expect_gt(nrow(built1$sdtm$QS), 0)
   expect_gt(nrow(built1$sdtm$PE), 0)
   expect_gt(nrow(built1$sdtm$EG), 0)
+  # SE too: one subject-level row per subject. Each study seeds exactly one
+  # MH qualifier and one VS comment, so the supplemental domains are
+  # single-row here and in SYNTH02 below
+  expect_gt(nrow(built1$sdtm$SE), 0)
+  expect_equal(nrow(built1$sdtm$SUPPMH), 1)
+  expect_equal(nrow(built1$sdtm$SUPPVS), 1)
   # EG collects the same 5 intervals per (USUBJID, VISITNUM) key in both
   # studies (the SYNTH02 branch below asserts the same for its build)
   eg_counts1 <- dplyr::count(built1$sdtm$EG, USUBJID, VISITNUM)
@@ -121,6 +128,11 @@ test_that("build_all returns the trial design domains for both studies", {
   expect_equal(unique(pe_counts$n), 5)
   eg_counts <- dplyr::count(built2$sdtm$EG, USUBJID, VISITNUM)
   expect_equal(unique(eg_counts$n), 5)
+  # the qualifier set is all-or-nothing across studies as well: SE present
+  # in both, and one seeded MH qualifier + VS comment per study
+  expect_gt(nrow(built2$sdtm$SE), 0)
+  expect_equal(nrow(built2$sdtm$SUPPMH), 1)
+  expect_equal(nrow(built2$sdtm$SUPPVS), 1)
 })
 
 # Meta-tests: corrupt a trial design domain, assert the validator trips ---

@@ -147,7 +147,7 @@ spec_synth01 <- new_study_spec(
     "AE",     "AESEQ",  "AEDISCON", "AE Led to Study Discontinuation",    "AEDISCON", "yn",       "CRF",          NA,
     "EX",     "EXSEQ",  "EXADMBY",  "Dose Administered By",               "EXADMBY",  "squish",   "CRF",          NA,
     "PE",     "PESEQ",  "PEABNDT",  "Abnormality Details",                "CVSPEC",   "squish",   "CRF",          NA,
-    "MH",     "MHSPID", "MHSPECD",  "If Related, Specify",                "MHSPEC",   "squish",   "CRF",          NA,
+    "MH",     "MHSEQ",  "MHSPECD",  "If Related, Specify",                "MHSPEC",   "squish",   "CRF",          NA,
     "VS",     "VSSEQ",  "VSCOMTL",  "Comment",                            "VSCOMT",   "squish",   "CRF",          NA
   ),
 

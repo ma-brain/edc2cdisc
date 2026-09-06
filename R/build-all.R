@@ -22,7 +22,7 @@
 #'   and a `define.xml` stub is written alongside.
 #' @param adam_dir Optional output directory for the ADaM datasets, laid out
 #'   like `sdtm_dir`.
-#' @return A list with `sdtm` (named list of the 23 mapped domains) and
+#' @return A list with `sdtm` (named list of the 26 mapped domains) and
 #'   `adam` (ADSL, ADAE, ADVS, ADLB), invisibly.
 #' @export
 #' @examples
@@ -43,15 +43,18 @@ build_all <- function(extract_dir, spec = spec_synth01,
 
   # ---- SDTM --------------------------------------------------------------
   dm <- map_dm(forms$DM, forms$EX, forms$DS, spec)
+  se <- map_se(dm, spec)          # subject-level: needs only dm + spec
   refs <- subject_ref(dm)
   ex   <- map_ex(forms$EX, spec, refs)
   vs   <- map_vs(forms$VS, spec, refs)
+  suppvs <- map_suppvs(forms$VS, vs, spec)
   ae   <- map_ae(forms$AE, spec, refs)
   cm   <- map_cm(forms$CM, spec, refs)
   ds   <- map_ds(forms$DS, spec, refs)
   sv   <- map_sv(forms, spec, refs)
   lb   <- map_lb(forms$LB, spec, refs)
   mh   <- map_mh(forms$MH, spec, refs)
+  suppmh <- map_suppmh(forms$MH, mh, spec)
   qs   <- map_qs(forms$QS, spec, refs)
   pe   <- map_pe(forms$PE, spec, refs)
   eg   <- map_eg(forms$EG, spec, refs)
@@ -69,9 +72,9 @@ build_all <- function(extract_dir, spec = spec_synth01,
   ts <- map_ts(spec)
 
   sdtm <- list(DM = dm, EX = ex, VS = vs, AE = ae, CM = cm, DS = ds, SV = sv,
-               LB = lb, MH = mh, QS = qs, PE = pe, EG = eg,
+               LB = lb, MH = mh, QS = qs, PE = pe, EG = eg, SE = se,
                SUPPDM = suppdm, SUPPAE = suppae, SUPPEX = suppex,
-               SUPPPE = supppe, CO = co,
+               SUPPPE = supppe, SUPPMH = suppmh, SUPPVS = suppvs, CO = co,
                RELREC = relrec,
                TA = ta, TE = te, TI = ti, TV = tv, TS = ts)
 
