@@ -59,9 +59,11 @@ map_pe <- function(pe, spec, refs) {
            PECLSIG  = NA_character_)
 
   # Performed items: keep only actual answers; a system left blank on a
-  # performed form is not an SDTM record.
+  # performed form is not an SDTM record. The performed stamp must be
+  # explicit - blank/NA PERF rows fall through to nothing rather than
+  # masquerading as answered.
   answered <- pivoted |>
-    filter(PEPERF != "0", !is.na(PEORRES), PEORRES != "") |>
+    filter(PEPERF == "1", !is.na(PEORRES), PEORRES != "") |>
     mutate(PECLSIG = if_else(PEORRES == "ABNORMAL", "Y", "N"))
 
   bind_rows(answered, not_done) |>

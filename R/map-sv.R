@@ -62,9 +62,8 @@ map_sv <- function(forms, spec, refs) {
       STUDYID = spec$study$STUDYID,
       DOMAIN  = "SV",
       # Planned study day of the visit: TargetDays is measured from first
-      # dose (BASE = TargetDays 0), so apply the same no-day-0 rule as
-      # derive_dy().
-      VISITDY = if_else(TargetDays >= 0L, TargetDays + 1L, TargetDays),
+      # dose (BASE = TargetDays 0), so apply the shared no-day-0 rule
+      VISITDY = planned_dy(TargetDays),
       SVSTDY  = derive_dy(SVSTDTC, RFSTDTC),
       SVENDY  = derive_dy(SVENDTC, RFSTDTC)
     ) |>

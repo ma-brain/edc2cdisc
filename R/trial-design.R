@@ -137,8 +137,8 @@ map_tv <- function(spec) {
     mutate(
       STUDYID = spec$study$STUDYID,
       DOMAIN  = "TV",
-      # Planned study day: same no-day-0 rule as derive_dy()/map_sv()
-      VISITDY = if_else(TargetDays >= 0L, TargetDays + 1L, TargetDays)
+      # Planned study day: the shared no-day-0 rule (see planned_dy())
+      VISITDY = planned_dy(TargetDays)
     ) |>
     arrange(VISITNUM) |>
     transmute(STUDYID, DOMAIN, VISITNUM, VISIT, VISITDY, EPOCH) |>

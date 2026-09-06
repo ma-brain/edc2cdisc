@@ -99,3 +99,16 @@ min_dtc <- function(x) if (all(is.na(x))) NA_character_ else min(x, na.rm = TRUE
 #' @param x ISO 8601 character vector
 #' @export
 max_dtc <- function(x) if (all(is.na(x))) NA_character_ else max(x, na.rm = TRUE)
+
+#' Planned study day from a TargetDays offset
+#'
+#' The package's no-day-0 rule: day 0 is never reported - target day 0 is
+#' study day 1, negatives pass through. Used by [map_sv()], [map_tv()] and
+#' the TV-vs-visits validator so the three cannot drift apart.
+#'
+#' @param target_days Integer TargetDays offset from first dose (BASE = 0)
+#' @return The planned study day integer vector.
+#' @export
+planned_dy <- function(target_days) {
+  if_else(target_days >= 0L, target_days + 1L, target_days)
+}

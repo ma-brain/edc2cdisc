@@ -55,9 +55,11 @@ map_qs <- function(qs, spec, refs) {
            QSSTRESN = NA_real_)
 
   # Performed items: keep only actual answers; an item left blank on a
-  # performed form is not an SDTM record.
+  # performed form is not an SDTM record. The performed stamp must be
+  # explicit - blank/NA PERF rows fall through to nothing rather than
+  # masquerading as answered.
   answered <- pivoted |>
-    filter(QSPERF != "0", !is.na(QSORRES), QSORRES != "") |>
+    filter(QSPERF == "1", !is.na(QSORRES), QSORRES != "") |>
     mutate(QSSTRESN = suppressWarnings(as.numeric(QSORRES)))
 
   bind_rows(answered, not_done) |>

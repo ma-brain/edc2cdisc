@@ -588,8 +588,7 @@ validate_sdtm <- function(domains, spec = NULL) {
       planned <- spec$visits |>
         transmute(
           VISITNUM, VISIT,
-          # the same no-day-0 rule map_tv() and map_sv() apply
-          VISITDY = if_else(TargetDays >= 0L, TargetDays + 1L, TargetDays)
+          VISITDY = planned_dy(TargetDays)
         )
       drift <- planned |>
         anti_join(tv_df, by = c("VISITNUM", "VISIT", "VISITDY")) |>
@@ -695,12 +694,14 @@ validate_sdtm <- function(domains, spec = NULL) {
   # there.
   pe_df <- domains$PE
   if (!is.null(pe_df) && nrow(pe_df) > 0) {
-    bad_orres <- setdiff(
-      unique(pe_df$PEORRES[!.is_blank(pe_df$PEORRES)]),
-      c("NORMAL", "ABNORMAL")
-    )
-    if (length(bad_orres) > 0) {
-      add("PE", "ERROR", "peorres-bad-value", str_flatten_comma(bad_orres))
+    if ("PEORRES" %in% names(pe_df)) {
+      bad_orres <- setdiff(
+        unique(pe_df$PEORRES[!.is_blank(pe_df$PEORRES)]),
+        c("NORMAL", "ABNORMAL")
+      )
+      if (length(bad_orres) > 0) {
+        add("PE", "ERROR", "peorres-bad-value", str_flatten_comma(bad_orres))
+      }
     }
     if (all(c("PECLSIG", "PEORRES") %in% names(pe_df))) {
       # only answered rows are checkable: STAT rows carry no result and their

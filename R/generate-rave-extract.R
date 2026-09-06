@@ -1085,9 +1085,10 @@ populate <- function(subjects, cfg) {
   "_DD"     = c("(day component)", "integer", "8")
 )
 
+# no _RAW entries: write_metadata() types suffixed columns through
+# .SUFFIX_META before this list is ever consulted, so _RAW rows here are dead
 .FLOAT_FIELDS <- c("SYSBP", "DIABP", "PULSE", "TEMP", "WEIGHT", "HEIGHT",
-                   "CMDOSE", "EXDOSE", "GLUC", "CREAT", "HGB", "POT", "ALT",
-                   "MOS01_RAW", "MOS02_RAW", "MOS03_RAW", "MOS04_RAW")
+                   "CMDOSE", "EXDOSE", "GLUC", "CREAT", "HGB", "POT", "ALT")
 
 .SASFORMAT_OF <- c(date = "DATE9.", datetime = "E8601DT19.",
                    float = "BEST8.", integer = "BEST8.")

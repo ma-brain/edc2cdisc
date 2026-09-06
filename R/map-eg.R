@@ -57,9 +57,11 @@ map_eg <- function(eg, spec, refs) {
            EGSTRESU = NA_character_)
 
   # Performed items: keep only actual answers; an interval left blank on a
-  # performed form is not an SDTM record.
+  # performed form is not an SDTM record. The performed stamp must be
+  # explicit - blank/NA PERF rows fall through to nothing rather than
+  # masquerading as answered.
   answered <- pivoted |>
-    filter(EGPERF != "0", !is.na(EGORRES), EGORRES != "") |>
+    filter(EGPERF == "1", !is.na(EGORRES), EGORRES != "") |>
     mutate(EGSTRESN = suppressWarnings(as.numeric(EGORRES)),
            EGSTRESU = if_else(is.na(EGSTRESN), NA_character_, "msec"))
 
