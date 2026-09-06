@@ -17,18 +17,22 @@
 #' inputs. Checks population-flag and treatment coherence on ADSL, the
 #' TRTEMFL window and SUPP merge-back on ADAE, record coverage and
 #' analysis-timing coherence on ADCM, and for the BDS datasets
-#' (ADVS / ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic, ANRIND
-#' against the row's own range, and coverage against the SDTM source
-#' records.
+#' (ADVS / ADEG / ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic,
+#' ANRIND against the row's own range, and coverage against the SDTM
+#' source records. ADEG is the ADVS situation exactly: EG collects no
+#' reference ranges of its own, so the ADEG rows of `spec$bds` are the
+#' SAP stand-in the built ANRIND is checked against.
 #'
-#' @param adsl,adae,adcm,advs,adlb The mapped ADaM datasets
-#' @param dm,ds,ae,cm,vs,lb,suppae The SDTM source datasets the ADaM layer
+#' @param adsl,adae,adcm,advs,adeg,adlb The mapped ADaM datasets
+#' @param dm,ds,ae,cm,vs,eg,lb,suppae The SDTM source datasets the ADaM layer
 #'   was built from
 #' @param spec A `study_spec`; the ADVS rows of `spec$bds` declare the
-#'   reference ranges the built ADVS is checked against - a silent change
-#'   on either side (in `spec$bds` or in [derive_advs()]) trips the
-#'   range-drift check, and a parameter missing from `spec$bds` trips the
-#'   coverage check. The study's `age_min` / `age_max` bound the AGE check.
+#'   reference ranges the built ADVS is checked against and the ADEG rows
+#'   the ECG interval ranges the built ADEG is checked against - a silent
+#'   change on either side (in `spec$bds` or in [derive_advs()] /
+#'   [derive_adeg()]) trips the range-drift check, and a parameter missing
+#'   from `spec$bds` trips the coverage check. The study's `age_min` /
+#'   `age_max` bound the AGE check.
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
 #'   detail. Empty when everything passes.
 #' @export
@@ -39,13 +43,13 @@
 #' }
 #' built <- build_all(ext)
 #' issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
-#'                         built$adam$ADVS, built$adam$ADLB, built$sdtm$DM,
-#'                         built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
-#'                         built$sdtm$VS, built$sdtm$LB, built$sdtm$SUPPAE,
-#'                         spec_synth01)
+#'                         built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
+#'                         built$sdtm$DM, built$sdtm$DS, built$sdtm$AE,
+#'                         built$sdtm$CM, built$sdtm$VS, built$sdtm$EG,
+#'                         built$sdtm$LB, built$sdtm$SUPPAE, spec_synth01)
 #' issues                                  # empty: the build is clean
-validate_adam <- function(adsl, adae, adcm, advs, adlb,
-                          dm, ds, ae, cm, vs, lb, suppae,
+validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb,
+                          dm, ds, ae, cm, vs, eg, lb, suppae,
                           spec = spec_synth01) {
   issues <- list()
   add <- function(domain, severity, check, detail) {
@@ -612,6 +616,167 @@ validate_adam <- function(adsl, adae, adcm, advs, adlb,
   if (length(advs_undeclared) > 0) {
     add("ADVS", "ERROR", "advs-param-not-in-spec",
         str_flatten_comma(advs_undeclared))
+  }
+
+  # ADEG: structure -------------------------------------------------------------
+  .req_adeg <- c(
+    "STUDYID", "USUBJID", "PARAMCD", "PARAM", "PARAMN", "AVAL", "AVALU",
+    "ABLFL", "BASE", "CHG", "PCHG", "ANRIND", "ANRLO", "ANRHI",
+    "AVISIT", "AVISITN", "ADT", "ADY"
+  )
+  miss <- setdiff(.req_adeg, names(adeg))
+  if (length(miss) > 0) {
+    add("ADEG", "ERROR", "adeg-required-vars", str_flatten_comma(miss))
+  }
+
+  # One analysis record per subject / parameter / visit
+  adeg_dup <- adeg |>
+    count(USUBJID, PARAMCD, AVISITN, name = ".n") |>
+    filter(.n > 1)
+  if (nrow(adeg_dup) > 0) {
+    add("ADEG", "ERROR", "adeg-key-not-unique",
+        sprintf(paste("%d duplicated USUBJID/PARAMCD/AVISITN key(s) - a visit",
+                      "with two positions for one interval?"), nrow(adeg_dup)))
+  }
+
+  # Coverage: exactly the SDTM EG records that carry a result - the NOT
+  # DONE row documents a missed ECG and stays an SDTM-only fact
+  eg_results <- eg |> filter(!EGSTAT %in% "NOT DONE")
+  if (nrow(adeg) != nrow(eg_results)) {
+    add("ADEG", "ERROR", "adeg-coverage",
+        sprintf("ADEG has %d row(s) but EG carries %d result(s)",
+                nrow(adeg), nrow(eg_results)))
+  }
+  adeg_orphan <- adeg |>
+    anti_join(eg_results,
+              by = c("USUBJID", PARAMCD = "EGTESTCD", AVISITN = "VISITNUM",
+                     AVAL = "EGSTRESN"))
+  if (nrow(adeg_orphan) > 0) {
+    add("ADEG", "ERROR", "adeg-orphan-record",
+        sprintf("%d ADEG row(s) with no matching EG result", nrow(adeg_orphan)))
+  }
+
+  # Baseline: exactly one per randomized subject per interval, none for
+  # screen failures, and it must be the value SDTM flagged
+  bl_multi <- adeg |>
+    filter(ABLFL == "Y") |>
+    count(USUBJID, PARAMCD, name = ".n") |>
+    filter(.n > 1)
+  if (nrow(bl_multi) > 0) {
+    add("ADEG", "ERROR", "adeg-ablfl-multi",
+        sprintf("%d subject/interval(s) with >1 ABLFL='Y'", nrow(bl_multi)))
+  }
+  bl_missing <- adeg |>
+    filter(USUBJID %in% itt_ids, !is.na(AVAL)) |>
+    count(USUBJID, PARAMCD, ABLFL) |>
+    filter(!any(ABLFL %in% "Y"), .by = c("USUBJID", "PARAMCD"))
+  if (nrow(bl_missing) > 0) {
+    add("ADEG", "ERROR", "adeg-ablfl-missing",
+        sprintf(paste("%d randomized subject/interval(s) with no baseline",
+                      "record"), nrow(bl_missing)))
+  }
+  bl_sf <- adeg |> filter(USUBJID %in% sf_ids, ABLFL == "Y")
+  if (nrow(bl_sf) > 0) {
+    add("ADEG", "ERROR", "adeg-ablfl-screenfail",
+        "screen-failure subject with a baseline flag")
+  }
+  eg_bl <- eg_results |>
+    filter(EGBLFL == "Y") |>
+    select(USUBJID, PARAMCD = EGTESTCD, .eg_bl = EGSTRESN)
+  bad_bl <- adeg |>
+    filter(ABLFL == "Y") |>
+    left_join(eg_bl, by = c("USUBJID", "PARAMCD")) |>
+    filter(is.na(.eg_bl) | AVAL != .eg_bl)
+  if (nrow(bad_bl) > 0) {
+    add("ADEG", "ERROR", "adeg-ablfl-not-from-eg",
+        "ABLFL='Y' AVAL disagrees with the SDTM EGBLFL record")
+  }
+
+  # BASE/CHG/PCHG arithmetic, recomputed from the analysis values
+  base_chk <- adeg |>
+    filter(ABLFL == "Y") |>
+    select(USUBJID, PARAMCD, .base = AVAL)
+  bad_base <- adeg |>
+    left_join(base_chk, by = c("USUBJID", "PARAMCD")) |>
+    filter(xor(is.na(BASE), is.na(.base)) |
+             (!is.na(BASE) & !is.na(.base) & BASE != .base))
+  if (nrow(bad_base) > 0) {
+    add("ADEG", "ERROR", "adeg-base-wrong",
+        "BASE disagrees with the ABLFL='Y' AVAL")
+  }
+
+  bad_base_sf <- adeg |> filter(USUBJID %in% sf_ids, !is.na(BASE))
+  if (nrow(bad_base_sf) > 0) {
+    add("ADEG", "ERROR", "adeg-base-screenfail",
+        "screen-failure row with a BASE value")
+  }
+  bad_base_itt <- adeg |>
+    filter(USUBJID %in% itt_ids, !is.na(AVAL), is.na(BASE))
+  if (nrow(bad_base_itt) > 0) {
+    add("ADEG", "ERROR", "adeg-base-missing",
+        sprintf("%d randomized row(s) with no BASE", nrow(bad_base_itt)))
+  }
+
+  bad_chg <- adeg |>
+    filter(!is.na(BASE)) |>
+    mutate(.chg  = .rule_chg(AVAL, BASE, ABLFL),
+           .pchg = .rule_pchg(.chg, BASE)) |>
+    filter(xor(is.na(CHG), is.na(.chg)) | xor(is.na(PCHG), is.na(.pchg)) |
+             (!is.na(CHG) & CHG != .chg) | (!is.na(PCHG) & PCHG != .pchg))
+  if (nrow(bad_chg) > 0) {
+    add("ADEG", "ERROR", "adeg-chg-wrong",
+        "CHG/PCHG disagree with AVAL - BASE (or populated on the baseline row)")
+  }
+
+  # ANRIND: recomputed from the row's own range, and the ranges themselves
+  # must equal the declared spec - EG collects no ranges of its own, the
+  # spec$bds ADEG rows are the SAP stand-in
+  adeg_spec <- filter(spec$bds, domain == "ADEG") |>
+    select(PARAMCD = paramcd, ANRLO = anrlo, ANRHI = anrhi)
+  bad_range <- adeg |>
+    select(PARAMCD, ANRLO, ANRHI) |>
+    distinct() |>
+    full_join(adeg_spec, by = "PARAMCD") |>
+    filter(is.na(PARAMCD) |
+             xor(is.na(ANRLO.x), is.na(ANRLO.y)) |
+             (!is.na(ANRLO.x) & !is.na(ANRLO.y) & ANRLO.x != ANRLO.y) |
+             (!is.na(ANRHI.x) & !is.na(ANRHI.y) & ANRHI.x != ANRHI.y))
+  if (nrow(bad_range) > 0) {
+    add("ADEG", "ERROR", "adeg-range-spec-drift",
+        "ANRLO/ANRHI on ADEG disagree with the declared reference ranges")
+  }
+
+  bad_anrind <- adeg |>
+    mutate(.expect = .rule_anrind(AVAL, ANRLO, ANRHI)) |>
+    filter(xor(is.na(ANRIND), is.na(.expect)) |
+             (!is.na(ANRIND) & !is.na(.expect) & ANRIND != .expect))
+  if (nrow(bad_anrind) > 0) {
+    add("ADEG", "ERROR", "adeg-anrind-wrong",
+        "ANRIND disagrees with the AVAL vs ANRLO/ANRHI comparison")
+  }
+
+  # Analysis day: anchored on ADSL TRTSDT
+  bad_ady <- adeg |>
+    left_join(adsl_ref, by = "USUBJID") |>
+    mutate(.expect = derive_dy_d(ADT, .ref_trtsdt)) |>
+    filter(xor(is.na(ADY), is.na(.expect)) |
+             (!is.na(ADY) & !is.na(.expect) & ADY != .expect))
+  if (nrow(bad_ady) > 0) {
+    add("ADEG", "ERROR", "adeg-ady-wrong",
+        "ADY disagrees with ADT vs ADSL TRTSDT")
+  }
+  if (any(adeg$ADY == 0, na.rm = TRUE)) {
+    add("ADEG", "ERROR", "adeg-study-day-zero", "ADY equals zero")
+  }
+
+  # Spec coverage: every built parameter must be declared in spec$bds - a
+  # new ECG interval collected on the CRF without an ADaM spec row shows up
+  # here instead of as a silently unconfigured analysis parameter
+  adeg_undeclared <- setdiff(unique(adeg$PARAMCD),
+                             spec$bds$paramcd[spec$bds$domain == "ADEG"])
+  if (length(adeg_undeclared) > 0) {
+    add("ADEG", "ERROR", "adeg-param-not-in-spec",
+        str_flatten_comma(adeg_undeclared))
   }
 
   # ADLB: structure -------------------------------------------------------------

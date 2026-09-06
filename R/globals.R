@@ -8,7 +8,8 @@
 # ============================================================================
 
 utils::globalVariables(c(
-  ".base", ".bnrind", ".chg", ".conv", ".diff", ".eligible", ".expect", ".factor",
+  ".base", ".bnrind", ".chg", ".conv", ".diff", ".eg_bl", ".eligible", ".expect",
+  ".factor",
   ".key", ".lb_bl", ".lb_hi", ".lb_ind", ".lb_lo", ".n", ".orres_n", ".pchg",
   ".rank", ".rave_n", ".ref_trtsdt", ".ref_trtedt", ".unit", ".vs_bl",
   "ABLFL", "ADT", "ADY",
