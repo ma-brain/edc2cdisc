@@ -1,3 +1,13 @@
+# edc2cdisc 0.4.5.9000
+
+## Added
+
+* ADEG, the ECG analysis dataset (BDS). `derive_adeg()` clones the ADVS
+  pattern: AVAL from EGSTRESN, baseline/change derivations against the
+  carried EGBLFL, and ANRIND against the five declared ECG interval ranges
+  in `spec$bds` — exercised by a seeded HIGH QT/QTCF visit.
+  `build_all()` returns 6 ADaM datasets.
+
 # edc2cdisc 0.4.5
 
 ## Added
