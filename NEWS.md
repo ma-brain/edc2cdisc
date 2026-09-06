@@ -2,6 +2,18 @@
 
 ## Added
 
+* ADCM, the OCCDS concomitant-medication analysis dataset.
+  `derive_adcm()` is the ADAE pattern without the SUPP merge-back (CM
+  collects no qualifiers in this study): one analysis record per collected
+  CM record with ASEQ = CMSEQ, imputed analysis dates on the shared
+  first-of rule, and study days anchored on ADSL TRTSDT - negative where a
+  medication predates first dose, as every dosed subject's here does. The
+  ADSL anchors (SAFFL/TRTSDT/TRTEDT) are carried per the OCCDS convention;
+  no treatment-emergent flag exists to invent. `validate_adam()` gains the
+  ADCM contract (required vars, key uniqueness, coverage against the SDTM
+  CM keys both ways, imputation flags, anchored study days, the
+  full-precision CMSTDY cross-check, date ordering) and now takes `adcm`
+  and `cm` explicitly. `build_all()` returns 5 ADaM datasets.
 * The QS (Questionnaires) domain. A deterministic scheduled `QS` CRF form
   (MOOD SCALE ordinal items) feeds `map_qs()`, a `map_vs()`-style findings
   mapper with NOT DONE rows and baseline flags. `build_all()` returns 20

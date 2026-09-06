@@ -30,9 +30,10 @@ Status: Executed in parallel with the `se-supp-qualifiers` run, on branch
    those rows and the negative-days path of `derive_dy_d()` is exercised by
    the pinned tests, not just by construction.
 5. **Dates: the shared `impute_dtc()` first-of rule** (`""`/`"D"`/`"M"`
-   flags). The seeded CM carries year-only ("2021"), month-only ("2024-02"),
-   full-date and datetime precision — all four imputation paths are live in
-   the data, so the pins cover them without synthetic inputs.
+   flags). The seeded CM carries year-only (4 rows: "2021"), month-only
+   (10 rows: "2024-02") and full-date precision (18 rows) — all three
+   imputation paths are live in the data, so the pins cover them without
+   synthetic inputs.
 6. **`validate_adam()` grows honestly.** New signature
    `(adsl, adae, adcm, advs, adlb, dm, ds, ae, cm, vs, lb, suppae, spec)` —
    every call site updated, no NULL-default escape hatch: a silently skipped
