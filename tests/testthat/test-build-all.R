@@ -35,9 +35,9 @@ test_that("the define.xml stub is well-formed and complete", {
   doc <- xml2::read_xml(path)
   ns <- xml2::xml_ns(doc)
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 23)
-  # 11 curated value codelists, minus RELTYPE: its values are all blank on
+  # 12 curated value codelists, minus RELTYPE: its values are all blank on
   # record-level links, and an empty codelist is not emitted
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 10)
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 11)
   # the trial design domains carry keys and structures like the rest
   igd_ta <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='TA']", ns)
   expect_equal(xml2::xml_attr(igd_ta, "Domain"), "TA")
@@ -51,11 +51,26 @@ test_that("the define.xml stub is well-formed and complete", {
                "One record per subject per questionnaire item per visit")
   qs_ref <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='QS']/d1:ItemRef[@ItemOID='IT.QS.QSSEQ']", ns)
   expect_equal(xml2::xml_attr(qs_ref, "KeySequence"), "3")
-  # value-level metadata hooked onto VSSTRESN / LBSTRESN
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 2)
+  # PE/EG/SUPPPE are documented like the other tabulations. The structure
+  # attribute is namespace-prefixed: unprefixed xml_attr() returns NA here.
+  igd_pe <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='PE']", ns)
+  expect_equal(xml2::xml_attr(igd_pe, "def:Structure", ns = ns),
+               "One record per subject per body system per visit")
+  igd_eg <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='EG']", ns)
+  expect_equal(xml2::xml_attr(igd_eg, "def:Structure", ns = ns),
+               "One record per subject per ECG test per visit")
+  eg_ref <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='EG']/d1:ItemRef[@ItemOID='IT.EG.EGSEQ']", ns)
+  expect_equal(xml2::xml_attr(eg_ref, "KeySequence"), "3")
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef[@Name='SUPPPE']", ns)), 1)
+  # PE's observed NORMAL/ABNORMAL values become a curated codelist
+  pe_items <- xml2::xml_find_all(doc, "//d1:CodeList[@OID='CL.PEORRES']/d1:EnumeratedItem", ns)
+  expect_equal(xml2::xml_attr(pe_items, "CodedValue"), c("ABNORMAL", "NORMAL"))
+  # value-level metadata hooked onto VSSTRESN / LBSTRESN / EGSTRESN - the
+  # only --STRESN findings variables (QS/PE have none, by design)
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 3)
   # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no
   # ItemRef references is metadata emitted and then orphaned
-  expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListRef", ns)), 2)
+  expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListRef", ns)), 3)
 })
 
 test_that("XPT output round-trips", {

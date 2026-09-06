@@ -38,9 +38,12 @@ build_define_xml <- function(domains, spec, path) {
     LB     = c("STUDYID", "USUBJID", "LBSEQ"),
     MH     = c("STUDYID", "USUBJID", "MHSEQ"),
     QS     = c("STUDYID", "USUBJID", "QSSEQ"),
+    PE     = c("STUDYID", "USUBJID", "PESEQ"),
+    EG     = c("STUDYID", "USUBJID", "EGSEQ"),
     SUPPDM = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "QNAM"),
     SUPPAE = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "QNAM"),
     SUPPEX = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "QNAM"),
+    SUPPPE = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "QNAM"),
     CO     = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "COSEQ"),
     RELREC = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL", "RELID"),
     TA     = c("STUDYID", "ARMCD", "TAETORD"),
@@ -62,9 +65,12 @@ build_define_xml <- function(domains, spec, path) {
     LB     = "One record per subject per lab test per visit",
     MH     = "One record per subject per medical history event",
     QS     = "One record per subject per questionnaire item per visit",
+    PE     = "One record per subject per body system per visit",
+    EG     = "One record per subject per ECG test per visit",
     SUPPDM = "One record per subject per SUPPDM variable",
     SUPPAE = "One record per subject per AE record per SUPPAE variable",
     SUPPEX = "One record per subject per EX record per SUPPEX variable",
+    SUPPPE = "One record per subject per PE record per SUPPPE variable",
     CO     = "One record per subject per comment",
     RELREC = "One record per linked record (two records per RELID)",
     TA     = "One record per arm per element",
@@ -126,7 +132,8 @@ build_define_xml <- function(domains, spec, path) {
   # Curated codelists: the values observed across all domains carrying the
   # variable.
   codelist_vars <- c("AESEV", "AEREL", "AEACN", "AEOUT", "LBNRIND", "DTHFL",
-                     "QNAM", "RDOMAIN", "RELTYPE", "DSDECOD", "IECAT")
+                     "QNAM", "RDOMAIN", "RELTYPE", "DSDECOD", "IECAT",
+                     "PEORRES")
   codelist_values <- map(set_names(codelist_vars), \(v) {
     vals <- unlist(imap(domains, \(df, d) if (v %in% names(df)) unique(df[[v]])),
                    use.names = FALSE)
@@ -236,6 +243,9 @@ build_define_xml <- function(domains, spec, path) {
     distinct(.data$LBTESTCD, .data$LBTEST, .data$LBSTRESU,
              .data$LBSTNRLO, .data$LBSTNRHI) |>
     arrange(.data$LBTESTCD, .data$LBSTNRLO)
+  eg_params <- domains$EG |>
+    distinct(.data$EGTESTCD, .data$EGTEST, .data$EGSTRESU) |>
+    arrange(.data$EGTESTCD)
 
   findings <- list(
     list(domain = "VS", var = "VSSTRESN", codevar = "VSTESTCD",
@@ -243,7 +253,10 @@ build_define_xml <- function(domains, spec, path) {
          codes = sort(unique(vs_params$VSTESTCD)), params = vs_params),
     list(domain = "LB", var = "LBSTRESN", codevar = "LBTESTCD",
          namevar = "LBTEST", unitvar = "LBSTRESU",
-         codes = sort(unique(lb_params$LBTESTCD)), params = lb_params)
+         codes = sort(unique(lb_params$LBTESTCD)), params = lb_params),
+    list(domain = "EG", var = "EGSTRESN", codevar = "EGTESTCD",
+         namevar = "EGTEST", unitvar = "EGSTRESU",
+         codes = sort(unique(eg_params$EGTESTCD)), params = eg_params)
   )
 
   for (f in findings) {
