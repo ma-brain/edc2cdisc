@@ -2,6 +2,11 @@
 
 ## Added
 
+* QS conformance completion: `map_qs()` now outputs QSSTRESC, QSSTRESN and
+  QSSTRESU (blank for ordinal items), closing the subset gap the QS run
+  documented; define.xml gains the QS value-level metadata with
+  unit-conditional descriptions; `validate_sdtm()` gains
+  `qstresn-not-numeric`.
 * ADEG, the ECG analysis dataset (BDS). `derive_adeg()` clones the ADVS
   pattern: AVAL from EGSTRESN, baseline/change derivations against the
   carried EGBLFL, and ANRIND against the five declared ECG interval ranges

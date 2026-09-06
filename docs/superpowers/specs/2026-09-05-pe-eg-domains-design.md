@@ -95,10 +95,12 @@ SUPP key set); structures ("One record per subject per body system per visit",
 "One record per subject per ECG test per visit", SUPP structure pattern);
 ValueListDef on EGSTRESN (PE has no --STRESN; the PEORRES codelist is curated
 via `codelist_vars` + "PEORRES"). Counts after both plans: ItemGroupDef 23,
-ValueListDef 3 (VS, LB, EG), CodeList 11 (PEORRES). Amended from the draft's
+ValueListDef 4 (VS, LB, EG, QS — QS joined at the conformance completion),
+CodeList 11 (PEORRES). Amended from the draft's
 "ValueListDef 4 (QS, EG)": a ValueListDef annotates a --STRESN column, so only
 VS/LB/EG carry one — the QS amendment skipped that domain's VLM for want of
-QSSTRESN, and PE reports character PEORRES, leaving EG as the only new entry.
+QSSTRESN (QS has since gained it), and PE reports character PEORRES, leaving
+EG as the only new entry.
 
 ## Testing
 

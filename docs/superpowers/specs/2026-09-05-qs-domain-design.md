@@ -80,12 +80,11 @@ QSREASND, QSBLFL, VISITNUM, VISIT, QSDTC, QSDY.
 ## define.xml
 
 key_spec `QS = c(STUDYID, USUBJID, QSSEQ)`; structure "One record per subject
-per questionnaire item per visit". No value-level metadata: the pragmatic QS
-subset has no QSSTRESN column (numeric parsing happens inside the mapper for
-baseline ranking only), so the findings VLM loop does not apply. QS gets keys
-and a structure like SUPP's — define.xml declares it, with nothing per-item
-to annotate. Counts: ItemGroupDef 20, ValueListDef 2 (VS and LB — unchanged;
-QS adds none).
+per questionnaire item per visit". QS value-level metadata exists since the
+conformance completion: one value-level ItemDef per item on QSSTRESN, with
+unit-conditional descriptions (ordinal items carry no unit, so the
+description is the bare test name). VS/LB/EG descriptions are unchanged —
+their units are never blank.
 
 ## Testing
 
@@ -100,6 +99,6 @@ QS adds none).
 
 ## Out of scope
 
-ADQS; QS scoring/total scores; SUPPQS; item-level NOT DONE; QSSTRESU; EG/PE
+ADQS; QS scoring/total scores; SUPPQS; item-level NOT DONE; EG/PE
 (covered by their own design); visit-level `QSPERF` beyond the one seeded
 not-done visit.
