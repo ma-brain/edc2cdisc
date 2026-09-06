@@ -17,6 +17,10 @@
   SV = c("STUDYID", "DOMAIN", "USUBJID", "VISITNUM", "VISIT", "SVSTDTC"),
   LB = c("STUDYID", "DOMAIN", "USUBJID", "LBSEQ", "LBTESTCD", "LBTEST",
          "LBORRES", "LBSTRESN", "LBSTRESU", "LBNRIND", "VISITNUM", "LBDTC"),
+  PE = c("STUDYID", "DOMAIN", "USUBJID", "PESEQ", "PETESTCD", "PETEST",
+         "PEORRES", "PEDTC"),
+  EG = c("STUDYID", "DOMAIN", "USUBJID", "EGSEQ", "EGTESTCD", "EGTEST",
+         "EGORRES", "EGSTRESN", "EGSTRESU", "EGDTC"),
   RELREC = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
              "RELTYPE", "RELID"),
   SUPPDM = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
@@ -68,7 +72,10 @@
 #' referential integrity against DM, unique --SEQ keys, ISO 8601 --DTC
 #' formats, no study day 0, baseline-flag uniqueness, LBNRIND coherence, SV
 #' visit uniqueness, VISITNUM reconciliation against SV, screen-failure
-#' study-day leaks, --STAT/--REASND coherence, SUPP/CO related-record
+#' study-day leaks, --STAT/--REASND coherence, PEORRES values
+#' (`peorres-bad-value`), PECLSIG/PEORRES coherence (`peclsig-coherence`),
+#' EGSTRESU fixed to msec when EGSTRESN is present (`egstresu-fixed`),
+#' SUPP/CO related-record
 #' structure, death coherence across
 #' AE/DS/DM, MH onset before first dose, RELREC pair integrity, trial design
 #' integrity (TA→TE, TA against `spec$arms`/`spec$visits`, TV against
@@ -293,7 +300,7 @@ validate_sdtm <- function(domains, spec = NULL) {
 
   # Screen failures must have no study days anywhere (no RFSTDTC)
   sf_ids <- domains$DM |> filter(ARMCD == "SCRNFAIL") |> pull(USUBJID)
-  for (d in c("VS", "AE", "CM", "DS", "SV", "LB", "MH", "QS")) {
+  for (d in c("VS", "AE", "CM", "DS", "SV", "LB", "MH", "QS", "PE", "EG")) {
     df <- domains[[d]]
     # VISITDY is a protocol-planned day, not anchored to RFSTDTC - exclude it.
     dy_vars <- setdiff(names(df)[str_ends(names(df), "DY")], "VISITDY")
@@ -664,7 +671,9 @@ validate_sdtm <- function(domains, spec = NULL) {
   # other findings domains that carry a completion status (PE, EG) join by
   # adding a tuple. NOT DONE owes a reason and must carry no result; a
   # collected result must not declare a status.
-  for (sr in list(c("QS", "QSSTAT", "QSREASND", "QSORRES"))) {
+  for (sr in list(c("QS", "QSSTAT", "QSREASND", "QSORRES"),
+                  c("PE", "PESTAT", "PEREASND", "PEORRES"),
+                  c("EG", "EGSTAT", "EGREASND", "EGORRES"))) {
     df <- domains[[sr[1]]]
     if (is.null(df) || nrow(df) == 0 || !all(sr[2:4] %in% names(df))) next
     bad <- df |>
@@ -675,6 +684,52 @@ validate_sdtm <- function(domains, spec = NULL) {
       add(sr[1], "ERROR", "stat-reason",
           sprintf(paste("%d row(s) where %s/%s/%s disagree (e.g. USUBJID %s)"),
                   nrow(bad), sr[2], sr[3], sr[4], bad$USUBJID[1]))
+    }
+  }
+
+  # PE/EG findings: the collected values are hard-coded CDISC terms (the
+  # LBNRIND precedent) and the clinical-significance flag is recomputed from
+  # the result instead of trusting the mapper - the same read-it-twice
+  # discipline as the QS block above. A missing column is already an ERROR
+  # via required-vars, so each check below only runs once its columns are
+  # there.
+  pe_df <- domains$PE
+  if (!is.null(pe_df) && nrow(pe_df) > 0) {
+    bad_orres <- setdiff(
+      unique(pe_df$PEORRES[!.is_blank(pe_df$PEORRES)]),
+      c("NORMAL", "ABNORMAL")
+    )
+    if (length(bad_orres) > 0) {
+      add("PE", "ERROR", "peorres-bad-value", str_flatten_comma(bad_orres))
+    }
+    if (all(c("PECLSIG", "PEORRES") %in% names(pe_df))) {
+      # only answered rows are checkable: STAT rows carry no result and their
+      # blank PECLSIG is correct, not a disagreement
+      sig_gap <- pe_df |>
+        filter(!.is_blank(PEORRES),
+               .is_blank(PECLSIG) |
+                 PECLSIG != if_else(PEORRES == "ABNORMAL", "Y", "N"))
+      if (nrow(sig_gap) > 0) {
+        add("PE", "ERROR", "peclsig-coherence",
+            sprintf(paste("%d row(s) where PECLSIG disagrees with PEORRES",
+                          "(Y must mean ABNORMAL, N must mean NORMAL)"),
+                    nrow(sig_gap)))
+      }
+    }
+  }
+
+  # EG: the intervals are standardised to msec at map time, so a numeric
+  # result without msec says the conversion silently drifted
+  eg_df <- domains$EG
+  if (!is.null(eg_df) && nrow(eg_df) > 0 &&
+        all(c("EGSTRESN", "EGSTRESU") %in% names(eg_df))) {
+    eg_unit_gap <- eg_df |>
+      filter(!is.na(EGSTRESN),
+             .is_blank(EGSTRESU) | EGSTRESU != "msec")
+    if (nrow(eg_unit_gap) > 0) {
+      add("EG", "ERROR", "egstresu-fixed",
+          sprintf("%d numeric EGSTRESN row(s) whose EGSTRESU is not 'msec'",
+                  nrow(eg_unit_gap)))
     }
   }
 

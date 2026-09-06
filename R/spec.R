@@ -17,8 +17,8 @@
 
 # The domains build_all() can produce; variables rows must name one of these
 .sdtm_domains <- c("DM", "EX", "VS", "AE", "CM", "DS", "SV", "LB", "MH",
-                   "QS", "PE", "EG", "SUPPDM", "SUPPAE", "SUPPEX", "CO",
-                   "RELREC")
+                   "QS", "PE", "EG", "SUPPDM", "SUPPAE", "SUPPEX", "SUPPPE",
+                   "CO", "RELREC")
 
 # Trial design tables: optional constructor arguments, always present on
 # the built spec so the builders can rely on their columns. Protocol fact,

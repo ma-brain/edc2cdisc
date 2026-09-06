@@ -23,7 +23,10 @@ Runs the structural checks: required variables, DOMAIN constants, USUBJID
 referential integrity against DM, unique --SEQ keys, ISO 8601 --DTC
 formats, no study day 0, baseline-flag uniqueness, LBNRIND coherence, SV
 visit uniqueness, VISITNUM reconciliation against SV, screen-failure
-study-day leaks, --STAT/--REASND coherence, SUPP/CO related-record
+study-day leaks, --STAT/--REASND coherence, PEORRES values
+(\code{peorres-bad-value}), PECLSIG/PEORRES coherence (\code{peclsig-coherence}),
+EGSTRESU fixed to msec when EGSTRESN is present (\code{egstresu-fixed}),
+SUPP/CO related-record
 structure, death coherence across
 AE/DS/DM, MH onset before first dose, RELREC pair integrity, trial design
 integrity (TA→TE, TA against \code{spec$arms}/\code{spec$visits}, TV against

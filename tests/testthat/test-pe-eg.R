@@ -197,3 +197,76 @@ test_that("screen failures appear only at screening, with no study day", {
     }
   }
 })
+
+# Meta-tests: corrupt PE/EG/SUPPPE, assert the validator trips --------------
+
+pe_eg_built <- function() {
+  out <- file.path(tempdir(), "pe-eg-meta")
+  dir.create(out, showWarnings = FALSE)
+  ext <- file.path(out, "rave")
+  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
+  suppressMessages(build_all(ext))
+}
+
+test_that("a PEORRES outside NORMAL/ABNORMAL trips peorres-bad-value", {
+  domains <- pe_eg_built()$sdtm
+  idx <- which(domains$PE$PEORRES == "NORMAL")[1]
+  domains$PE$PEORRES[idx] <- "MAYBE"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("peorres-bad-value" %in% issues$check[issues$domain == "PE"])
+})
+
+test_that("a flipped PECLSIG on a NORMAL row trips peclsig-coherence", {
+  domains <- pe_eg_built()$sdtm
+  idx <- which(domains$PE$PEORRES == "NORMAL" & domains$PE$PECLSIG == "N")[1]
+  domains$PE$PECLSIG[idx] <- "Y"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("peclsig-coherence" %in% issues$check[issues$domain == "PE"])
+})
+
+test_that("EGSTRESU usec on a numeric result row trips egstresu-fixed", {
+  domains <- pe_eg_built()$sdtm
+  idx <- which(!is.na(domains$EG$EGSTRESN))[1]
+  domains$EG$EGSTRESU[idx] <- "usec"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("egstresu-fixed" %in% issues$check[issues$domain == "EG"])
+})
+
+test_that("a NOT DONE PE row with a blank reason trips stat-reason", {
+  domains <- pe_eg_built()$sdtm
+  idx <- which(domains$PE$PESTAT == "NOT DONE")[1]
+  domains$PE$PEREASND[idx] <- NA_character_
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("stat-reason" %in% issues$check[issues$domain == "PE"])
+})
+
+test_that("a NOT DONE EG row with a blank reason trips stat-reason", {
+  domains <- pe_eg_built()$sdtm
+  idx <- which(domains$EG$EGSTAT == "NOT DONE")[1]
+  domains$EG$EGREASND[idx] <- NA_character_
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("stat-reason" %in% issues$check[issues$domain == "EG"])
+})
+
+test_that("a status on a collected result trips stat-reason even without NOT DONE", {
+  # SDTM --STAT CT only allows NOT DONE, but arm 2 of the check (a populated
+  # result may not declare a status) must not depend on the value: an exotic
+  # STAT string on an answered row still fires
+  domains <- pe_eg_built()$sdtm
+  idx <- which(is.na(domains$PE$PESTAT))[1]
+  domains$PE$PESTAT[idx] <- "PARTIAL"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("stat-reason" %in% issues$check[issues$domain == "PE"])
+})
+
+test_that("a SUPPPE row for a subject with no PE record trips related-parent-orphan", {
+  domains <- pe_eg_built()$sdtm
+  domains$SUPPPE$USUBJID[1] <- "3021-999-999" # in neither PE nor DM
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("related-parent-orphan" %in% issues$check[issues$domain == "SUPPPE"])
+})
+
+test_that("a clean build still validates with zero findings", {
+  built <- pe_eg_built()
+  expect_equal(nrow(validate_sdtm(built$sdtm, spec_synth01)), 0)
+})
