@@ -25,9 +25,9 @@ reference outputs without any network access.
 - **Reads** clinical view CSVs defensively: everything as character on
   purpose, EOF truncation guard, inactive-record filtering:
   `read_clinical_view()`, `read_rave_extract()`.
-- **Maps** 20 SDTM domains (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, SUPPDM,
-  SUPPAE, SUPPEX, CO, RELREC, TA, TE, TI, TV, TS) through a study spec:
-  `map_dm()`, `map_ex()`, … , `map_relrec()`.
+- **Maps** 23 SDTM domains (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, PE, EG,
+  SUPPDM, SUPPAE, SUPPEX, SUPPPE, CO, RELREC, TA, TE, TI, TV, TS) through a
+  study spec: `map_dm()`, `map_ex()`, … , `map_relrec()`.
 - **Derives** the four core ADaM datasets: `derive_adsl()`, `derive_adae()`,
   `derive_advs()`, `derive_adlb()`.
 - **Validates** both layers with checks that catch the mistakes this kind of
@@ -65,7 +65,7 @@ library(edc2cdisc)
 generate_rave_extract(out = tempdir())
 built <- build_all(tempdir())
 
-built$sdtm$DM      # 20 SDTM domains, validated
+built$sdtm$DM      # 23 SDTM domains, validated
 built$adam$ADSL    # ADSL / ADAE / ADVS / ADLB, validated
 
 # or step by step, mapping only what you need

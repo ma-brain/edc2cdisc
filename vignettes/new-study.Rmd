@@ -38,7 +38,7 @@ names(spec_synth01)
 Each table carries one kind of configuration: `study` (constants),
 `sites`, `arms`, `visits`, `codelists` (collected decode -> CDISC term),
 `supp` (SUPP-- qualifiers), `units` (LB conventional-to-SI factors),
-`forms` (event vs log typing), `tests` (per-test pivot specs for VS/LB/QS)
+`forms` (event vs log typing), `tests` (per-test pivot specs for VS/LB/QS/PE/EG)
 and `variables` (one row per SDTM variable per domain: source CRF field,
 transform, derivation reference).
 
@@ -108,8 +108,8 @@ record, exactly as in the shipped study.
 
 ## Adding a vital sign
 
-The findings domains pivot off `spec$tests` — one row per test, not per
-variable. Adding a respiratory rate collection is a row, not a code
+The findings domains (VS, LB, QS, PE, EG) pivot off `spec$tests` — one row
+per test, not per variable. Adding a respiratory rate collection is a row, not a code
 change:
 
 ```{r, eval = FALSE}

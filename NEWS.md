@@ -8,6 +8,14 @@
   SDTM domains; `validate_sdtm()` gains `qscat-not-in-spec` and a reusable
   `stat-reason` coherence check; define.xml documents QS with keys and
   structure.
+* The PE (Physical Examination) and EG (ECG) domains plus SUPPPE, the first
+  SUPP qualifier on a findings domain. `map_pe()` reads collected body-system
+  findings (NORMAL/ABNORMAL with a clinically-significant flag, one seeded
+  abnormality carried as a PEABNDT qualifier), `map_eg()` maps five ECG
+  intervals in msec with reduced-precision dates where the collection time is
+  missing. `validate_sdtm()` gains `peorres-bad-value`, `peclsig-coherence`
+  and `egstresu-fixed`, and the reusable `stat-reason` check now covers PE
+  and EG. `build_all()` returns 23 SDTM domains.
 
 # edc2cdisc 0.4.0
 
