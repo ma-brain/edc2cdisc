@@ -960,7 +960,8 @@ populate <- function(subjects, cfg) {
         if (idx == cfg$idx$eg_qt_high[1] && vpos == cfg$idx$eg_qt_high[2]) {
           # ADEG's ANRIND needs a classified row: the SAP stand-in ranges make
           # every deterministic value NORMAL, so one visit runs QT/QTCF high
-          # (mirrors the LB force_high precedent).
+          # (mirrors the LB force_high precedent). Both values must clear the
+          # ADEG spec$bds ranges (QT/QTCF 350-450) for ANRIND to classify HIGH.
           eg_fields$QT_RAW <- "520"
           eg_fields$QTCF_RAW <- "537"
         }

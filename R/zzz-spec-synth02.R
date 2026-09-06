@@ -229,7 +229,13 @@ spec_synth02 <- new_study_spec(
     "ADLB", "HGB",    3,  NA,   NA,
     "ADLB", "K",      4,  NA,   NA,
     "ADLB", "ALT",    5,  NA,   NA,
-    "ADLB", "AST",    6,  NA,   NA
+    "ADLB", "AST",    6,  NA,   NA,
+    # ADEG: the SAP stand-in ECG interval ranges (msec)
+    "ADEG", "PR",   1,  120,  200,
+    "ADEG", "QRS",  2,  60,   100,
+    "ADEG", "QT",   3,  350,  450,
+    "ADEG", "QTCF", 4,  350,  450,
+    "ADEG", "RR",   5,  600,  1200
   ),
 
   # Same CRF family as SYNTH01, so the variable-level mapping carries over

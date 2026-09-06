@@ -110,8 +110,9 @@
       # Week 4 (position 4) is a performed ECG - where QT_RAW = "520" /
       # QTCF_RAW = "537" seed on (the ADEG ANRIND = HIGH row; the SAP
       # stand-in ranges make every deterministic value NORMAL). Clear of the
-      # eg_not_done and eg_late_time subjects. (Probed against the built
-      # extract; the deterministic values there were 386/405.)
+      # sf/et/deaths subjects and the other EG seeds (eg_not_done,
+      # eg_late_time). (Probed against the built extract; the deterministic
+      # values there were 386/405.)
       eg_qt_high = c(13L, 4L)
     )
   )
@@ -298,8 +299,9 @@
       # Week 8 (position 4) is a performed ECG - where QT_RAW = "520" /
       # QTCF_RAW = "537" seed on (the ADEG ANRIND = HIGH row; the SAP
       # stand-in ranges make every deterministic value NORMAL). Clear of the
-      # eg_not_done and eg_late_time subjects. (Probed against the built
-      # extract; the deterministic values there were 398/415.)
+      # sf/et/deaths subjects and the other EG seeds (eg_not_done,
+      # eg_late_time). (Probed against the built extract; the deterministic
+      # values there were 398/415.)
       eg_qt_high = c(11L, 4L)
     )
   )
