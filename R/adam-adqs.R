@@ -56,8 +56,8 @@ derive_adqs <- function(qs, adsl, spec = spec_synth01) {
     filter(!QSSTAT %in% "NOT DONE") |>
     left_join(param_spec, by = c("QSTESTCD" = "PARAMCD")) |>
     # A QS item the spec does not carry is a spec/data disagreement the
-    # validator owns (param-not-in-spec); here it would silently corrupt the
-    # totals' all-required count, so the analysis frame keeps spec'd items.
+    # validator owns (adqs-item-not-in-spec); here it would silently corrupt
+    # the totals' all-required count, so the analysis frame keeps spec'd items.
     filter(!is.na(PARAMN)) |>
     left_join(adsl_trtsdt, by = "USUBJID") |>
     mutate(

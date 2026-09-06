@@ -26,7 +26,12 @@
 #' instrument total is recomputed from the SDTM QS items through the
 #' same `spec$totals` rows and the same all-required rule the builder
 #' applies (`adqs-total-wrong`), and a total may exist only where the
-#' complete item set exists (`adqs-total-coverage`).
+#' complete item set exists (`adqs-total-coverage`). The built ranges
+#' join the drift check like any BDS parameter's - the `spec$bds` NA/NA
+#' for the items, the `spec$totals` range for the total
+#' (`adqs-range-spec-drift`) - and a QS item performed in SDTM but
+#' missing from `spec$bds`, which the builder silently drops, trips
+#' `adqs-item-not-in-spec`.
 #'
 #' @param adsl,adae,adcm,advs,adeg,adlb,adqs The mapped ADaM datasets
 #' @param dm,ds,ae,cm,vs,qs,eg,lb,suppae The SDTM source datasets the ADaM layer
@@ -39,7 +44,10 @@
 #'   from `spec$bds` trips the coverage check. The `spec$totals` rows
 #'   declare the derived totals the built ADQS is recomputed against - a
 #'   silent change there or in [derive_adqs()] trips the total-recompute
-#'   check. The study's `age_min` / `age_max` bound the AGE check.
+#'   check; with the ADQS `spec$bds` rows they are also the range source
+#'   the built ADQS is drift-checked against, and a QS item missing from
+#'   `spec$bds` trips `adqs-item-not-in-spec`. The study's `age_min` /
+#'   `age_max` bound the AGE check.
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
 #'   detail. Empty when everything passes.
 #' @export
@@ -1074,6 +1082,30 @@ validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs,
         "ANRIND disagrees with the AVAL vs ANRLO/ANRHI comparison")
   }
 
+  # The ranges themselves must equal the declared spec - the ADVS/ADEG
+  # drift check on ADQS's two range sources: the spec$bds range for an
+  # item (NA/NA, ordinal answers have no absolute norm) and the spec$totals
+  # range for a total - so a drifted range cannot hide behind a
+  # classification that still holds
+  adqs_rng_spec <- bind_rows(
+    filter(spec$bds, domain == "ADQS") |>
+      select(PARAMCD = paramcd, ANRLO = anrlo, ANRHI = anrhi),
+    filter(spec$totals, domain == "ADQS") |>
+      select(PARAMCD = paramcd, ANRLO = anrlo, ANRHI = anrhi)
+  )
+  bad_range <- adqs |>
+    select(PARAMCD, ANRLO, ANRHI) |>
+    distinct() |>
+    full_join(adqs_rng_spec, by = "PARAMCD") |>
+    filter(is.na(PARAMCD) |
+             xor(is.na(ANRLO.x), is.na(ANRLO.y)) |
+             (!is.na(ANRLO.x) & !is.na(ANRLO.y) & ANRLO.x != ANRLO.y) |
+             (!is.na(ANRHI.x) & !is.na(ANRHI.y) & ANRHI.x != ANRHI.y))
+  if (nrow(bad_range) > 0) {
+    add("ADQS", "ERROR", "adqs-range-spec-drift",
+        "ANRLO/ANRHI on ADQS disagree with the declared reference ranges")
+  }
+
   # Analysis day: anchored on ADSL TRTSDT
   bad_ady <- adqs |>
     left_join(adsl_ref, by = "USUBJID") |>
@@ -1097,6 +1129,21 @@ validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs,
   if (length(adqs_undeclared) > 0) {
     add("ADQS", "ERROR", "adqs-param-not-in-spec",
         str_flatten_comma(adqs_undeclared))
+  }
+
+  # The built-side sweep cannot see what the builder dropped before it ever
+  # reached ADQS: derive_adqs() keeps spec'd items only, so an item
+  # performed in QS but missing from spec$bds vanishes from the items and
+  # from the totals' all-required count in silence - the disagreement is
+  # checked straight off the SDTM QS, with the coverage check's NOT DONE
+  # filtering
+  qs_undeclared <- setdiff(
+    unique(qs$QSTESTCD[!qs$QSSTAT %in% "NOT DONE"]),
+    qs_items_spec
+  )
+  if (length(qs_undeclared) > 0) {
+    add("ADQS", "ERROR", "adqs-item-not-in-spec",
+        str_flatten_comma(qs_undeclared))
   }
 
   # The recompute-don't-trust centrepiece: the total is derived, so the

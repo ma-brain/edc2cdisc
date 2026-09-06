@@ -317,6 +317,51 @@ test_that("a MOSTOT ANRIND flipped without a reason is caught", {
   expect_true("adqs-anrind-wrong" %in% issues$check)
 })
 
+test_that("a MOSTOT ANRLO drift the classification survives is caught", {
+  built <- build_fixtures()$built
+  adqs <- built$adam$ADQS
+  i <- which(adqs$PARAMCD == "MOSTOT")[1]
+  adqs$ANRLO[i] <- adqs$ANRLO[i] + 1  # 4 -> 5: the 6-point total stays NORMAL
+
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
+                          built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
+                          adqs, built$sdtm$DM, built$sdtm$DS, built$sdtm$AE,
+                          built$sdtm$CM, built$sdtm$VS, built$sdtm$QS,
+                          built$sdtm$EG, built$sdtm$LB, built$sdtm$SUPPAE,
+                          spec_synth01)
+  expect_false("adqs-anrind-wrong" %in% issues$check) # the class still holds ...
+  expect_true("adqs-range-spec-drift" %in% issues$check) # ... the drift shows
+  expect_setequal(issues$check, "adqs-range-spec-drift")
+})
+
+test_that("a QS item missing from spec$bds trips the spec check, not silence", {
+  built <- build_fixtures()$built
+
+  # a spec whose ADQS block forgot MOS03: the builder keeps spec'd items
+  # only, so the disagreement lives between QS and the spec, not in ADQS
+  spec2 <- spec_synth01
+  spec2$bds <- spec2$bds[!(spec2$bds$domain == "ADQS" &
+                             spec2$bds$paramcd == "MOS03"), ]
+
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
+                          built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
+                          built$adam$ADQS, built$sdtm$DM, built$sdtm$DS,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS,
+                          built$sdtm$QS, built$sdtm$EG, built$sdtm$LB,
+                          built$sdtm$SUPPAE, spec2)
+  expect_true("adqs-item-not-in-spec" %in% issues$check)
+  expect_true("MOS03" %in% issues$detail[issues$check == "adqs-item-not-in-spec"])
+
+  # against the clean spec every performed item is declared
+  issues2 <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
+                           built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
+                           built$adam$ADQS, built$sdtm$DM, built$sdtm$DS,
+                           built$sdtm$AE, built$sdtm$CM, built$sdtm$VS,
+                           built$sdtm$QS, built$sdtm$EG, built$sdtm$LB,
+                           built$sdtm$SUPPAE, spec_synth01)
+  expect_false("adqs-item-not-in-spec" %in% issues2$check)
+})
+
 test_that("a clean build passes the ADaM validator with zero findings", {
   built <- build_fixtures()$built
   issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,

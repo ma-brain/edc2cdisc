@@ -38,7 +38,10 @@ change on either side (in \code{spec$bds} or in \code{\link[=derive_advs]{derive
 from \code{spec$bds} trips the coverage check. The \code{spec$totals} rows
 declare the derived totals the built ADQS is recomputed against - a
 silent change there or in \code{\link[=derive_adqs]{derive_adqs()}} trips the total-recompute
-check. The study's \code{age_min} / \code{age_max} bound the AGE check.}
+check; with the ADQS \code{spec$bds} rows they are also the range source
+the built ADQS is drift-checked against, and a QS item missing from
+\code{spec$bds} trips \verb{adqs-item-not-in-spec}. The study's \code{age_min} /
+\code{age_max} bound the AGE check.}
 }
 \value{
 An issue tibble: domain, severity ("ERROR" / "WARN"), check,
@@ -62,7 +65,12 @@ contract with the package's first derived analysis parameter: the
 instrument total is recomputed from the SDTM QS items through the
 same \code{spec$totals} rows and the same all-required rule the builder
 applies (\code{adqs-total-wrong}), and a total may exist only where the
-complete item set exists (\code{adqs-total-coverage}).
+complete item set exists (\code{adqs-total-coverage}). The built ranges
+join the drift check like any BDS parameter's - the \code{spec$bds} NA/NA
+for the items, the \code{spec$totals} range for the total
+(\code{adqs-range-spec-drift}) - and a QS item performed in SDTM but
+missing from \code{spec$bds}, which the builder silently drops, trips
+\verb{adqs-item-not-in-spec}.
 }
 \examples{
 ext <- file.path(tempdir(), "extract-adam")
