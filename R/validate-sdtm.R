@@ -25,6 +25,8 @@
              "QNAM", "QLABEL", "QVAL", "QORIG", "QEVAL"),
   SUPPEX = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
              "QNAM", "QLABEL", "QVAL", "QORIG", "QEVAL"),
+  SUPPPE = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
+             "QNAM", "QLABEL", "QVAL", "QORIG", "QEVAL"),
   CO = c("STUDYID", "DOMAIN", "RDOMAIN", "USUBJID", "COSEQ",
          "IDVAR", "IDVARVAL", "COVAL"),
   TA = c("STUDYID", "DOMAIN", "ARMCD", "ARM", "TAETORD", "ETCD", "ELEMENT",
@@ -77,7 +79,7 @@
 #'
 #' @param domains A named list of mapped SDTM datasets, as built by
 #'   [build_all()] (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, SUPPDM, SUPPAE,
-#'   SUPPEX, CO, RELREC, TA, TE, TI, TV, TS)
+#'   SUPPEX, SUPPPE, CO, RELREC, TA, TE, TI, TV, TS)
 #' @param spec Optional `study_spec`; when given, required-variable lists
 #'   for the engine-mapped domains come from `spec$variables`.
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
@@ -305,7 +307,8 @@ validate_sdtm <- function(domains, spec = NULL) {
   }
 
   # SUPP-- / CO: related-record structure
-  .related <- c(SUPPDM = "DM", SUPPAE = "AE", SUPPEX = "EX", CO = "AE")
+  .related <- c(SUPPDM = "DM", SUPPAE = "AE", SUPPEX = "EX", SUPPPE = "PE",
+                CO = "AE")
   for (rel in names(.related)) {
     df <- domains[[rel]]
     if (is.null(df)) next

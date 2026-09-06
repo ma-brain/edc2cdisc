@@ -22,7 +22,7 @@
 #'   and a `define.xml` stub is written alongside.
 #' @param adam_dir Optional output directory for the ADaM datasets, laid out
 #'   like `sdtm_dir`.
-#' @return A list with `sdtm` (named list of the 22 mapped domains) and
+#' @return A list with `sdtm` (named list of the 23 mapped domains) and
 #'   `adam` (ADSL, ADAE, ADVS, ADLB), invisibly.
 #' @export
 #' @examples
@@ -58,6 +58,7 @@ build_all <- function(extract_dir, spec = spec_synth01,
   suppdm <- map_suppdm(forms$DM, spec)
   suppae <- map_suppae(forms$AE, ae, spec)
   suppex <- map_suppex(forms$EX, ex, spec)
+  supppe <- map_supppe(forms$PE, pe, spec)
   co     <- map_co(forms$AE, ae, spec)
   relrec <- map_relrec(ae, cm, spec)
   # Trial design: protocol facts from the spec, no CRF forms involved
@@ -69,7 +70,8 @@ build_all <- function(extract_dir, spec = spec_synth01,
 
   sdtm <- list(DM = dm, EX = ex, VS = vs, AE = ae, CM = cm, DS = ds, SV = sv,
                LB = lb, MH = mh, QS = qs, PE = pe, EG = eg,
-               SUPPDM = suppdm, SUPPAE = suppae, SUPPEX = suppex, CO = co,
+               SUPPDM = suppdm, SUPPAE = suppae, SUPPEX = suppex,
+               SUPPPE = supppe, CO = co,
                RELREC = relrec,
                TA = ta, TE = te, TI = ti, TV = tv, TS = ts)
 

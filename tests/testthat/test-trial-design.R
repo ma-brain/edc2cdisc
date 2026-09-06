@@ -88,8 +88,8 @@ test_that("build_all returns the trial design domains for both studies", {
   built1 <- build_all(ext1)
   expect_setequal(names(built1$sdtm),
                   c("DM", "EX", "VS", "AE", "CM", "DS", "SV", "LB", "MH",
-                    "QS", "PE", "EG", "SUPPDM", "SUPPAE", "SUPPEX", "CO",
-                    "RELREC", "TA", "TE", "TI", "TV", "TS"))
+                    "QS", "PE", "EG", "SUPPDM", "SUPPAE", "SUPPEX", "SUPPPE",
+                    "CO", "RELREC", "TA", "TE", "TI", "TV", "TS"))
   expect_equal(nrow(built1$sdtm$TA), 6)
   expect_equal(nrow(built1$sdtm$TE), 2)
   expect_equal(nrow(built1$sdtm$TI), 6)

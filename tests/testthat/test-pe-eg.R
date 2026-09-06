@@ -102,6 +102,31 @@ test_that("the seeded abnormal PE finding is CV ABNORMAL with PECLSIG Y, exactly
   }
 })
 
+test_that("SUPPPE carries exactly the seeded abnormality detail, linked to its PE record", {
+  out <- file.path(tempdir(), "pe-eg-supppe")
+  on.exit(unlink(out, recursive = TRUE, force = TRUE), add = TRUE)
+  ext <- file.path(out, "rave")
+  suppressMessages(generate_rave_extract(out = ext))
+
+  built <- suppressMessages(build_all(ext))
+  supppe <- built$sdtm$SUPPPE
+  parent <- built$sdtm$PE |> filter(PECLSIG == "Y")
+
+  # the qualifier exists only where the exam collected one: the CV/ABNORMAL
+  # row's "specify abnormality" text, pointing back at that PE record
+  expect_equal(nrow(supppe), 1L)
+  expect_equal(as.vector(supppe$QNAM), "PEABNDT")
+  expect_equal(as.vector(supppe$QVAL), "Systolic murmur")
+  expect_equal(as.vector(supppe$QLABEL), "Abnormality Details")
+  expect_equal(as.vector(supppe$IDVAR), "PESEQ")
+  expect_equal(as.vector(supppe$IDVARVAL), as.character(parent$PESEQ))
+  expect_equal(supppe$USUBJID, parent$USUBJID)
+  expect_equal(unique(as.vector(supppe$USUBJID)), "3021-101-004")
+  expect_equal(as.vector(supppe$RDOMAIN), "PE")
+  expect_equal(as.vector(supppe$QORIG), "CRF")
+  expect_true(is.na(supppe$QEVAL))
+})
+
 test_that("the seeded not-done visits yield STAT rows with reasons and blank results", {
   f <- pe_eg_fixture("SYNTH01")
   pe_items <- nrow(filter(f$spec$tests, domain == "PE"))

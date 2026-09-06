@@ -172,3 +172,72 @@ map_suppex <- function(ex, ex_built, spec) {
     qnams   = supp_qnams(spec, "EX")
   )
 }
+
+#' Map the Supplemental Qualifiers for PE
+#'
+#' PE is one record per exam system per visit, so the raw fields are joined
+#' onto the built PE by (USUBJID, VISITNUM) plus the system the qualifier
+#' hangs off - the "specify abnormality" text is only askable on the CV
+#' system's ABNORMAL finding - to recover the derived PESEQ: the [map_suppex()]
+#' trick with PETESTCD/PEORRES as the extra key. The qualifier columns come
+#' from `spec$supp`, so a study with a different set of non-standard PE
+#' fields is a spec change, not a code change.
+#'
+#' The transformed value is stored under the `src` name, not `qnam`:
+#' [make_supp()] reads QVAL from the parent column named in `qnams$src`, and
+#' PE is the first qualifier whose src (CVSPEC) differs from its qnam
+#' (PEABNDT).
+#'
+#' @param pe Raw PE clinical view
+#' @param pe_built The mapped PE dataset (see [map_pe()])
+#' @param spec A `study_spec`
+#' @return The labelled SUPPPE tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-supppe")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' pe <- map_pe(forms$PE, spec_synth01, subject_ref(dm))
+#' supppe <- map_supppe(forms$PE, pe, spec_synth01)
+#' supppe[, c("USUBJID", "IDVARVAL", "QNAM", "QVAL")]
+#' @export
+map_supppe <- function(pe, pe_built, spec) {
+  rows <- filter(spec$supp, rdomain == "PE")
+  visit_map <- spec$visits |> select(Folder, VISITNUM)
+  parent <- pe |>
+    left_join(visit_map, by = "Folder") |>
+    mutate(STUDYID = spec$study$STUDYID,
+           USUBJID = str_c(spec$study$STUDYID, Subject, sep = "-"))
+  for (i in seq_len(nrow(rows))) {
+    # under the src name: make_supp() reads QVAL from parent[[qnams$src]]
+    parent[[rows$src[i]]] <- supp_transform(parent[[rows$src[i]]],
+                                            rows$transform[i])
+  }
+  # only a row that actually collected a qualifier may look for a parent
+  # record - the squish transform turned the blank CVSPEC fields into NA,
+  # and they must not reach the join (and its guard) as unmapped noise
+  parent <- filter(parent, if_any(all_of(rows$src), ~ !is.na(.x)))
+  n_raw <- nrow(parent)
+
+  pe_abnormal <- pe_built |> filter(PETESTCD == "CV", PEORRES == "ABNORMAL")
+  parent <- inner_join(parent, select(pe_abnormal, USUBJID, VISITNUM, PESEQ),
+                       by = c("USUBJID", "VISITNUM"))
+
+  # Every collected qualifier must have matched exactly one PE record: a
+  # CVSPEC with no CV/ABNORMAL finding at that visit is a broken link.
+  if (nrow(parent) != n_raw) {
+    stop(sprintf(
+      "SUPPPE: %d of %d raw PE row(s) with a collected qualifier did not map to a PE record",
+      n_raw - nrow(parent), n_raw
+    ), call. = FALSE)
+  }
+
+  make_supp(
+    parent  = parent,
+    rdomain = "PE",
+    idvar   = "PESEQ",
+    qnams   = supp_qnams(spec, "PE")
+  )
+}
