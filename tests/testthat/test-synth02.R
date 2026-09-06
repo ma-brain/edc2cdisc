@@ -116,6 +116,7 @@ test_that("SYNTH02 runs end-to-end through build_all with its own spec", {
   # the seeded WEEK 8 QT/QTCF excursion: exactly one subject classifies
   # HIGH against the declared 350-450 range, on both parameters
   hi <- dplyr::filter(built$adam$ADEG, ANRIND == "HIGH")
+  expect_equal(nrow(hi), 2L)
   expect_setequal(hi$USUBJID, "4033-203-012")
   expect_setequal(hi$PARAMCD, c("QT", "QTCF"))
   expect_setequal(hi$AVISIT, "WEEK 8")

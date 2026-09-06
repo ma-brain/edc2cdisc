@@ -168,6 +168,12 @@ test_that("a TE without ETCD defers to required-vars, not a spurious fire", {
   expect_true("required-vars" %in% issues$check[issues$domain == "TE"])
 })
 
+test_that("a column-less TE keeps te-etcd-not-unique silent, not noisy", {
+  domains <- td_fixture()$sdtm
+  domains$TE$ETCD <- NULL
+  expect_warning(validate_sdtm(domains, spec_synth01), NA)
+})
+
 test_that("a NARMS row disagreeing with spec$arms trips ts-narms-mismatch", {
   domains <- td_fixture()$sdtm
   domains$TS$TSVAL[domains$TS$TSPARMCD == "NARMS"] <- "9"
