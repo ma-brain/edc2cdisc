@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development to implement this plan task-by-task. Unattended-overnight rules: never push, commit per task, full suite green at every commit (reference re-freeze windows as planned), stop cleanly on BLOCKED. Branch: `se-supp-qualifiers`.
 
-**Goal:** Add SE (Subject Elements, derived from DM + `spec$elements`) and two SUPP qualifiers — SUPPMH (new `MHSPEC` field on the MH log form, joined via a new `MHSPID`) and SUPPVS (new `VSCOMT` field on the VS event form, joined via visit+testcd → VSSEQ) — taking `build_all()` to 25 SDTM domains.
+**Goal:** Add SE (Subject Elements, derived from DM + `spec$elements`) and two SUPP qualifiers — SUPPMH (new `MHSPEC` field on the MH log form, joined via a new `MHSPID`) and SUPPVS (new `VSCOMT` field on the VS event form, joined via visit+testcd → VSSEQ) — taking `build_all()` to 26 SDTM domains.
 
 **Architecture:** SE is a DM-derived domain consuming `spec$elements` (the trial-design table) with the validator cross-checking SE↔TE; the two SUPP extensions clone the two existing join patterns (`map_suppae`'s SPID join, `map_supppe`'s visit+testcd join). Generator changes are additive columns on existing forms with config-driven seeds — zero RNG, byte-additive digests.
 
@@ -105,8 +105,8 @@ Better: drive the pivot from `spec$elements` via `pmap` (one branch per element 
 
 **Files:** `R/build-all.R`, count tests.
 
-- [ ] `se <- map_se(dm, spec)` after `dm` (before refs? SE needs only dm+spec — place right after `dm <- map_dm(...)`/refs creation); `suppmh <- map_suppmh(forms$MH, mh, spec)` after `mh`; `suppvs <- map_suppvs(forms$VS, vs, spec)` after `vs`. sdtm list: `DM, SE` after DM? — order: `…, LB, MH, QS, PE, EG, SE, SUPPDM, SUPPAE, SUPPEX, SUPPPE, SUPPMH, SUPPVS, CO, RELREC, TA, TE, TI, TV, TS` (SE grouped with subject findings, SUPPMH/SUPPVS with the SUPP family). Roxygen 23 → 25 + document().
-- [ ] Counts: rds set + se/suppmh/suppvs (25), xpt 25, ItemGroupDef 25; cross-study test extensions (SE non-empty both studies; SUPPMH/SUPPVS single-row both studies).
+- [ ] `se <- map_se(dm, spec)` after `dm` (before refs? SE needs only dm+spec — place right after `dm <- map_dm(...)`/refs creation); `suppmh <- map_suppmh(forms$MH, mh, spec)` after `mh`; `suppvs <- map_suppvs(forms$VS, vs, spec)` after `vs`. sdtm list: `DM, SE` after DM? — order: `…, LB, MH, QS, PE, EG, SE, SUPPDM, SUPPAE, SUPPEX, SUPPPE, SUPPMH, SUPPVS, CO, RELREC, TA, TE, TI, TV, TS` (SE grouped with subject findings, SUPPMH/SUPPVS with the SUPP family). Roxygen 23 → 26 + document().
+- [ ] Counts: rds set + se/suppmh/suppvs (26), xpt 26, ItemGroupDef 26; cross-study test extensions (SE non-empty both studies; SUPPMH/SUPPVS single-row both studies).
 - [ ] Re-freeze references NOW (this task completes the domain set): run `Rscript tests/update_reference.R`, verify `git status --porcelain tests/reference` shows EXACTLY `mh.rds` modified + `se.rds`/`suppmh.rds`/`suppvs.rds` new, zero others — **stop and investigate if sv.rds or anything else moved**. Full suite green (632+new). Commit: `feat(build): wire SE, SUPPMH and SUPPVS into build_all()` + `test: re-freeze mh.rds and freeze SE/SUPP references` (two commits).
 - [ ] NOTE: Tasks 6–7 (validators, define) come AFTER the freeze in this plan — new validator checks and define entries do not move references (they only read built data). If a Task 6 check unexpectedly changes a reference, that is a bug — stop.
 
@@ -123,8 +123,8 @@ Better: drive the pivot from `spec$elements` via `pmap` (one branch per element 
 
 **Files:** `R/define-xml.R`, `tests/testthat/test-build-all.R`, `README.md`, `NEWS.md`, design doc if needed.
 
-- [ ] `key_spec`: SE (STUDYID, USUBJID, SESEQ), SUPPMH/SUPPVS (SUPP sets); `structure_spec`: "One record per subject per element" + SUPP patterns. No VLM. No new codelists. TDD assertions: ItemGroupDef 25 (already), SE Structure attribute + SESEQ KeySequence "3", SUPPMH/SUPPVS ItemGroupDefs exist.
-- [ ] README: 23 → 25 (Maps bullet names + quick-start comment) and mapper illustration gains `map_se()`. NEWS: bullet under `0.4.0.9000` (SE + the two qualifiers, the validator additions, 25 domains). build_vignettes check.
+- [ ] `key_spec`: SE (STUDYID, USUBJID, SESEQ), SUPPMH/SUPPVS (SUPP sets); `structure_spec`: "One record per subject per element" + SUPP patterns. No VLM. No new codelists. TDD assertions: ItemGroupDef 26 (already), SE Structure attribute + SESEQ KeySequence "3", SUPPMH/SUPPVS ItemGroupDefs exist.
+- [ ] README: 23 → 26 (Maps bullet names + quick-start comment) and mapper illustration gains `map_se()`. NEWS: bullet under `0.4.0.9000` (SE + the two qualifiers, the validator additions, 26 domains). build_vignettes check.
 - [ ] Full suite + lint + `R CMD build && R CMD check` Status OK (expect the PESEQ/EGSEQ-style globals note to not reappear — SESEQ/… used via derive_seq strings; if a NOTE appears, fix via globals precedent).
 - [ ] Commits: `feat(define-xml): document SE, SUPPMH and SUPPVS` then `docs: SE and SUPP qualifier domains`.
 

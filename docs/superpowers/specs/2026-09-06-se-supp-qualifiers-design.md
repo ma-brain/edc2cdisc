@@ -36,7 +36,7 @@ Status: Proposed — awaiting evening skim, then overnight execution
 5. **SE consumes `spec$elements` — "two things read the spec" again.** The
    validator cross-checks SE.ETCD against TE.ETCD (the `ta-etcd` precedent),
    so a drifted elements table cannot satisfy both readers.
-6. **Domain count 23 → 25** (SE, SUPPMH, SUPPVS). ItemGroupDef 25;
+6. **Domain count 23 → 26** (SE, SUPPMH, SUPPVS). ItemGroupDef 26;
    ValueListDef stays 3 (none of the three has a --STRESN); CodeList stays
    11.
 
@@ -105,7 +105,7 @@ STUDYID, DOMAIN, USUBJID, SESEQ, ETCD, ELEMENT, SESTDTC, SEENDTC.
 
 Keys: SE (STUDYID, USUBJID, SESEQ), SUPPMH/SUPPVS (SUPP key sets).
 Structures: "One record per subject per element" / SUPP patterns. No VLM
-(no --STRESN anywhere). Counts: ItemGroupDef 25, ValueListDef 3, CodeList 11.
+(no --STRESN anywhere). Counts: ItemGroupDef 26, ValueListDef 3, CodeList 11.
 
 ## Testing
 

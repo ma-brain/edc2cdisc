@@ -127,7 +127,11 @@ test_that("a TREAT element starting before SCRN ends trips se-element-continuity
 
 test_that("a duplicated USUBJID/ETCD key trips se-element-continuity", {
   domains <- se_val_fixture()
-  domains$SE <- bind_rows(domains$SE, domains$SE[1, ])
+  # SESEQ is bumped on the clone so the mutation trips the continuity
+  # dup-half alone, not the generic seq-not-unique check
+  clone <- domains$SE[1, ]
+  clone$SESEQ <- max(domains$SE$SESEQ[domains$SE$USUBJID == clone$USUBJID]) + 1L
+  domains$SE <- bind_rows(domains$SE, clone)
   issues <- validate_sdtm(domains, spec_synth01)
   expect_true("se-element-continuity" %in% issues$check[issues$domain == "SE"])
 })

@@ -2,6 +2,12 @@
 
 ## Added
 
+* The SE (Subject Elements) domain plus two more SUPP qualifiers: SUPPMH
+  (an "if related, specify" detail on the medical-history form, joined via
+  the new MHSPID) and SUPPVS (a comment on the vital-signs form, joined via
+  visit and test). `map_se()` derives elements from DM dates and
+  `spec$elements`; `validate_sdtm()` cross-checks SE against TE and gains
+  `se-element-continuity`. `build_all()` returns 26 SDTM domains.
 * The QS (Questionnaires) domain. A deterministic scheduled `QS` CRF form
   (MOOD SCALE ordinal items) feeds `map_qs()`, a `map_vs()`-style findings
   mapper with NOT DONE rows and baseline flags. `build_all()` returns 20

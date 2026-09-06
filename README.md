@@ -75,6 +75,7 @@ forms <- read_rave_extract(dir = tempdir())
 dm   <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
 refs <- subject_ref(dm)                 # feeds every --DY derivation
 ex   <- map_ex(forms$EX, spec_synth01, refs)
+se   <- map_se(dm, spec_synth01)        # subject elements from DM + spec
 ```
 
 ## Regression guarantees

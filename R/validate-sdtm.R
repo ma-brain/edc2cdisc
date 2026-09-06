@@ -770,6 +770,9 @@ validate_sdtm <- function(domains, spec = NULL) {
     # start before the screening element ended. ISO 8601 compares correctly
     # as a string, which is why partial dates stay partial (the
     # mh-after-first-dose precedent)
+    # SCRN/TREAT are hardcoded (the map_suppvs() TEMP precedent): a future
+    # study that renames its elements silently no-ops the overlap half - the
+    # dup half and the se-etcd-not-in-te cross-check still fire.
     if (all(c("SESTDTC", "SEENDTC") %in% names(se_df))) {
       overlap <- se_df |>
         filter(ETCD == "TREAT") |>

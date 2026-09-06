@@ -122,7 +122,3 @@ test_that("a collected qualifier with no parent record stops the mapper loudly",
   expect_error(map_suppvs(f$forms$VS, vs_broken, f$spec),
                "did not map to a VS TEMP record")
 })
-
-# Orphan SUPPMH/SUPPVS rows tripping related-parent-orphan in validate_sdtm()
-# land with Task 6's validator wiring: the .related lookup in
-# R/validate-sdtm.R does not know the two domains until then.
