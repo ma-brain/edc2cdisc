@@ -16,9 +16,9 @@ test_that("a flipped SAFFL trips the SAFFL/TRTSDT coherence check", {
   adsl <- built$adam$ADSL
   adsl$SAFFL[3] <- ifelse(adsl$SAFFL[3] == "Y", "N", "Y")
 
-  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADVS,
+  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADCM, built$adam$ADVS,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec_synth01)
   expect_true("saffl-trtsdt-coherence" %in% issues$check)
   expect_error(stop_on_error(issues, "meta"), "1 validation error")
@@ -30,9 +30,9 @@ test_that("a flipped TRTEMFL is recomputed and flagged", {
   treated <- adae$TRTEMFL == "Y"
   adae$TRTEMFL[which(treated)[1]] <- ""
 
-  issues <- validate_adam(built$adam$ADSL, adae, built$adam$ADVS,
+  issues <- validate_adam(built$adam$ADSL, adae, built$adam$ADCM, built$adam$ADVS,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec_synth01)
   expect_true("trtemfl-not-derivable" %in% issues$check)
 })
@@ -43,9 +43,9 @@ test_that("a blanked TRTEMFL is recomputed and flagged", {
   treated <- which(adae$TRTEMFL == "Y")
   adae$TRTEMFL[treated[1]] <- NA_character_
 
-  issues <- validate_adam(built$adam$ADSL, adae, built$adam$ADVS,
+  issues <- validate_adam(built$adam$ADSL, adae, built$adam$ADCM, built$adam$ADVS,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec_synth01)
   expect_true("trtemfl-not-derivable" %in% issues$check)
 })
@@ -56,11 +56,74 @@ test_that("a blanked TRTDURD is flagged", {
   i <- which(!is.na(adsl$TRTSDT) & !is.na(adsl$TRTEDT) & !is.na(adsl$TRTDURD))[1]
   adsl$TRTDURD[i] <- NA_integer_
 
-  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADVS,
+  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADCM, built$adam$ADVS,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec_synth01)
   expect_true("trtdurd-wrong" %in% issues$check)
+})
+
+test_that("an ADCM study day that disagrees with its anchor is caught", {
+  built <- build_fixtures()$built
+  adcm <- built$adam$ADCM
+  i <- which(!is.na(adcm$ASTDY))[1]
+  adcm$ASTDY[i] <- adcm$ASTDY[i] + 1L
+
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, adcm,
+                          built$adam$ADVS, built$adam$ADLB, built$sdtm$DM,
+                          built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                          built$sdtm$VS, built$sdtm$LB, built$sdtm$SUPPAE,
+                          spec_synth01)
+  expect_true("adcm-astdy-wrong-anchor" %in% issues$check)
+})
+
+test_that("a dropped CM record breaks ADCM coverage loudly", {
+  built <- build_fixtures()$built
+  adcm <- built$adam$ADCM[-1, ]       # a CM record vanishes from ADCM
+
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, adcm,
+                          built$adam$ADVS, built$adam$ADLB, built$sdtm$DM,
+                          built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                          built$sdtm$VS, built$sdtm$LB, built$sdtm$SUPPAE,
+                          spec_synth01)
+  expect_true("adcm-lost-record" %in% issues$check)
+})
+
+test_that("an ADCM row with no CM record and a bad flag are caught", {
+  built <- build_fixtures()$built
+
+  extra <- built$adam$ADCM[1, ]
+  extra$ASEQ <- 99L                   # no SDTM CM record behind it
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE,
+                          bind_rows(built$adam$ADCM, extra),
+                          built$adam$ADVS, built$adam$ADLB, built$sdtm$DM,
+                          built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                          built$sdtm$VS, built$sdtm$LB, built$sdtm$SUPPAE,
+                          spec_synth01)
+  expect_true("adcm-extra-record" %in% issues$check)
+
+  adcm <- built$adam$ADCM
+  adcm$ASTDTF[1] <- "X"               # imputing nothing is not a flag value
+  issues2 <- validate_adam(built$adam$ADSL, built$adam$ADAE, adcm,
+                           built$adam$ADVS, built$adam$ADLB, built$sdtm$DM,
+                           built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                           built$sdtm$VS, built$sdtm$LB, built$sdtm$SUPPAE,
+                           spec_synth01)
+  expect_true("adcm-imputation-flag-bad" %in% issues2$check)
+})
+
+test_that("an ADCM end date moved before the start is caught", {
+  built <- build_fixtures()$built
+  adcm <- built$adam$ADCM
+  i <- which(!is.na(adcm$ASTDT) & !is.na(adcm$AENDT))[1]
+  adcm$AENDT[i] <- adcm$ASTDT[i] - 1
+
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, adcm,
+                          built$adam$ADVS, built$adam$ADLB, built$sdtm$DM,
+                          built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                          built$sdtm$VS, built$sdtm$LB, built$sdtm$SUPPAE,
+                          spec_synth01)
+  expect_true("adcm-aendt-before-astdt" %in% issues$check)
 })
 
 test_that("a blanked ADVS ADY is flagged", {
@@ -69,9 +132,9 @@ test_that("a blanked ADVS ADY is flagged", {
   i <- which(!is.na(advs$ADY))[1]
   advs$ADY[i] <- NA_integer_
 
-  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, advs,
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM, advs,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec_synth01)
   expect_true("advs-ady-wrong" %in% issues$check)
 })
@@ -82,9 +145,9 @@ test_that("an ADVS row whose upper bound went missing cannot stay NORMAL", {
   i <- which(!is.na(advs$ANRHI) & advs$ANRIND == "NORMAL")[1]
   advs$ANRHI[i] <- NA # the range is now one-sided; NORMAL is unsupported
 
-  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, advs,
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM, advs,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec_synth01)
   expect_true("advs-anrind-wrong" %in% issues$check)
 })
@@ -100,9 +163,9 @@ test_that("a zero study day is caught in SDTM and ADaM", {
 
   adae <- built$adam$ADAE
   adae$AENDY[1] <- 0L
-  issues <- validate_adam(built$adam$ADSL, adae, built$adam$ADVS,
+  issues <- validate_adam(built$adam$ADSL, adae, built$adam$ADCM, built$adam$ADVS,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec_synth01)
   expect_true("adae-study-day-zero" %in% issues$check)
 })
@@ -174,9 +237,9 @@ test_that("the AGE bounds come from spec$study and can be widened there", {
   adsl <- built$adam$ADSL
   adsl$AGE[1] <- 17
 
-  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADVS,
+  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADCM, built$adam$ADVS,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec_synth01)
   expect_true("age-out-of-range" %in% issues$check)
 
@@ -194,9 +257,9 @@ test_that("the AGE bounds come from spec$study and can be widened there", {
     bds       = spec_synth01$bds,
     variables = spec_synth01$variables
   )
-  issues2 <- validate_adam(adsl, built$adam$ADAE, built$adam$ADVS,
+  issues2 <- validate_adam(adsl, built$adam$ADAE, built$adam$ADCM, built$adam$ADVS,
                            built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                           built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                           built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                            built$sdtm$SUPPAE, spec_paed)
   expect_false("age-out-of-range" %in% issues2$check)
 })
@@ -249,9 +312,9 @@ test_that("an ADaM parameter missing from spec$bds trips the coverage check", {
 
   # derive against the trimmed spec: TEMP loses its ranges/order
   advs <- derive_advs(built$sdtm$VS, built$adam$ADSL, spec2)
-  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, advs,
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM, advs,
                           built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                          built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
+                          built$sdtm$AE, built$sdtm$CM, built$sdtm$VS, built$sdtm$LB,
                           built$sdtm$SUPPAE, spec2)
   expect_true("advs-param-not-in-spec" %in% issues$check)
   expect_true("TEMP" %in% issues$detail[issues$check == "advs-param-not-in-spec"])

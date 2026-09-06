@@ -55,9 +55,11 @@ test_that("SYNTH02 runs end-to-end through build_all with its own spec", {
   # the whole point: both validators are clean, with no mapper changes
   expect_equal(nrow(validate_sdtm(built$sdtm, spec_synth02)), 0)
   expect_equal(nrow(validate_adam(built$adam$ADSL, built$adam$ADAE,
-                                  built$adam$ADVS, built$adam$ADLB,
+                                  built$adam$ADCM, built$adam$ADVS,
+                                  built$adam$ADLB,
                                   built$sdtm$DM, built$sdtm$DS,
-                                  built$sdtm$AE, built$sdtm$VS,
+                                  built$sdtm$AE, built$sdtm$CM,
+                                  built$sdtm$VS,
                                   built$sdtm$LB, built$sdtm$SUPPAE,
                                   spec_synth02)), 0)
 
@@ -110,7 +112,7 @@ test_that("SYNTH02 runs end-to-end through build_all with its own spec", {
   # deliverables written like any study's
   expect_true(file.exists(file.path(out, "sdtm", "define.xml")))
   expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 26L)
-  expect_equal(length(list.files(file.path(out, "adam", "xpt"))), 4L)
+  expect_equal(length(list.files(file.path(out, "adam", "xpt"))), 5L)
 })
 
 test_that("the SYNTH02 extract fails loudly under the SYNTH01 spec", {
