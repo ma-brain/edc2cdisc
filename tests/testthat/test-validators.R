@@ -334,6 +334,23 @@ test_that("a MOSTOT ANRLO drift the classification survives is caught", {
   expect_setequal(issues$check, "adqs-range-spec-drift")
 })
 
+test_that("an item ANRLO drift the classification survives is caught", {
+  built <- build_fixtures()$built
+  adqs <- built$adam$ADQS
+  i <- which(adqs$PARAMCD == "MOS01")[1]
+  adqs$ANRLO[i] <- 1  # the spec declares NA/NA for ordinal items: any value drifts
+
+  issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
+                          built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
+                          adqs, built$sdtm$DM, built$sdtm$DS, built$sdtm$AE,
+                          built$sdtm$CM, built$sdtm$VS, built$sdtm$QS,
+                          built$sdtm$EG, built$sdtm$LB, built$sdtm$SUPPAE,
+                          spec_synth01)
+  expect_false("adqs-anrind-wrong" %in% issues$check) # one bound still cannot classify
+  expect_true("adqs-range-spec-drift" %in% issues$check)
+  expect_setequal(issues$check, "adqs-range-spec-drift")
+})
+
 test_that("a QS item missing from spec$bds trips the spec check, not silence", {
   built <- build_fixtures()$built
 

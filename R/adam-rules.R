@@ -39,7 +39,13 @@
   )
 }
 
-# Percent change from baseline, defined only where CHG is.
+# Percent change from baseline, defined only where CHG is. A zero base is
+# left unguarded on purpose: the arithmetic is honest (Inf on a positive
+# change, -Inf on a negative one, NaN on none) and the deriver and
+# validator share this one rule, so the frozen output and the recompute
+# always agree. A NA-at-zero guard would be a cross-dataset redesign of
+# every BDS dataset's frozen output, not a rule tweak - if an SAP ever
+# demands it, change it here and re-freeze, never in one deriver.
 .rule_pchg <- function(chg, base) {
   if_else(!is.na(chg), 100 * chg / base, NA_real_)
 }

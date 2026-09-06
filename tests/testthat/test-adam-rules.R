@@ -43,6 +43,12 @@ test_that("pchg: defined only where CHG is", {
   expect_equal(.rule_pchg(2, NA_real_), NA_real_)
 })
 
+test_that("pchg: a zero base is unguarded by design - the rule is shared", {
+  expect_equal(.rule_pchg(1, 0), Inf)
+  expect_equal(.rule_pchg(-1, 0), -Inf)
+  expect_equal(.rule_pchg(0, 0), NaN)
+})
+
 test_that("anrind: needs the value and both bounds", {
   expect_equal(.rule_anrind(36, 35, 37.5), "NORMAL")
   expect_equal(.rule_anrind(30, 35, 37.5), "LOW")
