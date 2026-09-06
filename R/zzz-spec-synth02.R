@@ -151,7 +151,9 @@ spec_synth02 <- new_study_spec(
     "EX",     "EXSEQ",  "EXADMBY",  "Dose Administered By",               "EXADMBY",  "squish",   "CRF",  NA,
     # the study's extra non-standard field: the dose's lot number
     "EX",     "EXSEQ",  "EXLOT",    "Lot Number",                         "EXLOT",    "squish",   "CRF",  NA,
-    "PE",     "PESEQ",  "PEABNDT",  "Abnormality Details",                "CVSPEC",   "squish",   "CRF",  NA
+    "PE",     "PESEQ",  "PEABNDT",  "Abnormality Details",                "CVSPEC",   "squish",   "CRF",  NA,
+    "MH",     "MHSPID", "MHSPECD",  "If Related, Specify",                "MHSPEC",   "squish",   "CRF",  NA,
+    "VS",     "VSSEQ",  "VSCOMTL",  "Comment",                            "VSCOMT",   "squish",   "CRF",  NA
   ),
 
   units = tribble(

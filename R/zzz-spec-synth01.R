@@ -146,7 +146,9 @@ spec_synth01 <- new_study_spec(
     "AE",     "AESEQ",  "AESI",     "Adverse Event of Special Interest",  "AESI",     "yn",       "CRF",          "INVESTIGATOR",
     "AE",     "AESEQ",  "AEDISCON", "AE Led to Study Discontinuation",    "AEDISCON", "yn",       "CRF",          NA,
     "EX",     "EXSEQ",  "EXADMBY",  "Dose Administered By",               "EXADMBY",  "squish",   "CRF",          NA,
-    "PE",     "PESEQ",  "PEABNDT",  "Abnormality Details",                "CVSPEC",   "squish",   "CRF",          NA
+    "PE",     "PESEQ",  "PEABNDT",  "Abnormality Details",                "CVSPEC",   "squish",   "CRF",          NA,
+    "MH",     "MHSPID", "MHSPECD",  "If Related, Specify",                "MHSPEC",   "squish",   "CRF",          NA,
+    "VS",     "VSSEQ",  "VSCOMTL",  "Comment",                            "VSCOMT",   "squish",   "CRF",          NA
   ),
 
   units = tribble(
@@ -307,6 +309,9 @@ spec_synth01 <- new_study_spec(
     "MH",    "STUDYID",  NA,                "derivation",  "study_id", NA,        NA,       NA,
     "MH",    "DOMAIN",   NA,                "constant",    NA,         "MH",      NA,       NA,
     "MH",    "USUBJID",  "Subject",         "derivation",  "usubjid",  NA,        NA,       NA,
+    # Rave log-line number, kept as MHSPID so SUPPMH can pin each related
+    # record to an MH row without re-deriving MHSEQ.
+    "MH",    "MHSPID",   "recordposition",  "character",   NA,         NA,        NA,       NA,
     "MH",    "MHTERM",   "MHTERM",          "squish",      NA,         NA,        NA,       NA,
     "MH",    "MHDECOD",  "MHCOD_PT",        "rename",      NA,         NA,        NA,       NA,
     "MH",    "MHBODSYS", "MHCOD_SOC",       "rename",      NA,         NA,        NA,       NA,

@@ -15,10 +15,13 @@
   "upper", "upper_squish", "character", "constant", "derivation"
 )
 
-# The domains build_all() can produce; variables rows must name one of these
+# The collected-data domains build_all() can produce (the SUPP-- qualifiers
+# and the spec-driven SE included); spec$variables rows must name one of
+# these. Trial design (TA/TE/TI/TV/TS) stays out - protocol facts the
+# mapping engine cannot drive.
 .sdtm_domains <- c("DM", "EX", "VS", "AE", "CM", "DS", "SV", "LB", "MH",
-                   "QS", "PE", "EG", "SUPPDM", "SUPPAE", "SUPPEX", "SUPPPE",
-                   "CO", "RELREC")
+                   "QS", "PE", "EG", "SE", "SUPPDM", "SUPPAE", "SUPPEX",
+                   "SUPPPE", "SUPPMH", "SUPPVS", "CO", "RELREC")
 
 # Trial design tables: optional constructor arguments, always present on
 # the built spec so the builders can rely on their columns. Protocol fact,

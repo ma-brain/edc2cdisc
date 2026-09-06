@@ -33,14 +33,15 @@ map_mh <- function(mh, spec, refs) {
       MHENDY = derive_dy(MHENDTC, RFSTDTC)
     ) |>
     derive_seq("MHSEQ", MHSTDTC, MHTERM) |>
-    select(STUDYID, DOMAIN, USUBJID, MHSEQ, MHTERM, MHDECOD, MHBODSYS,
-           MHSTDTC, MHENDTC, MHSTDY, MHENDY, MHENRTPT, MHENRF) |>
+    select(STUDYID, DOMAIN, USUBJID, MHSEQ, MHSPID, MHTERM, MHDECOD,
+           MHBODSYS, MHSTDTC, MHENDTC, MHSTDY, MHENDY, MHENRTPT, MHENRF) |>
     arrange(USUBJID, MHSEQ) |>
     apply_labels(c(
       STUDYID  = "Study Identifier",
       DOMAIN   = "Domain Abbreviation",
       USUBJID  = "Unique Subject Identifier",
       MHSEQ    = "Sequence Number",
+      MHSPID   = "Sponsor-Defined Identifier",
       MHTERM   = "Reported Term for the Medical History",
       MHDECOD  = "Dictionary-Derived Term",
       MHBODSYS = "Body System or Organ Class",
