@@ -52,7 +52,7 @@ utils::globalVariables(c(
   "RFPENDTC", "RFSTDTC", "RecordActive", "RecordDate", "SAFFL", "SEENDTC",
   "SESEQ", "SESTDTC", "SEX",
   "SITEID", "STUDYID", "SUBJID", "SVENDTC", "SVENDY", "SVSTDTC", "SVSTDY",
-  "SaveTs", "Subject", "TABRANCH", "TAETORD", "TATRANS", "TEDUR",
+  "SCRN_END", "SaveTs", "Subject", "TREAT_START", "TABRANCH", "TAETORD", "TATRANS", "TEDUR",
   "TEENRL", "TESTRL", "TRT01A", "TRT01ACD", "TRT01P", "TRT01PCD", "TRTDURD",
   "TRTEDT", "TRTEDTF", "TRTEMFL", "TRTSDT", "TRTSDTF", "TSPARM", "TSPARMCD",
   "TSVAL", "TSVALNF", "TargetDays",
