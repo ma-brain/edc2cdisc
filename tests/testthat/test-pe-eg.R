@@ -128,50 +128,63 @@ test_that("SUPPPE carries exactly the seeded abnormality detail, linked to its P
 })
 
 test_that("the seeded not-done visits yield STAT rows with reasons and blank results", {
-  f <- pe_eg_fixture("SYNTH01")
-  pe_items <- nrow(filter(f$spec$tests, domain == "PE"))
-  eg_items <- nrow(filter(f$spec$tests, domain == "EG"))
+  for (study in c("SYNTH01", "SYNTH02")) {
+    f <- pe_eg_fixture(study)
+    pe_items <- nrow(filter(f$spec$tests, domain == "PE"))
+    eg_items <- nrow(filter(f$spec$tests, domain == "EG"))
+    # generator seeds: PE not-done idx 12 at BASE in both studies; EG not-done
+    # idx 9 in SYNTH01 but idx 7 in SYNTH02 (its idx 9 is an early-termination
+    # subject whose Week 12 visit does not exist), both at visit 5
+    pe_subj <- switch(study, SYNTH01 = "3021-101-013", SYNTH02 = "4033-201-013")
+    eg_subj <- switch(study, SYNTH01 = "3021-101-010", SYNTH02 = "4033-202-008")
 
-  # PE: subject idx 12 (101-013) at BASE, one STAT row per system
-  pe_stat <- f$pe |> filter(PESTAT == "NOT DONE")
-  expect_equal(nrow(pe_stat), pe_items)
-  expect_true(all(pe_stat$USUBJID == "3021-101-013"))
-  expect_equal(unique(pe_stat$VISITNUM), 2)
-  expect_equal(unique(pe_stat$PEREASND), "Subject unwell")
-  expect_true(all(is.na(pe_stat$PEORRES)))
-  expect_true(all(is.na(pe_stat$PECLSIG)))
-  # the visit date is still collected on a not-done form
-  expect_true(all(str_length(pe_stat$PEDTC) == 10))
+    # PE: one STAT row per system
+    pe_stat <- f$pe |> filter(PESTAT == "NOT DONE")
+    expect_equal(nrow(pe_stat), pe_items,
+                 label = sprintf("PE STAT rows (%s)", study))
+    expect_true(all(pe_stat$USUBJID == pe_subj))
+    expect_equal(unique(pe_stat$VISITNUM), 2) # BASE
+    expect_equal(unique(pe_stat$PEREASND), "Subject unwell")
+    expect_true(all(is.na(pe_stat$PEORRES)))
+    expect_true(all(is.na(pe_stat$PECLSIG)))
+    # the visit date is still collected on a not-done form
+    expect_true(all(str_length(pe_stat$PEDTC) == 10))
 
-  # EG: subject idx 9 (101-010) at WK08, one STAT row per interval
-  eg_stat <- f$eg |> filter(EGSTAT == "NOT DONE")
-  expect_equal(nrow(eg_stat), eg_items)
-  expect_true(all(eg_stat$USUBJID == "3021-101-010"))
-  expect_equal(unique(eg_stat$VISITNUM), 5)
-  expect_equal(unique(eg_stat$EGREASND), "Equipment failure")
-  expect_true(all(is.na(eg_stat$EGORRES)))
-  expect_true(all(is.na(eg_stat$EGSTRESN)))
-  expect_true(all(is.na(eg_stat$EGSTRESU)))
-  expect_true(all(is.na(eg_stat$EGBLFL)))
+    # EG: one STAT row per interval
+    eg_stat <- f$eg |> filter(EGSTAT == "NOT DONE")
+    expect_equal(nrow(eg_stat), eg_items,
+                 label = sprintf("EG STAT rows (%s)", study))
+    expect_true(all(eg_stat$USUBJID == eg_subj))
+    expect_equal(unique(eg_stat$VISITNUM), 5)
+    expect_equal(unique(eg_stat$EGREASND), "Equipment failure")
+    expect_true(all(is.na(eg_stat$EGORRES)))
+    expect_true(all(is.na(eg_stat$EGSTRESN)))
+    expect_true(all(is.na(eg_stat$EGSTRESU)))
+    expect_true(all(is.na(eg_stat$EGBLFL)))
+  }
 })
 
 test_that("EG values parse numerically in msec; the blank-time row is date-only", {
-  f <- pe_eg_fixture("SYNTH01")
-  answered <- f$eg |> filter(is.na(EGSTAT))
-  # the generator's interval arithmetic only ever produces plain integers,
-  # so every answered EGORRES parses
-  expect_true(all(!is.na(answered$EGSTRESN)))
-  expect_true(all(answered$EGSTRESU == "msec"))
-  expect_true(all(is.na(f$eg$EGSTRESU[is.na(f$eg$EGSTRESN)])))
+  for (study in c("SYNTH01", "SYNTH02")) {
+    f <- pe_eg_fixture(study)
+    answered <- f$eg |> filter(is.na(EGSTAT))
+    # the generator's interval arithmetic only ever produces plain integers,
+    # so every answered EGORRES parses
+    expect_true(all(!is.na(answered$EGSTRESN)),
+                label = sprintf("answered EGSTRESN (%s)", study))
+    expect_true(all(answered$EGSTRESU == "msec"))
+    expect_true(all(is.na(f$eg$EGSTRESU[is.na(f$eg$EGSTRESN)])))
 
-  # subject idx 2 (103-003) at WK02 has EGTIM left blank: the intervals are
-  # still there (120/98/386/405/1000, the base=5 arithmetic) but EGDTC
-  # carries no time component
-  late <- f$eg |> filter(USUBJID == "3021-103-003", VISITNUM == 3)
-  expect_equal(nrow(late), 5L)
-  expect_setequal(late$EGSTRESN, c(120, 98, 386, 405, 1000))
-  expect_true(all(str_length(late$EGDTC) == 10))
-  expect_false(any(str_detect(late$EGDTC, "T")))
+    # the generator leaves EGTIM blank for subject idx 2 at visit 3 (WK02 in
+    # SYNTH01, WK04 in SYNTH02): the intervals are still there (120/98/386/
+    # 405/1000, the base=5 arithmetic) but EGDTC carries no time component
+    late_subj <- switch(study, SYNTH01 = "3021-103-003", SYNTH02 = "4033-203-003")
+    late <- f$eg |> filter(USUBJID == late_subj, VISITNUM == 3)
+    expect_equal(nrow(late), 5L, label = sprintf("late rows (%s)", study))
+    expect_setequal(late$EGSTRESN, c(120, 98, 386, 405, 1000))
+    expect_true(all(str_length(late$EGDTC) == 10))
+    expect_false(any(str_detect(late$EGDTC, "T")))
+  }
 })
 
 test_that("EGBLFL flags only numeric results on or before first dose", {

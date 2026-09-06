@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-Same as the QS plan (zero RNG, byte-frozen existing artifacts, XPT limits, feature branch `pe-eg-domains`, suite stays at its current all-green count). After this plan: **23 SDTM domains**; ItemGroupDef 23; ValueListDef 4; CodeList 11.
+Same as the QS plan (zero RNG, byte-frozen existing artifacts, XPT limits, feature branch `pe-eg-domains`, suite stays at its current all-green count). After this plan: **23 SDTM domains**; ItemGroupDef 23; ValueListDef 3 (VS, LB, EG; the plan's original 4 miscounted — QS and PE have no --STRESN output column); CodeList 11.
 
 ## File Structure
 

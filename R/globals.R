@@ -42,7 +42,7 @@ utils::globalVariables(c(
   "MHTERM", "MaxUpdated", "MinCreated", "NRHI_O", "NRLO_O", "PARAMCD",
   "PARAMN", "PCHG", "PageRepeatNumber", "PECLSIG", "PEDAT_DD", "PEDAT_MM",
   "PEDAT_YYYY", "PEDTC", "PEDY", "PEORRES", "PEPERF", "PENRA", "PEREASND",
-  "PEREASND", "PESEQ", "PESTAT", "PETEST", "PETESTCD",
+  "PESEQ", "PESTAT", "PETEST", "PETESTCD",
   "QLABEL", "QNAM", "QVAL",
   "QSBLFL", "QSCAT", "QSDAT_DD", "QSDAT_MM", "QSDAT_YYYY", "QSDTC", "QSDY",
   "QSNRA", "QSORRES", "QSPERF", "QSREASND", "QSSEQ", "QSSTAT", "QSSTRESN",
