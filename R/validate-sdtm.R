@@ -21,6 +21,8 @@
          "PEORRES", "PEDTC"),
   EG = c("STUDYID", "DOMAIN", "USUBJID", "EGSEQ", "EGTESTCD", "EGTEST",
          "EGORRES", "EGSTRESN", "EGSTRESU", "EGDTC"),
+  SE = c("STUDYID", "DOMAIN", "USUBJID", "SESEQ", "ETCD", "ELEMENT",
+         "SESTDTC"),
   RELREC = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
              "RELTYPE", "RELID"),
   SUPPDM = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
@@ -30,6 +32,10 @@
   SUPPEX = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
              "QNAM", "QLABEL", "QVAL", "QORIG", "QEVAL"),
   SUPPPE = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
+             "QNAM", "QLABEL", "QVAL", "QORIG", "QEVAL"),
+  SUPPMH = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
+             "QNAM", "QLABEL", "QVAL", "QORIG", "QEVAL"),
+  SUPPVS = c("STUDYID", "RDOMAIN", "USUBJID", "IDVAR", "IDVARVAL",
              "QNAM", "QLABEL", "QVAL", "QORIG", "QEVAL"),
   CO = c("STUDYID", "DOMAIN", "RDOMAIN", "USUBJID", "COSEQ",
          "IDVAR", "IDVARVAL", "COVAL"),
@@ -75,9 +81,10 @@
 #' study-day leaks, --STAT/--REASND coherence, PEORRES values
 #' (`peorres-bad-value`), PECLSIG/PEORRES coherence (`peclsig-coherence`),
 #' EGSTRESU fixed to msec when EGSTRESN is present (`egstresu-fixed`),
-#' SUPP/CO related-record
-#' structure, death coherence across
-#' AE/DS/DM, MH onset before first dose, RELREC pair integrity, trial design
+#' SUPP/CO related-record structure (the SUPPMH/SUPPVS qualifiers
+#' included), death coherence across AE/DS/DM, MH onset before first dose,
+#' SE element codes against TE (`se-etcd-not-in-te`) and SE element
+#' continuity (`se-element-continuity`), RELREC pair integrity, trial design
 #' integrity (TA→TE, TA against `spec$arms`/`spec$visits`, TV against
 #' `spec$visits`, SV visits planned in TV, TS parameter consistency against
 #' `spec$arms`/`spec$study$n`) and - when a spec is supplied - controlled
@@ -85,8 +92,9 @@
 #' `spec$tests`.
 #'
 #' @param domains A named list of mapped SDTM datasets, as built by
-#'   [build_all()] (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, SUPPDM, SUPPAE,
-#'   SUPPEX, SUPPPE, CO, RELREC, TA, TE, TI, TV, TS)
+#'   [build_all()] (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, PE, EG, SE,
+#'   SUPPDM, SUPPAE, SUPPEX, SUPPPE, SUPPMH, SUPPVS, CO, RELREC, TA, TE, TI,
+#'   TV, TS)
 #' @param spec Optional `study_spec`; when given, required-variable lists
 #'   for the engine-mapped domains come from `spec$variables`.
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
@@ -315,7 +323,7 @@ validate_sdtm <- function(domains, spec = NULL) {
 
   # SUPP-- / CO: related-record structure
   .related <- c(SUPPDM = "DM", SUPPAE = "AE", SUPPEX = "EX", SUPPPE = "PE",
-                CO = "AE")
+                SUPPMH = "MH", SUPPVS = "VS", CO = "AE")
   for (rel in names(.related)) {
     df <- domains[[rel]]
     if (is.null(df)) next
@@ -731,6 +739,51 @@ validate_sdtm <- function(domains, spec = NULL) {
       add("EG", "ERROR", "egstresu-fixed",
           sprintf("%d numeric EGSTRESN row(s) whose EGSTRESU is not 'msec'",
                   nrow(eg_unit_gap)))
+    }
+  }
+
+  # SE: the subject-elements timeline. SE is derived from the DM reference
+  # dates plus the spec's element table, so the checks recompute both sides
+  # instead of trusting the mapper - the same read-it-twice discipline as the
+  # trial design block above. A missing column is already an ERROR via
+  # required-vars, so each check below only runs once its columns are there.
+  se_df <- domains$SE
+  if (!is.null(se_df) && nrow(se_df) > 0 &&
+        all(c("USUBJID", "ETCD") %in% names(se_df))) {
+    # every element actually started must be a TE element (the ta-etcd
+    # precedent)
+    if (!is.null(te_df) && nrow(te_df) > 0 && "ETCD" %in% names(te_df)) {
+      unknown_el <- setdiff(unique(se_df$ETCD), unique(te_df$ETCD))
+      if (length(unknown_el) > 0) {
+        add("SE", "ERROR", "se-etcd-not-in-te", str_flatten_comma(unknown_el))
+      }
+    }
+
+    # an element runs at most once per subject
+    dup <- se_df |> count(USUBJID, ETCD, name = ".n") |> filter(.n > 1)
+    if (nrow(dup) > 0) {
+      add("SE", "ERROR", "se-element-continuity",
+          sprintf("%d duplicated USUBJID/ETCD key(s)", nrow(dup)))
+    }
+
+    # a subject's elements must run in order: the treatment element cannot
+    # start before the screening element ended. ISO 8601 compares correctly
+    # as a string, which is why partial dates stay partial (the
+    # mh-after-first-dose precedent)
+    if (all(c("SESTDTC", "SEENDTC") %in% names(se_df))) {
+      overlap <- se_df |>
+        filter(ETCD == "TREAT") |>
+        select(USUBJID, TREAT_START = SESTDTC) |>
+        inner_join(
+          se_df |> filter(ETCD == "SCRN") |> select(USUBJID, SCRN_END = SEENDTC),
+          by = "USUBJID"
+        ) |>
+        filter(!is.na(TREAT_START), !is.na(SCRN_END), TREAT_START < SCRN_END)
+      if (nrow(overlap) > 0) {
+        add("SE", "ERROR", "se-element-continuity",
+            sprintf(paste("%d subject(s) whose TREAT element starts before",
+                          "their SCRN element ends"), nrow(overlap)))
+      }
     }
   }
 

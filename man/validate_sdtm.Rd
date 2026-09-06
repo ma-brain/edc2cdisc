@@ -8,8 +8,9 @@ validate_sdtm(domains, spec = NULL)
 }
 \arguments{
 \item{domains}{A named list of mapped SDTM datasets, as built by
-\code{\link[=build_all]{build_all()}} (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, SUPPDM, SUPPAE,
-SUPPEX, SUPPPE, CO, RELREC, TA, TE, TI, TV, TS)}
+\code{\link[=build_all]{build_all()}} (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, PE, EG, SE,
+SUPPDM, SUPPAE, SUPPEX, SUPPPE, SUPPMH, SUPPVS, CO, RELREC, TA, TE, TI,
+TV, TS)}
 
 \item{spec}{Optional \code{study_spec}; when given, required-variable lists
 for the engine-mapped domains come from \code{spec$variables}.}
@@ -26,9 +27,10 @@ visit uniqueness, VISITNUM reconciliation against SV, screen-failure
 study-day leaks, --STAT/--REASND coherence, PEORRES values
 (\code{peorres-bad-value}), PECLSIG/PEORRES coherence (\code{peclsig-coherence}),
 EGSTRESU fixed to msec when EGSTRESN is present (\code{egstresu-fixed}),
-SUPP/CO related-record
-structure, death coherence across
-AE/DS/DM, MH onset before first dose, RELREC pair integrity, trial design
+SUPP/CO related-record structure (the SUPPMH/SUPPVS qualifiers
+included), death coherence across AE/DS/DM, MH onset before first dose,
+SE element codes against TE (\verb{se-etcd-not-in-te}) and SE element
+continuity (\code{se-element-continuity}), RELREC pair integrity, trial design
 integrity (TA→TE, TA against \code{spec$arms}/\code{spec$visits}, TV against
 \code{spec$visits}, SV visits planned in TV, TS parameter consistency against
 \code{spec$arms}/\code{spec$study$n}) and - when a spec is supplied - controlled

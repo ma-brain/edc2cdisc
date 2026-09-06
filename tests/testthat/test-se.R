@@ -1,9 +1,9 @@
 # SE: Subject Elements -------------------------------------------------------
 # SE is derived, not collected: map_se() pivots the built DM's reference
 # dates into one row per subject per element actually started, with
-# ETCD/ELEMENT read from spec$elements. build_all() does not wire SE yet
-# (Task 5 does), so the fixture calls map_se() directly on build_all()'s DM -
-# the intended usage.
+# ETCD/ELEMENT read from spec$elements. The mapper tests call map_se()
+# directly on build_all()'s DM - the intended usage - while the validator
+# meta-tests at the bottom corrupt the full build_all() output.
 
 se_fixture <- function() {
   out <- file.path(tempdir(), "se-fix")
@@ -92,4 +92,62 @@ test_that("ETCD/ELEMENT values come from spec$elements", {
     left_join(select(spec_synth01$elements, ETCD, ELEMENT_SPEC = ELEMENT),
               by = "ETCD")
   expect_equal(joined$ELEMENT, joined$ELEMENT_SPEC, ignore_attr = "label")
+})
+
+# Meta-tests: corrupt SE or its SUPP qualifiers, assert the validator trips.
+# build_all() wires SE, SUPPMH and SUPPVS (Task 5), so the validator sees
+# exactly what the pipeline ships.
+
+se_val_fixture <- function() {
+  out <- file.path(tempdir(), "se-meta")
+  dir.create(out, showWarnings = FALSE)
+  ext <- file.path(out, "rave")
+  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
+  suppressMessages(build_all(ext))$sdtm
+}
+
+test_that("a clean build has zero SE and SUPP qualifier findings", {
+  expect_equal(nrow(validate_sdtm(se_val_fixture(), spec_synth01)), 0)
+})
+
+test_that("an SE element missing from TE trips se-etcd-not-in-te", {
+  domains <- se_val_fixture()
+  domains$SE$ETCD[1] <- "BOGUS"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("se-etcd-not-in-te" %in% issues$check[issues$domain == "SE"])
+})
+
+test_that("a TREAT element starting before SCRN ends trips se-element-continuity", {
+  domains <- se_val_fixture()
+  hit <- which(domains$SE$ETCD == "TREAT")[1]
+  domains$SE$SESTDTC[hit] <- "1990-01-01"
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("se-element-continuity" %in% issues$check[issues$domain == "SE"])
+})
+
+test_that("a duplicated USUBJID/ETCD key trips se-element-continuity", {
+  domains <- se_val_fixture()
+  domains$SE <- bind_rows(domains$SE, domains$SE[1, ])
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("se-element-continuity" %in% issues$check[issues$domain == "SE"])
+})
+
+test_that("a SUPPMH row with no parent MH record trips related-parent-orphan", {
+  domains <- se_val_fixture()
+  domains$MH <- domains$MH |>
+    anti_join(transmute(domains$SUPPMH, USUBJID, MHSEQ = as.numeric(IDVARVAL)),
+              by = c("USUBJID", "MHSEQ"))
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("related-parent-orphan" %in%
+                issues$check[issues$domain == "SUPPMH"])
+})
+
+test_that("a SUPPVS row with no parent VS record trips related-parent-orphan", {
+  domains <- se_val_fixture()
+  domains$VS <- domains$VS |>
+    anti_join(transmute(domains$SUPPVS, USUBJID, VSSEQ = as.numeric(IDVARVAL)),
+              by = c("USUBJID", "VSSEQ"))
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("related-parent-orphan" %in%
+                issues$check[issues$domain == "SUPPVS"])
 })
