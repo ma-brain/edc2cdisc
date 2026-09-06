@@ -109,6 +109,17 @@ test_that("SYNTH02 runs end-to-end through build_all with its own spec", {
   # dosing is SYN-201
   expect_setequal(unique(built$sdtm$EX$EXTRT), c("PLACEBO", "SYN-201"))
 
+  # trial design shape: two elements (screen, treat), six inclusion criteria
+  expect_equal(nrow(built$sdtm$TE), 2L)
+  expect_equal(nrow(built$sdtm$TI), 6L)
+
+  # the seeded WEEK 8 QT/QTCF excursion: exactly one subject classifies
+  # HIGH against the declared 350-450 range, on both parameters
+  hi <- dplyr::filter(built$adam$ADEG, ANRIND == "HIGH")
+  expect_setequal(hi$USUBJID, "4033-203-012")
+  expect_setequal(hi$PARAMCD, c("QT", "QTCF"))
+  expect_setequal(hi$AVISIT, "WEEK 8")
+
   # deliverables written like any study's
   expect_true(file.exists(file.path(out, "sdtm", "define.xml")))
   expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 26L)

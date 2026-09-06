@@ -148,6 +148,26 @@ test_that("a TA element missing from TE trips ta-etcd-not-in-te", {
   expect_true("ta-etcd-not-in-te" %in% issues$check)
 })
 
+test_that("an empty TE defers: the etcd cross-checks do not double-report", {
+  domains <- td_fixture()$sdtm
+  domains$TE <- domains$TE[0, ]
+  issues <- validate_sdtm(domains, spec_synth01)
+  # trial-design-empty already owns "TE has no rows" - neither cross-check
+  # piles an ERROR on top of it
+  expect_false("ta-etcd-not-in-te" %in% issues$check)
+  expect_false("se-etcd-not-in-te" %in% issues$check)
+  expect_true("trial-design-empty" %in% issues$check[issues$domain == "TE"])
+})
+
+test_that("a TE without ETCD defers to required-vars, not a spurious fire", {
+  domains <- td_fixture()$sdtm
+  domains$TE$ETCD <- NULL
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_false("ta-etcd-not-in-te" %in% issues$check)
+  expect_false("se-etcd-not-in-te" %in% issues$check)
+  expect_true("required-vars" %in% issues$check[issues$domain == "TE"])
+})
+
 test_that("a NARMS row disagreeing with spec$arms trips ts-narms-mismatch", {
   domains <- td_fixture()$sdtm
   domains$TS$TSVAL[domains$TS$TSPARMCD == "NARMS"] <- "9"
@@ -192,6 +212,14 @@ test_that("an SV visit that TV never planned trips sv-visit-not-in-tv", {
   domains$SV <- bind_rows(domains$SV, ghost)
   issues <- validate_sdtm(domains, spec_synth01)
   expect_true("sv-visit-not-in-tv" %in% issues$check)
+})
+
+test_that("an SV without VISITNUM defers to required-vars instead of erroring", {
+  domains <- td_fixture()$sdtm
+  domains$SV$VISITNUM <- NULL
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_false("sv-visit-not-in-tv" %in% issues$check)
+  expect_true("required-vars" %in% issues$check[issues$domain == "SV"])
 })
 
 test_that("duplicate TS parameters and valflavor violations trip", {

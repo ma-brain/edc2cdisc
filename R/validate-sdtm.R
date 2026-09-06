@@ -255,56 +255,67 @@ validate_sdtm <- function(domains, spec = NULL) {
     }
   }
 
-  # SV: one row per subject per visit
-  sv_dup <- domains$SV |> count(USUBJID, VISITNUM, name = ".n") |> filter(.n > 1)
-  if (nrow(sv_dup) > 0) {
-    add("SV", "ERROR", "sv-visit-not-unique",
-        sprintf("%d duplicated USUBJID/VISITNUM key(s)", nrow(sv_dup)))
-  }
-
-  # VISITNUM reconciliation: SV is the reference list of visits that
-  # actually happened; every collected (USUBJID, VISITNUM) must map to an
-  # SV record, and the VISITNUM -> VISIT decode must agree with SV.
-  sv_keys      <- domains$SV |> distinct(USUBJID, VISITNUM)
-  sv_visit_map <- domains$SV |> distinct(VISITNUM, VISIT)
-
-  for (d in c("VS", "EX", "LB")) {
-    df <- domains[[d]]
-    if (is.null(df) || !all(c("USUBJID", "VISITNUM", "VISIT") %in% names(df))) next
-
-    orphan <- df |>
-      distinct(USUBJID, VISITNUM, VISIT) |>
-      anti_join(sv_keys, by = c("USUBJID", "VISITNUM"))
-    if (nrow(orphan) > 0) {
-      add(d, "ERROR", "visit-not-in-sv",
-          sprintf("%d USUBJID/VISITNUM not in SV (e.g. %s VISITNUM %s)",
-                  nrow(orphan), orphan$USUBJID[1], orphan$VISITNUM[1]))
+  # SV: one row per subject per visit. required-vars owns a missing column,
+  # so the SV-side checks only run once their columns are there
+  sv_core <- !is.null(domains$SV) &&
+    all(c("USUBJID", "VISITNUM", "VISIT") %in% names(domains$SV))
+  if (sv_core) {
+    sv_dup <- domains$SV |> count(USUBJID, VISITNUM, name = ".n") |> filter(.n > 1)
+    if (nrow(sv_dup) > 0) {
+      add("SV", "ERROR", "sv-visit-not-unique",
+          sprintf("%d duplicated USUBJID/VISITNUM key(s)", nrow(sv_dup)))
     }
 
-    clash <- df |>
-      distinct(VISITNUM, VISIT) |>
-      inner_join(sv_visit_map, by = "VISITNUM", suffix = c("", "_SV")) |>
-      filter(VISIT != VISIT_SV)
-    if (nrow(clash) > 0) {
-      add(d, "ERROR", "visitnum-decode-mismatch",
-          str_flatten_comma(sprintf("%s '%s' vs SV '%s'",
-                                    clash$VISITNUM, clash$VISIT, clash$VISIT_SV)))
+    # VISITNUM reconciliation: SV is the reference list of visits that
+    # actually happened; every collected (USUBJID, VISITNUM) must map to an
+    # SV record, and the VISITNUM -> VISIT decode must agree with SV.
+    sv_keys      <- domains$SV |> distinct(USUBJID, VISITNUM)
+    sv_visit_map <- domains$SV |> distinct(VISITNUM, VISIT)
+
+    for (d in c("VS", "EX", "LB")) {
+      df <- domains[[d]]
+      if (is.null(df) || !all(c("USUBJID", "VISITNUM", "VISIT") %in% names(df))) next
+
+      orphan <- df |>
+        distinct(USUBJID, VISITNUM, VISIT) |>
+        anti_join(sv_keys, by = c("USUBJID", "VISITNUM"))
+      if (nrow(orphan) > 0) {
+        add(d, "ERROR", "visit-not-in-sv",
+            sprintf("%d USUBJID/VISITNUM not in SV (e.g. %s VISITNUM %s)",
+                    nrow(orphan), orphan$USUBJID[1], orphan$VISITNUM[1]))
+      }
+
+      clash <- df |>
+        distinct(VISITNUM, VISIT) |>
+        inner_join(sv_visit_map, by = "VISITNUM", suffix = c("", "_SV")) |>
+        filter(VISIT != VISIT_SV)
+      if (nrow(clash) > 0) {
+        add(d, "ERROR", "visitnum-decode-mismatch",
+            str_flatten_comma(sprintf("%s '%s' vs SV '%s'",
+                                      clash$VISITNUM, clash$VISIT, clash$VISIT_SV)))
+      }
     }
   }
 
   # Date coherence: a VS measurement should fall inside its SV visit window
   # (dtc_date, not as.Date: a reduced-precision DTC would be a hard
-  # as.Date() error; here it simply cannot be window-checked)
-  vs_outside <- domains$VS |>
-    filter(!is.na(VSDTC)) |>
-    inner_join(select(domains$SV, USUBJID, VISITNUM, SVSTDTC, SVENDTC),
-               by = c("USUBJID", "VISITNUM")) |>
-    mutate(vd = dtc_date(VSDTC)) |>
-    filter(vd < dtc_date(SVSTDTC) | vd > dtc_date(SVENDTC))
-  if (nrow(vs_outside) > 0) {
-    add("VS", "WARN", "vsdtc-outside-sv-window",
-        sprintf("%d VS record(s) dated outside their SV visit window",
-                nrow(vs_outside)))
+  # as.Date() error; here it simply cannot be window-checked). SVENDTC is
+  # collected, not required, so required-vars does not own its absence -
+  # without it the window simply cannot be checked.
+  if (!is.null(domains$VS) && !is.null(domains$SV) &&
+        all(c("USUBJID", "VISITNUM", "SVSTDTC", "SVENDTC") %in% names(domains$SV)) &&
+        "VSDTC" %in% names(domains$VS)) {
+    vs_outside <- domains$VS |>
+      filter(!is.na(VSDTC)) |>
+      inner_join(select(domains$SV, USUBJID, VISITNUM, SVSTDTC, SVENDTC),
+                 by = c("USUBJID", "VISITNUM")) |>
+      mutate(vd = dtc_date(VSDTC)) |>
+      filter(vd < dtc_date(SVSTDTC) | vd > dtc_date(SVENDTC))
+    if (nrow(vs_outside) > 0) {
+      add("VS", "WARN", "vsdtc-outside-sv-window",
+          sprintf("%d VS record(s) dated outside their SV visit window",
+                  nrow(vs_outside)))
+    }
   }
 
   # Screen failures must have no study days anywhere (no RFSTDTC)
@@ -542,7 +553,10 @@ validate_sdtm <- function(domains, spec = NULL) {
             sprintf("%d duplicated ARMCD/TAETORD key(s)", nrow(dup)))
       }
     }
-    if (!is.null(te_df)) {
+    # an empty TE is trial-design-empty's finding and a missing ETCD column
+    # is required-vars' - the cross-check defers to both instead of
+    # double-reporting every element (the se-etcd guard, symmetrically)
+    if (!is.null(te_df) && nrow(te_df) > 0 && "ETCD" %in% names(te_df)) {
       orphan <- setdiff(unique(ta_df$ETCD), unique(te_df$ETCD))
       if (length(orphan) > 0) {
         add("TA", "ERROR", "ta-etcd-not-in-te", str_flatten_comma(orphan))
@@ -563,7 +577,8 @@ validate_sdtm <- function(domains, spec = NULL) {
       }
     }
   }
-  if (!is.null(te_df) && anyDuplicated(te_df$ETCD) > 0) {
+  if (!is.null(te_df) && "ETCD" %in% names(te_df) &&
+        anyDuplicated(te_df$ETCD) > 0) {
     add("TE", "ERROR", "te-etcd-not-unique", "duplicated ETCD")
   }
 
@@ -608,8 +623,8 @@ validate_sdtm <- function(domains, spec = NULL) {
       }
     }
   }
-  if (!is.null(domains$SV) && !is.null(tv_df) &&
-        "VISITNUM" %in% names(tv_df)) {
+  if (!is.null(domains$SV) && "VISITNUM" %in% names(domains$SV) &&
+        !is.null(tv_df) && "VISITNUM" %in% names(tv_df)) {
     unplanned <- domains$SV |> distinct(VISITNUM) |> anti_join(tv_df, by = "VISITNUM")
     if (nrow(unplanned) > 0) {
       add("SV", "ERROR", "sv-visit-not-in-tv",
