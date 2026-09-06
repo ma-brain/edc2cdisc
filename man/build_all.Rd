@@ -21,7 +21,7 @@ like \code{sdtm_dir}.}
 }
 \value{
 A list with \code{sdtm} (named list of the 23 mapped domains) and
-\code{adam} (ADSL, ADAE, ADVS, ADLB), invisibly.
+\code{adam} (ADSL, ADAE, ADCM, ADVS, ADLB), invisibly.
 }
 \description{
 Reads the clinical view extract from \code{extract_dir}, maps every SDTM

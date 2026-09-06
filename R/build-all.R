@@ -23,7 +23,7 @@
 #' @param adam_dir Optional output directory for the ADaM datasets, laid out
 #'   like `sdtm_dir`.
 #' @return A list with `sdtm` (named list of the 23 mapped domains) and
-#'   `adam` (ADSL, ADAE, ADVS, ADLB), invisibly.
+#'   `adam` (ADSL, ADAE, ADCM, ADVS, ADLB), invisibly.
 #' @export
 #' @examples
 #' # regenerate the synthetic extract and run the whole pipeline
@@ -84,13 +84,14 @@ build_all <- function(extract_dir, spec = spec_synth01,
   # ---- ADaM --------------------------------------------------------------
   adsl <- derive_adsl(dm, ex, ds)
   adae <- derive_adae(ae, suppae, adsl)
+  adcm <- derive_adcm(cm, adsl)
   advs <- derive_advs(vs, adsl, spec)
   adlb <- derive_adlb(lb, adsl, spec)
 
-  adam <- list(ADSL = adsl, ADAE = adae, ADVS = advs, ADLB = adlb)
+  adam <- list(ADSL = adsl, ADAE = adae, ADCM = adcm, ADVS = advs, ADLB = adlb)
 
-  issues <- validate_adam(adsl, adae, advs, adlb,
-                          dm, ds, ae, vs, lb, suppae, spec)
+  issues <- validate_adam(adsl, adae, adcm, advs, adlb,
+                          dm, ds, ae, cm, vs, lb, suppae, spec)
   stop_on_error(issues, "ADaM validation")
   if (nrow(issues) > 0) {
     message("build_all: ADaM validation warnings: ", nrow(issues))

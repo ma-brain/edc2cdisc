@@ -7,11 +7,13 @@
 validate_adam(
   adsl,
   adae,
+  adcm,
   advs,
   adlb,
   dm,
   ds,
   ae,
+  cm,
   vs,
   lb,
   suppae,
@@ -19,10 +21,10 @@ validate_adam(
 )
 }
 \arguments{
-\item{adsl, adae, advs, adlb}{The mapped ADaM datasets}
+\item{adsl, adae, adcm, advs, adlb}{The mapped ADaM datasets}
 
-\item{dm, ds, ae, vs, lb, suppae}{The SDTM source datasets the ADaM layer was
-built from}
+\item{dm, ds, ae, cm, vs, lb, suppae}{The SDTM source datasets the ADaM layer
+was built from}
 
 \item{spec}{A \code{study_spec}; the ADVS rows of \code{spec$bds} declare the
 reference ranges the built ADVS is checked against - a silent change
@@ -41,7 +43,8 @@ the build cannot drift apart: it detects post-hoc corruption of the
 built dataset. A wrong rule would satisfy both sides - the rules
 themselves are pinned by the rule-level tests against hand-built
 inputs. Checks population-flag and treatment coherence on ADSL, the
-TRTEMFL window and SUPP merge-back on ADAE, and for the BDS datasets
+TRTEMFL window and SUPP merge-back on ADAE, record coverage and
+analysis-timing coherence on ADCM, and for the BDS datasets
 (ADVS / ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic, ANRIND
 against the row's own range, and coverage against the SDTM source
 records.
@@ -52,9 +55,10 @@ ext <- file.path(tempdir(), "extract-adam")
 suppressMessages(generate_rave_extract(out = ext))
 }
 built <- build_all(ext)
-issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADVS,
-                        built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-                        built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
-                        built$sdtm$SUPPAE, spec_synth01)
+issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
+                        built$adam$ADVS, built$adam$ADLB, built$sdtm$DM,
+                        built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                        built$sdtm$VS, built$sdtm$LB, built$sdtm$SUPPAE,
+                        spec_synth01)
 issues                                  # empty: the build is clean
 }

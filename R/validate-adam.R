@@ -15,14 +15,15 @@
 #' built dataset. A wrong rule would satisfy both sides - the rules
 #' themselves are pinned by the rule-level tests against hand-built
 #' inputs. Checks population-flag and treatment coherence on ADSL, the
-#' TRTEMFL window and SUPP merge-back on ADAE, and for the BDS datasets
+#' TRTEMFL window and SUPP merge-back on ADAE, record coverage and
+#' analysis-timing coherence on ADCM, and for the BDS datasets
 #' (ADVS / ADLB) the baseline anchors, BASE/CHG/PCHG arithmetic, ANRIND
 #' against the row's own range, and coverage against the SDTM source
 #' records.
 #'
-#' @param adsl,adae,advs,adlb The mapped ADaM datasets
-#' @param dm,ds,ae,vs,lb,suppae The SDTM source datasets the ADaM layer was
-#'   built from
+#' @param adsl,adae,adcm,advs,adlb The mapped ADaM datasets
+#' @param dm,ds,ae,cm,vs,lb,suppae The SDTM source datasets the ADaM layer
+#'   was built from
 #' @param spec A `study_spec`; the ADVS rows of `spec$bds` declare the
 #'   reference ranges the built ADVS is checked against - a silent change
 #'   on either side (in `spec$bds` or in [derive_advs()]) trips the
@@ -37,13 +38,14 @@
 #' suppressMessages(generate_rave_extract(out = ext))
 #' }
 #' built <- build_all(ext)
-#' issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADVS,
-#'                         built$adam$ADLB, built$sdtm$DM, built$sdtm$DS,
-#'                         built$sdtm$AE, built$sdtm$VS, built$sdtm$LB,
-#'                         built$sdtm$SUPPAE, spec_synth01)
+#' issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
+#'                         built$adam$ADVS, built$adam$ADLB, built$sdtm$DM,
+#'                         built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+#'                         built$sdtm$VS, built$sdtm$LB, built$sdtm$SUPPAE,
+#'                         spec_synth01)
 #' issues                                  # empty: the build is clean
-validate_adam <- function(adsl, adae, advs, adlb,
-                          dm, ds, ae, vs, lb, suppae,
+validate_adam <- function(adsl, adae, adcm, advs, adlb,
+                          dm, ds, ae, cm, vs, lb, suppae,
                           spec = spec_synth01) {
   issues <- list()
   add <- function(domain, severity, check, detail) {
@@ -373,6 +375,82 @@ validate_adam <- function(adsl, adae, advs, adlb,
     add("ADAE", "ERROR", "adae-supp-merge-bad",
         sprintf(paste("%d row(s) where AESI/AEDISCON disagree with SUPPAE",
                       "or are missing"), nrow(bad_supp)))
+  }
+
+  # ADCM: structure -------------------------------------------------------------
+  .req_adcm <- c(
+    "STUDYID", "USUBJID", "ASEQ", "CMTRT", "CMDECOD", "CMINDC", "CMDOSE",
+    "CMDOSU", "CMDOSFRQ", "CMROUTE",
+    "ASTDT", "ASTDTF", "ASTDY", "AENDT", "AENDTF", "AENDY"
+  )
+  miss <- setdiff(.req_adcm, names(adcm))
+  if (length(miss) > 0) {
+    add("ADCM", "ERROR", "adcm-required-vars", str_flatten_comma(miss))
+  }
+
+  # One analysis record per collected medication
+  adcm_dup <- adcm |> count(USUBJID, ASEQ, name = ".n") |> filter(.n > 1)
+  if (nrow(adcm_dup) > 0) {
+    add("ADCM", "ERROR", "adcm-key-not-unique",
+        sprintf("%d duplicated USUBJID/ASEQ key(s)", nrow(adcm_dup)))
+  }
+  cm_keys   <- cm |> distinct(USUBJID, CMSEQ)
+  adcm_keys <- adcm |> distinct(USUBJID, ASEQ)
+  lost <- anti_join(cm_keys, adcm_keys, by = c("USUBJID", CMSEQ = "ASEQ"))
+  if (nrow(lost) > 0) {
+    add("ADCM", "ERROR", "adcm-lost-record",
+        sprintf("%d SDTM CM record(s) with no ADCM row", nrow(lost)))
+  }
+  extra <- anti_join(adcm_keys, cm_keys, by = c("USUBJID", ASEQ = "CMSEQ"))
+  if (nrow(extra) > 0) {
+    add("ADCM", "ERROR", "adcm-extra-record",
+        sprintf("%d ADCM row(s) with no SDTM CM record", nrow(extra)))
+  }
+
+  # ADCM imputation flags
+  for (fl in c("ASTDTF", "AENDTF")) {
+    dtv <- str_remove(fl, "F$")
+    bad <- adcm |>
+      filter(!.data[[fl]] %in% c("", "D", "M", NA)) |>
+      bind_rows(adcm |> filter(.data[[fl]] %in% c("D", "M"), is.na(.data[[dtv]])))
+    if (nrow(bad) > 0) {
+      add("ADCM", "ERROR", "adcm-imputation-flag-bad",
+          sprintf("%d row(s) with a bad %s / %s pair", nrow(bad), fl, dtv))
+    }
+  }
+
+  # Analysis study days: anchored on TRTSDT with the no-day-0 rule
+  bad_dy <- adcm |>
+    left_join(
+      adsl |> transmute(USUBJID, .ref_trtsdt = TRTSDT),
+      by = "USUBJID"
+    ) |>
+    mutate(.expect = derive_dy_d(ASTDT, .ref_trtsdt)) |>
+    filter(xor(is.na(ASTDY), is.na(.expect)) |
+             (!is.na(ASTDY) & !is.na(.expect) & ASTDY != .expect))
+  if (nrow(bad_dy) > 0) {
+    add("ADCM", "ERROR", "adcm-astdy-wrong-anchor",
+        sprintf("%d row(s) where ASTDY disagrees with ASTDT vs TRTSDT",
+                nrow(bad_dy)))
+  }
+  if (any(adcm$ASTDY == 0, na.rm = TRUE) || any(adcm$AENDY == 0, na.rm = TRUE)) {
+    add("ADCM", "ERROR", "adcm-study-day-zero", "ASTDY or AENDY equals zero")
+  }
+
+  # A full-precision start yields the same study day SDTM computed
+  bad_dy2 <- adcm |>
+    inner_join(select(cm, USUBJID, CMSEQ, CMSTDTC, CMSTDY),
+               by = c("USUBJID", ASEQ = "CMSEQ")) |>
+    filter(str_length(CMSTDTC) == 10, !is.na(ASTDY), !is.na(CMSTDY),
+           ASTDY != CMSTDY)
+  if (nrow(bad_dy2) > 0) {
+    add("ADCM", "ERROR", "adcm-astdy-vs-sdtm-cmstdy",
+        "ASTDY disagrees with SDTM CMSTDY for a full-precision start")
+  }
+
+  bad_ord <- adcm |> filter(!is.na(ASTDT), !is.na(AENDT), AENDT < ASTDT)
+  if (nrow(bad_ord) > 0) {
+    add("ADCM", "ERROR", "adcm-aendt-before-astdt", sprintf("%d row(s)", nrow(bad_ord)))
   }
 
   # ADVS: structure -------------------------------------------------------------
