@@ -239,9 +239,11 @@ build_define_xml <- function(domains, spec, path) {
   }
 
   # Value-level metadata for the findings domains ------------------------------
-  # One value-level definition per test code. VS gets label + unit; LB also
-  # gets the observed reference ranges - ranges are collected data here
-  # (sex-specific), so the distinct pairs are the value-level story.
+  # One value-level definition per test code. VS/LB/EG get label + unit; LB
+  # also gets the observed reference ranges - ranges are collected data here
+  # (sex-specific), so the distinct pairs are the value-level story. QS items
+  # are ordinal and carry no unit: the unit-conditional construction below
+  # renders their descriptions as the bare test names.
   vs_params <- domains$VS |>
     distinct(.data$VSTESTCD, .data$VSTEST, .data$VSSTRESU) |>
     arrange(.data$VSTESTCD)
@@ -252,6 +254,9 @@ build_define_xml <- function(domains, spec, path) {
   eg_params <- domains$EG |>
     distinct(.data$EGTESTCD, .data$EGTEST, .data$EGSTRESU) |>
     arrange(.data$EGTESTCD)
+  qs_params <- domains$QS |>
+    distinct(.data$QSTESTCD, .data$QSTEST, .data$QSSTRESU) |>
+    arrange(.data$QSTESTCD)
 
   findings <- list(
     list(domain = "VS", var = "VSSTRESN", codevar = "VSTESTCD",
@@ -262,7 +267,10 @@ build_define_xml <- function(domains, spec, path) {
          codes = sort(unique(lb_params$LBTESTCD)), params = lb_params),
     list(domain = "EG", var = "EGSTRESN", codevar = "EGTESTCD",
          namevar = "EGTEST", unitvar = "EGSTRESU",
-         codes = sort(unique(eg_params$EGTESTCD)), params = eg_params)
+         codes = sort(unique(eg_params$EGTESTCD)), params = eg_params),
+    list(domain = "QS", var = "QSSTRESN", codevar = "QSTESTCD",
+         namevar = "QSTEST", unitvar = "QSSTRESU",
+         codes = sort(unique(qs_params$QSTESTCD)), params = qs_params)
   )
 
   for (f in findings) {
@@ -273,7 +281,13 @@ build_define_xml <- function(domains, spec, path) {
       code <- f$codes[[i]]
       p    <- f$params |> filter(.data[[f$codevar]] == code)
       oid  <- str_c("IT.", d, ".", f$var, ".", code)
-      desc <- str_c(p[[f$namevar]][1], " (", p[[f$unitvar]][1], ")")
+      # unit-conditional description: the unit is appended only when present,
+      # so ordinal QS items read "Sleep Quality" instead of "Sleep Quality
+      # (NA)"; VS/LB/EG units are never blank and render as before
+      desc <- p[[f$namevar]][1]
+      if (!is.na(p[[f$unitvar]][1]) && p[[f$unitvar]][1] != "") {
+        desc <- str_c(desc, " (", p[[f$unitvar]][1], ")")
+      }
       if (d == "LB") {
         rngs <- p |>
           filter(!is.na(LBSTNRLO)) |>

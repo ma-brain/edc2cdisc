@@ -77,13 +77,13 @@ test_that("the define.xml stub is well-formed and complete", {
   # PE's observed NORMAL/ABNORMAL values become a curated codelist
   pe_items <- xml2::xml_find_all(doc, "//d1:CodeList[@OID='CL.PEORRES']/d1:EnumeratedItem", ns)
   expect_equal(xml2::xml_attr(pe_items, "CodedValue"), c("ABNORMAL", "NORMAL"))
-  # value-level metadata hooked onto VSSTRESN / LBSTRESN / EGSTRESN: only
-  # VS, LB and EG expose a --STRESN column - PE reports character PEORRES,
-  # and QS's numeric result never leaves the mapper
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 3)
+  # value-level metadata for the four findings domains that expose a
+  # --STRESN column: VS, LB, EG and QS (whose standardized results now leave
+  # the mapper) - PE reports character PEORRES instead
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 4)
   # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no
   # ItemRef references is metadata emitted and then orphaned
-  expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListRef", ns)), 3)
+  expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListRef", ns)), 4)
   # every EG value-level description carries the msec unit: map_eg() binds
   # answered rows before NOT DONE, and the VLM's first-occurrence-per-test
   # EGSTRESU depends on that ordering
@@ -93,6 +93,25 @@ test_that("the define.xml stub is well-formed and complete", {
   ))
   expect_length(eg_vlm_desc, 5)
   expect_true(all(str_detect(eg_vlm_desc, "\\(msec\\)$")))
+  # QS value-level metadata: VL.QS.QSSTRESN exists and hangs off the parent
+  # IT.QS.QSSTRESN ItemRef like the other findings domains
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef[@OID='VL.QS.QSSTRESN']", ns)), 1)
+  qs_vlr <- xml2::xml_find_first(
+    doc,
+    "//d1:ItemGroupDef[@Name='QS']/d1:ItemRef[@ItemOID='IT.QS.QSSTRESN']/def:ValueListRef",
+    ns
+  )
+  expect_equal(xml2::xml_attr(qs_vlr, "ValueListOID"), "VL.QS.QSSTRESN")
+  # ordinal items carry no unit: descriptions are the bare test names, not
+  # "Sleep Quality (NA)" - the unit-conditional description rule
+  qs_vlm_desc <- xml2::xml_text(xml2::xml_find_all(
+    doc, "//d1:ItemDef[starts-with(@OID, 'IT.QS.QSSTRESN.')]/d1:Description/d1:TranslatedText",
+    ns
+  ))
+  qs_spec <- spec_synth01$tests[spec_synth01$tests$domain == "QS", ]
+  expect_length(qs_vlm_desc, nrow(qs_spec))
+  expect_false(any(str_detect(qs_vlm_desc, "NA")))
+  expect_equal(qs_vlm_desc, qs_spec$test[order(qs_spec$testcd)])
 })
 
 test_that("XPT output round-trips", {
