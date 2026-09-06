@@ -84,11 +84,18 @@ map_qs <- function(qs, spec, refs) {
       .rank = rank(-.key, ties.method = "first", na.last = "keep"),
       .by = c(USUBJID, QSTESTCD)
     ) |>
-    mutate(QSBLFL = if_else(!is.na(.rank) & .rank == 1, "Y", NA_character_)) |>
+    mutate(QSBLFL = if_else(!is.na(.rank) & .rank == 1, "Y", NA_character_),
+           # standardized results join the interface: QSSTRESC is the
+           # character rendering of the numeric result (the VSSTRESC idiom);
+           # ordinal items carry no unit - present-but-empty is the honest
+           # form. NOT DONE rows keep all three NA.
+           QSSTRESC = as.character(QSSTRESN),
+           QSSTRESU = NA_character_) |>
     select(-.eligible, -.key, -.rank) |>
     derive_seq("QSSEQ", VISITNUM, QSTESTCD) |>
     select(STUDYID, DOMAIN, USUBJID, QSSEQ, QSCAT, QSTESTCD, QSTEST,
-           QSORRES, QSSTAT, QSREASND, QSBLFL, VISITNUM, VISIT, QSDTC, QSDY) |>
+           QSORRES, QSSTAT, QSREASND, QSSTRESC, QSSTRESN, QSSTRESU,
+           QSBLFL, VISITNUM, VISIT, QSDTC, QSDY) |>
     arrange(USUBJID, VISITNUM, QSSEQ) |>
     apply_labels(c(
       STUDYID  = "Study Identifier",
@@ -101,6 +108,9 @@ map_qs <- function(qs, spec, refs) {
       QSORRES  = "Result or Finding in Original Units",
       QSSTAT   = "Completion Status",
       QSREASND = "Reason Not Done",
+      QSSTRESC = "Character Result/Finding in Std Units",
+      QSSTRESN = "Numeric Result/Finding in Std Units",
+      QSSTRESU = "Standard Units",
       QSBLFL   = "Baseline Flag",
       VISITNUM = "Visit Number",
       VISIT    = "Visit Name",

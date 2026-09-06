@@ -43,8 +43,8 @@ test_that("map_qs returns the interface columns in order, labelled", {
   f <- qs_fixture()
   expect_equal(names(f$qs), c("STUDYID", "DOMAIN", "USUBJID", "QSSEQ", "QSCAT",
                               "QSTESTCD", "QSTEST", "QSORRES", "QSSTAT",
-                              "QSREASND", "QSBLFL", "VISITNUM", "VISIT",
-                              "QSDTC", "QSDY"))
+                              "QSREASND", "QSSTRESC", "QSSTRESN", "QSSTRESU",
+                              "QSBLFL", "VISITNUM", "VISIT", "QSDTC", "QSDY"))
   expect_true(all(f$qs$QSCAT == "MOOD SCALE"))
   expect_setequal(unique(f$qs$QSTESTCD),
                   filter(spec_synth01$tests, domain == "QS")$testcd)
@@ -61,6 +61,9 @@ test_that("map_qs returns the interface columns in order, labelled", {
       QSORRES  = "Result or Finding in Original Units",
       QSSTAT   = "Completion Status",
       QSREASND = "Reason Not Done",
+      QSSTRESC = "Character Result/Finding in Std Units",
+      QSSTRESN = "Numeric Result/Finding in Std Units",
+      QSSTRESU = "Standard Units",
       QSBLFL   = "Baseline Flag",
       VISITNUM = "Visit Number",
       VISIT    = "Visit Name",
@@ -86,6 +89,18 @@ test_that("answered items parse numerically; QSBLFL needs a numeric result", {
   expect_true(all(f$qs$VISITNUM[f$qs$QSBLFL %in% "Y"] == 2))
 })
 
+test_that("every answered row standardizes: QSSTRESN numeric, QSSTRESC its character", {
+  f <- qs_fixture()
+  answered <- f$qs |> filter(is.na(QSSTAT), !is.na(QSORRES), QSORRES != "")
+  # the numeric result leaves the mapper: non-NA on every answered row, and
+  # QSSTRESC is its character rendering (the VSSTRESC idiom)
+  expect_true(all(!is.na(answered$QSSTRESN)))
+  expect_equal(answered$QSSTRESC, as.character(answered$QSSTRESN),
+               ignore_attr = "label")
+  # ordinal items carry no unit: present-but-empty is the honest form
+  expect_true(all(is.na(f$qs$QSSTRESU)))
+})
+
 test_that("the seeded not-done visit yields NOT DONE rows with blank results", {
   f <- qs_fixture()
   stat <- f$qs |> filter(QSSTAT == "NOT DONE")
@@ -95,6 +110,10 @@ test_that("the seeded not-done visit yields NOT DONE rows with blank results", {
   expect_equal(unique(stat$VISITNUM), 4)
   expect_true(all(is.na(stat$QSORRES) | stat$QSORRES == ""))
   expect_true(all(is.na(stat$QSBLFL)))
+  # a blank result standardizes to nothing: all three standardized variables NA
+  expect_true(all(is.na(stat$QSSTRESC)))
+  expect_true(all(is.na(stat$QSSTRESN)))
+  expect_true(all(is.na(stat$QSSTRESU)))
   expect_equal(unique(stat$QSREASND), "Subject refused")
   # the visit date is still collected on a not-done form
   expect_true(all(str_length(stat$QSDTC) == 10))
