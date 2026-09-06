@@ -46,7 +46,7 @@
   TV = c("STUDYID", "DOMAIN", "VISITNUM", "VISIT", "VISITDY", "EPOCH"),
   TS = c("STUDYID", "DOMAIN", "TSPARMCD", "TSPARM", "TSVAL"),
   QS = c("STUDYID", "DOMAIN", "USUBJID", "QSSEQ", "QSCAT", "QSTESTCD",
-         "QSTEST", "QSORRES", "QSDTC")
+         "QSTEST", "QSORRES", "QSSTRESC", "QSSTRESN", "QSSTRESU", "QSDTC")
 )
 
 # ISO 8601: full or reduced precision, optional time; NA is allowed
@@ -78,7 +78,8 @@
 #' referential integrity against DM, unique --SEQ keys, ISO 8601 --DTC
 #' formats, no study day 0, baseline-flag uniqueness, LBNRIND coherence, SV
 #' visit uniqueness, VISITNUM reconciliation against SV, screen-failure
-#' study-day leaks, --STAT/--REASND coherence, PEORRES values
+#' study-day leaks, --STAT/--REASND coherence, QS answered rows that failed
+#' to standardize (`qstresn-not-numeric`), PEORRES values
 #' (`peorres-bad-value`), PECLSIG/PEORRES coherence (`peclsig-coherence`),
 #' EGSTRESU fixed to msec when EGSTRESN is present (`egstresu-fixed`),
 #' SUPP/CO related-record structure (the SUPPMH/SUPPVS qualifiers
@@ -671,6 +672,26 @@ validate_sdtm <- function(domains, spec = NULL) {
       if (length(bad_cat) > 0) {
         add("QS", "ERROR", "qscat-not-in-spec", str_flatten_comma(bad_cat))
       }
+    }
+  }
+
+  # The standardization contract: a collected answer must standardize or the
+  # record lies about itself. map_qs() parses every answered QSORRES into
+  # QSSTRESN, so NA on a row that is not NOT DONE means the value it holds is
+  # not the answer it claims to have collected. NOT DONE rows standardize to
+  # nothing - their NA is correct, not a leak.
+  if (!is.null(qs_df) && nrow(qs_df) > 0 &&
+        all(c("QSORRES", "QSSTAT", "QSSTRESN") %in% names(qs_df))) {
+    unstd <- qs_df |>
+      filter(!.is_blank(QSORRES),
+             is.na(QSSTAT) | QSSTAT != "NOT DONE",
+             is.na(QSSTRESN))
+    if (nrow(unstd) > 0) {
+      add("QS", "ERROR", "qstresn-not-numeric",
+          sprintf(paste("%d answered row(s) whose QSORRES did not parse",
+                        "into QSSTRESN (e.g. USUBJID %s, %s '%s')"),
+                  nrow(unstd), unstd$USUBJID[1], unstd$QSTESTCD[1],
+                  unstd$QSORRES[1]))
     }
   }
 

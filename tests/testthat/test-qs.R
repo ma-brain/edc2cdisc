@@ -163,6 +163,15 @@ test_that("a result injected onto a NOT DONE row trips stat-reason", {
                 validate_sdtm(domains, spec_synth01)$check)
 })
 
+test_that("a QSSTRESN lost on an answered row trips qstresn-not-numeric", {
+  domains <- qs_built()$sdtm
+  # an answered row: no status, and the mapper left a parsed QSSTRESN there
+  idx <- which(is.na(domains$QS$QSSTAT) & !is.na(domains$QS$QSSTRESN))[1]
+  domains$QS$QSSTRESN[idx] <- NA_real_
+  expect_true("qstresn-not-numeric" %in%
+                validate_sdtm(domains, spec_synth01)$check)
+})
+
 test_that("a clean build validates QS with zero findings", {
   built <- qs_built()
   expect_equal(nrow(validate_sdtm(built$sdtm, spec_synth01)), 0)
