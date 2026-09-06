@@ -22,8 +22,10 @@ onto the built PE by (USUBJID, VISITNUM) plus the system the qualifier
 hangs off - the "specify abnormality" text is only askable on the CV
 system's ABNORMAL finding - to recover the derived PESEQ: the \code{\link[=map_suppex]{map_suppex()}}
 trick with PETESTCD/PEORRES as the extra key. The qualifier columns come
-from \code{spec$supp}, so a study with a different set of non-standard PE
-fields is a spec change, not a code change.
+from \code{spec$supp} only for qualifiers hanging off that CV/ABNORMAL row: a
+qualifier collected on a different system needs the join itself extended
+in code, and the row-count guard below fails loudly if a spec row is
+attempted without it.
 }
 \details{
 The transformed value is stored under the \code{src} name, not \code{qnam}:

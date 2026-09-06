@@ -243,3 +243,144 @@ map_supppe <- function(pe, pe_built, spec) {
     qnams   = supp_qnams(spec, "PE")
   )
 }
+
+#' Map the Supplemental Qualifiers for MH
+#'
+#' MH is a log form, so the raw "If Related, Specify" text hangs on one log
+#' line: the raw fields are joined onto the built MH by MHSPID (the log-line
+#' number [map_mh()] carries as the sponsor identifier - the AESPID trick in
+#' [map_suppae()]) to recover the derived MHSEQ. The output IDVAR is
+#' "MHSEQ", pointing each SUPP row at its parent record's key variable just
+#' like SUPPAE's IDVAR = "AESEQ"; MHSPID is only the join key. Only lines
+#' where the investigator actually specified a detail produce a SUPP row.
+#'
+#' As in [map_supppe()], the transformed value is stored under the `src`
+#' name, not `qnam`: [make_supp()] reads QVAL from the parent column named
+#' in `qnams$src`, and the qualifier's src (MHSPEC) differs from its qnam
+#' (MHSPECD).
+#'
+#' @param mh Raw MH clinical view
+#' @param mh_built The mapped MH dataset (see [map_mh()])
+#' @param spec A `study_spec`
+#' @return The labelled SUPPMH tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-suppmh")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' mh <- map_mh(forms$MH, spec_synth01, subject_ref(dm))
+#' suppmh <- map_suppmh(forms$MH, mh, spec_synth01)
+#' suppmh[, c("USUBJID", "IDVARVAL", "QNAM", "QVAL")]
+#' @export
+map_suppmh <- function(mh, mh_built, spec) {
+  rows <- filter(spec$supp, rdomain == "MH")
+  parent <- tibble(
+    STUDYID = spec$study$STUDYID,
+    USUBJID = str_c(spec$study$STUDYID, mh$Subject, sep = "-"),
+    MHSPID  = as.character(mh$recordposition)
+  )
+  for (i in seq_len(nrow(rows))) {
+    # under the src name: make_supp() reads QVAL from parent[[qnams$src]]
+    parent[[rows$src[i]]] <- supp_transform(mh[[rows$src[i]]],
+                                            rows$transform[i])
+  }
+  # only a log line that actually collected a qualifier may look for its
+  # parent record: the squish transform turned the blank MHSPEC fields into
+  # NA, and they must not reach the join (and its guard) as unmapped noise
+  parent <- filter(parent, if_any(all_of(rows$src), ~ !is.na(.x)))
+  n_raw <- nrow(parent)
+
+  parent <- inner_join(parent, select(mh_built, USUBJID, MHSPID, MHSEQ),
+                       by = c("USUBJID", "MHSPID"))
+
+  # Every collected qualifier must have matched exactly one MH record.
+  if (nrow(parent) != n_raw) {
+    stop(sprintf(
+      "SUPPMH: %d of %d raw MH row(s) with a collected qualifier did not map to an MH record",
+      n_raw - nrow(parent), n_raw
+    ), call. = FALSE)
+  }
+
+  make_supp(
+    parent  = parent,
+    rdomain = "MH",
+    idvar   = "MHSEQ",
+    qnams   = supp_qnams(spec, "MH")
+  )
+}
+
+#' Map the Supplemental Qualifiers for VS
+#'
+#' VS is one record per test per visit, so the raw fields are joined onto the
+#' built VS by (USUBJID, VISITNUM) plus the record the comment hangs on -
+#' the [map_supppe()] pattern - to recover the derived VSSEQ. The join
+#' hardcodes VSTESTCD == "TEMP": the study's visit comment is collected on
+#' the temperature record. VSCOMT is a form-level field on the wide
+#' subject-visit row, so the raw data alone cannot say which test a comment
+#' belongs to and the mappers never see the config that seeds it - the
+#' hardcoded TEMP is the codified assumption. What the raw data CAN police
+#' is the link itself: the row-count guard fails loudly if any populated
+#' VSCOMT cannot be attached to exactly one built TEMP record, so a comment
+#' that drifts off the temperature record surfaces here instead of dropping
+#' or mis-attaching silently. A qualifier collected on a different test
+#' needs the join extended in code, exactly like SUPPPE's CV/ABNORMAL.
+#'
+#' @param vs Raw VS clinical view
+#' @param vs_built The mapped VS dataset (see [map_vs()])
+#' @param spec A `study_spec`
+#' @return The labelled SUPPVS tibble.
+#' @examples
+#' ext <- file.path(tempdir(), "ex-map-suppvs")
+#' \dontshow{
+#' suppressMessages(generate_rave_extract(out = ext))
+#' }
+#' forms <- suppressMessages(read_rave_extract(dir = ext))
+#' dm <- map_dm(forms$DM, forms$EX, forms$DS, spec_synth01)
+#' vs <- map_vs(forms$VS, spec_synth01, subject_ref(dm))
+#' suppvs <- map_suppvs(forms$VS, vs, spec_synth01)
+#' suppvs[, c("USUBJID", "IDVARVAL", "QNAM", "QVAL")]
+#' @export
+map_suppvs <- function(vs, vs_built, spec) {
+  rows <- filter(spec$supp, rdomain == "VS")
+  visit_map <- spec$visits |> select(Folder, VISITNUM)
+  parent <- vs |>
+    left_join(visit_map, by = "Folder") |>
+    mutate(STUDYID = spec$study$STUDYID,
+           USUBJID = str_c(spec$study$STUDYID, Subject, sep = "-"))
+  for (i in seq_len(nrow(rows))) {
+    # under the src name: make_supp() reads QVAL from parent[[qnams$src]]
+    parent[[rows$src[i]]] <- supp_transform(parent[[rows$src[i]]],
+                                            rows$transform[i])
+  }
+  # only a visit that actually collected a comment may look for its parent
+  # record - the squish transform turned the blank VSCOMT fields into NA,
+  # and they must not reach the join (and its guard) as unmapped noise
+  parent <- filter(parent, if_any(all_of(rows$src), ~ !is.na(.x)))
+  n_raw <- nrow(parent)
+
+  # TEMP hardcodes the config seed's semantics (its third element names the
+  # testcd the comment hangs on; see roxygen). The raw-data cross-check that
+  # remains is the guard below: a non-TEMP comment still has to find its
+  # visit's TEMP record, and a commented row that cannot fires loudly.
+  vs_temp <- vs_built |> filter(VSTESTCD == "TEMP")
+  parent <- inner_join(parent, select(vs_temp, USUBJID, VISITNUM, VSSEQ),
+                       by = c("USUBJID", "VISITNUM"))
+
+  # Every collected comment must have matched exactly one TEMP record: a
+  # VSCOMT with no temperature at that visit is a broken link.
+  if (nrow(parent) != n_raw) {
+    stop(sprintf(
+      "SUPPVS: %d of %d raw VS row(s) with a collected comment did not map to a VS TEMP record",
+      n_raw - nrow(parent), n_raw
+    ), call. = FALSE)
+  }
+
+  make_supp(
+    parent  = parent,
+    rdomain = "VS",
+    idvar   = "VSSEQ",
+    qnams   = supp_qnams(spec, "VS")
+  )
+}
