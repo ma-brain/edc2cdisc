@@ -27,7 +27,9 @@ reference outputs without any network access.
   `read_clinical_view()`, `read_rave_extract()`.
 - **Maps** 23 SDTM domains (DM, EX, VS, AE, CM, DS, SV, LB, MH, QS, PE, EG,
   SUPPDM, SUPPAE, SUPPEX, SUPPPE, CO, RELREC, TA, TE, TI, TV, TS) through a
-  study spec: `map_dm()`, `map_ex()`, … , `map_relrec()`.
+  study spec: `map_dm()`, `map_ex()`, … , `map_relrec()`, plus the trial
+  design and findings builders (`map_ta()` … `map_ts()`, `map_qs()`,
+  `map_pe()`, `map_eg()`).
 - **Derives** the four core ADaM datasets: `derive_adsl()`, `derive_adae()`,
   `derive_advs()`, `derive_adlb()`.
 - **Validates** both layers with checks that catch the mistakes this kind of

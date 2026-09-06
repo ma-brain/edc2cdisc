@@ -100,6 +100,10 @@ test_that("build_all returns the trial design domains for both studies", {
   expect_gt(nrow(built1$sdtm$QS), 0)
   expect_gt(nrow(built1$sdtm$PE), 0)
   expect_gt(nrow(built1$sdtm$EG), 0)
+  # EG collects the same 5 intervals per (USUBJID, VISITNUM) key in both
+  # studies (the SYNTH02 branch below asserts the same for its build)
+  eg_counts1 <- dplyr::count(built1$sdtm$EG, USUBJID, VISITNUM)
+  expect_equal(unique(eg_counts1$n), 5)
 
   ext2 <- file.path(out, "rave2")
   suppressMessages(generate_rave_extract(out = ext2, study = "SYNTH02"))

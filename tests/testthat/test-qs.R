@@ -26,9 +26,17 @@ test_that("map_qs pivots one row per spec item for every VS subject-visit", {
   expect_true(all(counts$n == qs_n_items))
   expect_equal(nrow(f$qs), qs_n_items * nrow(keys))
 
-  # QSSEQ numbers 1..n within subject across visits
-  one <- f$qs |> filter(USUBJID == f$qs$USUBJID[1]) |> arrange(QSSEQ)
-  expect_equal(one$QSSEQ, seq_len(nrow(one)), ignore_attr = "label")
+  # QSSEQ numbers 1..n within every subject across visits, and within one
+  # subject-visit the sequence follows QSTESTCD ascending
+  seq_ok <- f$qs |>
+    arrange(USUBJID, QSSEQ) |>
+    summarise(ok = all(QSSEQ == seq_len(dplyr::n())), .by = USUBJID)
+  expect_true(all(seq_ok$ok))
+  item_order <- f$qs |>
+    arrange(USUBJID, VISITNUM, QSSEQ) |>
+    summarise(ok = all(QSTESTCD == sort(QSTESTCD)),
+              .by = c(USUBJID, VISITNUM))
+  expect_true(all(item_order$ok))
 })
 
 test_that("map_qs returns the interface columns in order, labelled", {
@@ -40,6 +48,25 @@ test_that("map_qs returns the interface columns in order, labelled", {
   expect_true(all(f$qs$QSCAT == "MOOD SCALE"))
   expect_setequal(unique(f$qs$QSTESTCD),
                   filter(spec_synth01$tests, domain == "QS")$testcd)
+  # pin the exact label text; the <=40 sweep only guards future columns
+  expect_equal(
+    unlist(var_label(f$qs)),
+    c(STUDYID  = "Study Identifier",
+      DOMAIN   = "Domain Abbreviation",
+      USUBJID  = "Unique Subject Identifier",
+      QSSEQ    = "Sequence Number",
+      QSCAT    = "Category of Questionnaire",
+      QSTESTCD = "Question Short Name",
+      QSTEST   = "Question",
+      QSORRES  = "Result or Finding in Original Units",
+      QSSTAT   = "Completion Status",
+      QSREASND = "Reason Not Done",
+      QSBLFL   = "Baseline Flag",
+      VISITNUM = "Visit Number",
+      VISIT    = "Visit Name",
+      QSDTC    = "Date/Time of Questionnaire",
+      QSDY     = "Study Day of Questionnaire")
+  )
   long <- keep(var_label(f$qs), \(l) !is.null(l) && nchar(l) > 40)
   expect_length(long, 0)
 })
@@ -53,9 +80,10 @@ test_that("answered items parse numerically; QSBLFL needs a numeric result", {
   expect_setequal(unique(as.numeric(answered$QSORRES)), 0:3)
   expect_true(all(answered$QSORRES != ""))
 
-  # flags only on answered rows, and only on/before first dose (visits 1-2)
+  # flags only on answered rows, and the deterministic data puts every flag
+  # on BASE (visit 2): the last pre-dose numeric result is always collected
   expect_true(all(is.na(f$qs$QSBLFL[!is.na(f$qs$QSSTAT)])))
-  expect_true(all(f$qs$VISITNUM[f$qs$QSBLFL %in% "Y"] <= 2))
+  expect_true(all(f$qs$VISITNUM[f$qs$QSBLFL %in% "Y"] == 2))
 })
 
 test_that("the seeded not-done visit yields NOT DONE rows with blank results", {

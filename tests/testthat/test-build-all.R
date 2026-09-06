@@ -65,12 +65,22 @@ test_that("the define.xml stub is well-formed and complete", {
   # PE's observed NORMAL/ABNORMAL values become a curated codelist
   pe_items <- xml2::xml_find_all(doc, "//d1:CodeList[@OID='CL.PEORRES']/d1:EnumeratedItem", ns)
   expect_equal(xml2::xml_attr(pe_items, "CodedValue"), c("ABNORMAL", "NORMAL"))
-  # value-level metadata hooked onto VSSTRESN / LBSTRESN / EGSTRESN - the
-  # only --STRESN findings variables (QS/PE have none, by design)
+  # value-level metadata hooked onto VSSTRESN / LBSTRESN / EGSTRESN: only
+  # VS, LB and EG expose a --STRESN column - PE reports character PEORRES,
+  # and QS's numeric result never leaves the mapper
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 3)
   # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no
   # ItemRef references is metadata emitted and then orphaned
   expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListRef", ns)), 3)
+  # every EG value-level description carries the msec unit: map_eg() binds
+  # answered rows before NOT DONE, and the VLM's first-occurrence-per-test
+  # EGSTRESU depends on that ordering
+  eg_vlm_desc <- xml2::xml_text(xml2::xml_find_all(
+    doc, "//d1:ItemDef[starts-with(@OID, 'IT.EG.EGSTRESN.')]/d1:Description/d1:TranslatedText",
+    ns
+  ))
+  expect_length(eg_vlm_desc, 5)
+  expect_true(all(str_detect(eg_vlm_desc, "\\(msec\\)$")))
 })
 
 test_that("XPT output round-trips", {

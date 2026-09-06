@@ -47,15 +47,16 @@ test_that("map_pe and map_eg pivot one row per spec item for every VS subject-vi
   }
 })
 
-test_that("sequence numbers run 1..n within subject, visits in order", {
+test_that("sequence numbers run 1..n within every subject, visits in order", {
   f <- pe_eg_fixture("SYNTH01")
   for (dom_name in c("pe", "eg")) {
     dom <- f[[dom_name]]
     seq_var <- paste0(toupper(dom_name), "SEQ")
-    one <- dom |>
-      filter(USUBJID == dom$USUBJID[1]) |>
-      arrange(!!as.symbol(seq_var))
-    expect_equal(one[[seq_var]], seq_len(nrow(one)), ignore_attr = "label")
+    seq_ok <- dom |>
+      arrange(USUBJID, .data[[seq_var]]) |>
+      summarise(ok = all(.data[[seq_var]] == seq_len(dplyr::n())), .by = USUBJID)
+    expect_true(all(seq_ok$ok),
+                label = sprintf("%s: 1..n in every subject", seq_var))
   }
 })
 

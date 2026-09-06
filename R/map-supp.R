@@ -180,8 +180,10 @@ map_suppex <- function(ex, ex_built, spec) {
 #' hangs off - the "specify abnormality" text is only askable on the CV
 #' system's ABNORMAL finding - to recover the derived PESEQ: the [map_suppex()]
 #' trick with PETESTCD/PEORRES as the extra key. The qualifier columns come
-#' from `spec$supp`, so a study with a different set of non-standard PE
-#' fields is a spec change, not a code change.
+#' from `spec$supp` only for qualifiers hanging off that CV/ABNORMAL row: a
+#' qualifier collected on a different system needs the join itself extended
+#' in code, and the row-count guard below fails loudly if a spec row is
+#' attempted without it.
 #'
 #' The transformed value is stored under the `src` name, not `qnam`:
 #' [make_supp()] reads QVAL from the parent column named in `qnams$src`, and

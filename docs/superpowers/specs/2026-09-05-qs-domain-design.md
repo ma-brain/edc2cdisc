@@ -72,7 +72,7 @@ QSREASND, QSBLFL, VISITNUM, VISIT, QSDTC, QSDY.
 - `.sdtm_req_static$QS`: STUDYID, DOMAIN, USUBJID, QSSEQ, QSCAT, QSTESTCD,
   QSTEST, QSORRES, QSDTC.
 - New checks: `qscat-not-in-spec` (spec-gated: QSCAT ⊆ spec$tests$cat for QS);
-  `qs-stat-reason` (QSSTAT "NOT DONE" ⇒ QSREASND non-blank and QSORRES blank —
+  `stat-reason` (QSSTAT "NOT DONE" ⇒ QSREASND non-blank and QSORRES blank —
   generic for the new findings domains); screen-failure DY-leak loop gains QS.
 - Meta-tests: corrupt QSCAT → check fires; fake NOT DONE without reason → fires;
   QSSTAT NOT DONE with a result → fires.
