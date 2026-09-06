@@ -16,6 +16,7 @@ new_study_spec(
   tests,
   bds,
   variables,
+  totals = NULL,
   elements = NULL,
   ta = NULL,
   ie = NULL,
@@ -25,6 +26,13 @@ new_study_spec(
 }
 \arguments{
 \item{study, sites, arms, visits, codelists, supp, units, forms, tests, bds, variables}{Tibbles as described above.}
+
+\item{totals}{Optional totals table for derived analysis parameters:
+\code{domain}, \code{paramcd}, \code{param}, \code{paramn}, \code{anrlo}, \code{anrhi} (both must
+be set - a rangeless total could never classify) and \code{src_items}
+(the \verb{;}-delimited \code{bds} paramcds the parameter sums). Missing
+defaults to a zero-row table; every row must resolve against the
+\code{bds} table of the same domain.}
 
 \item{elements, ta, ie, ts}{Optional trial design tibbles: \code{elements}
 (ETCD, ELEMENT, TESTRL, TEENRL, TEDUR), \code{ta} (ARMCD, ETCD, TAETORD,
@@ -70,9 +78,13 @@ contribute an SV visit?)
 \item \code{tests}     - per-test pivot specs for the findings domains
 VS/LB/QS/PE/EG: \code{domain}, \code{field} (raw field OID), \code{testcd}, \code{test},
 \code{cat}, \code{specimen}
-\item \code{bds}       - ADaM BDS parameter configuration: \code{domain} (ADVS / ADLB),
-\code{paramcd}, \code{paramn} (order), \code{anrlo}, \code{anrhi} (declared reference
-ranges; NA where a parameter has no absolute range)
+\item \code{bds}       - ADaM BDS parameter configuration: \code{domain} (ADVS / ADLB
+/ ADQS), \code{paramcd}, \code{paramn} (order), \code{anrlo}, \code{anrhi} (declared
+reference ranges; NA where a parameter has no absolute range)
+\item \code{totals}    - derived analysis parameters (optional): \code{domain},
+\code{paramcd}, \code{param}, \code{paramn} (order), \code{anrlo} / \code{anrhi} (the declared
+reference range) and \code{src_items} (the \verb{;}-delimited \code{bds} paramcds
+the parameter sums)
 \item \code{variables} - the mapping table proper, one row per SDTM variable per
 domain: \code{domain}, \code{variable}, \code{crf_field}, \code{transform}, \code{ref},
 \code{value} (for constants), \code{aux} (auxiliary raw column, e.g. the time
@@ -94,7 +106,8 @@ The constructor validates references as well as shapes: every
 \code{derivation} row's \code{ref} must resolve against the derivation registry
 (the shared one plus \code{derivations}), every \code{decode} row's \code{ref} must
 name a codelist the spec carries, every \code{supp$transform} must be one
-\code{supp_transform()} knows, and every \code{variables$domain} must be a domain
-the package can build. A spec that cannot be honoured fails here, not
-halfway through a build.
+\code{supp_transform()} knows, every \code{totals} row must resolve against the
+\code{bds} parameters of its own domain, and every \code{variables$domain} must
+be a domain the package can build. A spec that cannot be honoured
+fails here, not halfway through a build.
 }

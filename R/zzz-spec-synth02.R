@@ -235,7 +235,22 @@ spec_synth02 <- new_study_spec(
     "ADEG", "QRS",  2,  60,   100,
     "ADEG", "QT",   3,  350,  450,
     "ADEG", "QTCF", 4,  350,  450,
-    "ADEG", "RR",   5,  600,  1200
+    "ADEG", "RR",   5,  600,  1200,
+    # ADQS: ordinal mood items carry no absolute range - ANRIND stays
+    # missing by design (the WEIGHT/HEIGHT precedent). The total's range
+    # is declared in spec$totals; MOS05 joins the scoring set.
+    "ADQS", "MOS01", 1,  NA,   NA,
+    "ADQS", "MOS02", 2,  NA,   NA,
+    "ADQS", "MOS03", 3,  NA,   NA,
+    "ADQS", "MOS04", 4,  NA,   NA,
+    "ADQS", "MOS05", 5,  NA,   NA
+  ),
+
+  # The MOOD SCALE total: five items in this protocol, so the declared
+  # range is wider than SYNTH01's.
+  totals = tribble(
+    ~domain, ~paramcd, ~param,             ~paramn, ~anrlo, ~anrhi, ~src_items,
+    "ADQS",  "MOSTOT", "MOOD SCALE Total", 6,       4,      15,     "MOS01;MOS02;MOS03;MOS04;MOS05"
   ),
 
   # Same CRF family as SYNTH01, so the variable-level mapping carries over

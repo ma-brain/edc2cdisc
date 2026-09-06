@@ -342,3 +342,71 @@ test_that("trial design shape errors fire at construction", {
                                    TSVALNF = NA)),
                "neither TSVAL nor TSVALNF")
 })
+
+# The totals table -------------------------------------------------------
+# Optional at construction like the trial design tables: a study without
+# derived analysis parameters carries none, one with totals is checked
+# here rather than halfway through a build.
+
+test_that("the totals table defaults to an empty typed tibble", {
+  s <- td_spec()
+  expect_equal(nrow(s$totals), 0)
+  expect_setequal(names(s$totals),
+                  c("domain", "paramcd", "param", "paramn", "anrlo",
+                    "anrhi", "src_items"))
+  expect_type(s$totals$domain, "character")
+  expect_type(s$totals$paramcd, "character")
+  expect_type(s$totals$param, "character")
+  expect_type(s$totals$paramn, "integer")
+  expect_type(s$totals$anrlo, "double")
+  expect_type(s$totals$anrhi, "double")
+  expect_type(s$totals$src_items, "character")
+})
+
+test_that("a well-formed totals table constructs", {
+  s <- td_spec(totals = tibble(
+    domain = "ADQS", paramcd = "MOSTOT", param = "MOOD SCALE Total",
+    paramn = 5, anrlo = 4, anrhi = 12,
+    src_items = "MOS01;MOS02;MOS03;MOS04"
+  ))
+  expect_equal(nrow(s$totals), 1)
+  expect_equal(s$totals$paramcd, "MOSTOT")
+})
+
+test_that("totals constructor checks fire at construction", {
+  # the total's domain has no bds rows to resolve against
+  expect_error(td_spec(totals = tibble(domain = "ADZZ", paramcd = "ZZTOT",
+                                       param = "z", paramn = 1,
+                                       anrlo = 1, anrhi = 2,
+                                       src_items = "SYSBP")),
+               "totals: domain with no bds rows")
+  # a src item the domain does not carry - it exists as another domain's
+  # bds paramcd, which must not count
+  expect_error(td_spec(totals = tibble(domain = "ADVS", paramcd = "VSTOT",
+                                       param = "v", paramn = 1,
+                                       anrlo = 1, anrhi = 2,
+                                       src_items = "MOS01")),
+               "not a bds paramcd")
+  # a src item nothing in the spec's bds table knows
+  expect_error(td_spec(totals = tibble(domain = "ADQS", paramcd = "MOSTOT",
+                                       param = "t", paramn = 5,
+                                       anrlo = 4, anrhi = 12,
+                                       src_items = "MOS01;MOS99")),
+               "not a bds paramcd")
+  # duplicated (domain, paramcd)
+  expect_error(td_spec(totals = tibble(domain = c("ADQS", "ADQS"),
+                                       paramcd = c("MOSTOT", "MOSTOT"),
+                                       param = "t", paramn = c(5, 6),
+                                       anrlo = 4, anrhi = 12,
+                                       src_items = "MOS01")),
+               "duplicate totals parameter entries")
+  # a rangeless total could never classify
+  expect_error(td_spec(totals = tibble(domain = "ADQS", paramcd = "MOSTOT",
+                                       param = "t", paramn = 5,
+                                       anrlo = NA, anrhi = 12,
+                                       src_items = "MOS01")),
+               "totals: anrlo/anrhi must not be NA")
+  # the required-column check covers totals too
+  expect_error(td_spec(totals = tibble(domain = "ADQS", paramcd = "MOSTOT")),
+               "missing column")
+})

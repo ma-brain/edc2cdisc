@@ -15,10 +15,10 @@
 #'   full_join, if_any, if_else, inner_join, left_join, mutate, na_if, pull,
 #'   recode_values, rename, row_number, select, slice_max, summarise,
 #'   transmute)
-#' @importFrom tidyr pivot_wider unite
+#' @importFrom tidyr pivot_wider unite unnest
 #' @importFrom stringr str_c str_detect str_ends str_flatten_comma
-#'   str_length str_pad str_remove str_squish str_sub str_to_lower
-#'   str_to_sentence str_to_title str_to_upper str_trim
+#'   str_length str_pad str_remove str_split str_squish str_sub
+#'   str_to_lower str_to_sentence str_to_title str_to_upper str_trim
 #' @importFrom purrr imap keep list_rbind map map_dfr pmap set_names
 #' @importFrom tibble as_tibble_row deframe tibble tribble
 #' @importFrom labelled set_variable_labels var_label

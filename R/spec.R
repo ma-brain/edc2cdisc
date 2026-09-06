@@ -39,6 +39,19 @@
               TSVAL = character(), TSVALNF = character())
 )
 
+# The totals table is optional like the trial design: a study without
+# derived analysis parameters carries none. Typed so the builders (and
+# the constructor's required-column loop) can rely on its columns.
+.totals_defaults <- tibble(
+  domain    = character(),
+  paramcd   = character(),
+  param     = character(),
+  paramn    = integer(),
+  anrlo     = numeric(),
+  anrhi     = numeric(),
+  src_items = character()
+)
+
 #' Build and validate a study specification
 #'
 #' A `study_spec` is a list of tibbles. Each table carries one kind of
@@ -66,9 +79,13 @@
 #' * `tests`     - per-test pivot specs for the findings domains
 #'   VS/LB/QS/PE/EG: `domain`, `field` (raw field OID), `testcd`, `test`,
 #'   `cat`, `specimen`
-#' * `bds`       - ADaM BDS parameter configuration: `domain` (ADVS / ADLB),
-#'   `paramcd`, `paramn` (order), `anrlo`, `anrhi` (declared reference
-#'   ranges; NA where a parameter has no absolute range)
+#' * `bds`       - ADaM BDS parameter configuration: `domain` (ADVS / ADLB
+#'   / ADQS), `paramcd`, `paramn` (order), `anrlo`, `anrhi` (declared
+#'   reference ranges; NA where a parameter has no absolute range)
+#' * `totals`    - derived analysis parameters (optional): `domain`,
+#'   `paramcd`, `param`, `paramn` (order), `anrlo` / `anrhi` (the declared
+#'   reference range) and `src_items` (the `;`-delimited `bds` paramcds
+#'   the parameter sums)
 #' * `variables` - the mapping table proper, one row per SDTM variable per
 #'   domain: `domain`, `variable`, `crf_field`, `transform`, `ref`,
 #'   `value` (for constants), `aux` (auxiliary raw column, e.g. the time
@@ -89,12 +106,19 @@
 #' `derivation` row's `ref` must resolve against the derivation registry
 #' (the shared one plus `derivations`), every `decode` row's `ref` must
 #' name a codelist the spec carries, every `supp$transform` must be one
-#' `supp_transform()` knows, and every `variables$domain` must be a domain
-#' the package can build. A spec that cannot be honoured fails here, not
-#' halfway through a build.
+#' `supp_transform()` knows, every `totals` row must resolve against the
+#' `bds` parameters of its own domain, and every `variables$domain` must
+#' be a domain the package can build. A spec that cannot be honoured
+#' fails here, not halfway through a build.
 #'
 #' @param study,sites,arms,visits,codelists,supp,units,forms,tests,bds,variables
 #'   Tibbles as described above.
+#' @param totals Optional totals table for derived analysis parameters:
+#'   `domain`, `paramcd`, `param`, `paramn`, `anrlo`, `anrhi` (both must
+#'   be set - a rangeless total could never classify) and `src_items`
+#'   (the `;`-delimited `bds` paramcds the parameter sums). Missing
+#'   defaults to a zero-row table; every row must resolve against the
+#'   `bds` table of the same domain.
 #' @param elements,ta,ie,ts Optional trial design tibbles: `elements`
 #'   (ETCD, ELEMENT, TESTRL, TEENRL, TEDUR), `ta` (ARMCD, ETCD, TAETORD,
 #'   EPOCH, TABRANCH, TATRANS), `ie` (IETESTCD, IETEST, IECAT) and `ts`
@@ -110,6 +134,7 @@
 #' @export
 new_study_spec <- function(study, sites, arms, visits, codelists,
                            supp, units, forms, tests, bds, variables,
+                           totals = NULL,
                            elements = NULL, ta = NULL, ie = NULL, ts = NULL,
                            derivations = list()) {
   spec <- list(
@@ -123,6 +148,7 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
     forms     = forms,
     tests     = tests,
     bds       = bds,
+    totals    = totals,
     variables = variables,
     elements  = elements,
     ta        = ta,
@@ -136,6 +162,7 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
   for (nm in names(.trial_defaults)) {
     if (is.null(spec[[nm]])) spec[[nm]] <- .trial_defaults[[nm]]
   }
+  if (is.null(spec$totals)) spec$totals <- .totals_defaults
 
   required <- list(
     study     = c("STUDYID", "PROJECT", "seed", "n", "age_min", "age_max"),
@@ -150,6 +177,8 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
     forms     = c("form_oid", "type", "scheduled"),
     tests     = c("domain", "field", "testcd", "test", "cat", "specimen"),
     bds       = c("domain", "paramcd", "paramn", "anrlo", "anrhi"),
+    totals    = c("domain", "paramcd", "param", "paramn", "anrlo", "anrhi",
+                  "src_items"),
     variables = c("domain", "variable", "crf_field", "transform", "ref",
                   "value", "aux", "default"),
     elements  = c("ETCD", "ELEMENT", "TESTRL", "TEENRL", "TEDUR"),
@@ -236,6 +265,42 @@ new_study_spec <- function(study, sites, arms, visits, codelists,
     stop("study spec: duplicate BDS parameter entries", call. = FALSE)
   }
 
+  # Totals: a derived analysis parameter must resolve against the bds
+  # rows of its own domain. A total naming a domain without bds rows, an
+  # item the domain does not carry, a duplicate (domain, paramcd) or a
+  # missing range (ANRIND could never classify) is a spec bug - caught
+  # at construction, not halfway through a build.
+  dup_tot <- spec$totals |> count(domain, paramcd) |> filter(n > 1)
+  if (nrow(dup_tot) > 0) {
+    stop("study spec: duplicate totals parameter entries", call. = FALSE)
+  }
+  if (nrow(spec$totals) > 0) {
+    unknown_dom <- setdiff(unique(spec$totals$domain),
+                           unique(spec$bds$domain))
+    if (length(unknown_dom) > 0) {
+      stop(sprintf("study spec: totals: domain with no bds rows: %s",
+                   str_flatten_comma(unknown_dom)), call. = FALSE)
+    }
+    tot_items <- spec$totals |>
+      select(domain, paramcd, src_items) |>
+      mutate(src_item = str_split(src_items, ";")) |>
+      unnest(src_item)
+    off_dom <- tot_items |>
+      anti_join(rename(spec$bds, src_item = paramcd),
+                by = c("domain", "src_item"))
+    if (nrow(off_dom) > 0) {
+      stop(sprintf(
+        "study spec: totals: src_item not a bds paramcd of the domain: %s",
+        str_flatten_comma(paste0(off_dom$domain, "/", off_dom$src_item))
+      ), call. = FALSE)
+    }
+    no_range <- spec$totals |> filter(is.na(anrlo) | is.na(anrhi))
+    if (nrow(no_range) > 0) {
+      stop(sprintf("study spec: totals: anrlo/anrhi must not be NA for: %s",
+                   str_flatten_comma(no_range$paramcd)), call. = FALSE)
+    }
+  }
+
   # Trial design: the protocol must resolve against the tables it names,
   # and the XPT v5 limits are enforced here, not at write time.
   if (nrow(spec$elements) > 0) {
@@ -319,6 +384,8 @@ print.study_spec <- function(x, ...) {
               length(unique(x$codelists$ct))))
   cat(sprintf("  supp qualifiers: %d   forms: %d   variables mapped: %d\n",
               nrow(x$supp), nrow(x$forms), nrow(x$variables)))
+  cat(sprintf("  bds parameters: %d   totals: %d\n",
+              nrow(x$bds), nrow(x$totals)))
   cat(sprintf("  trial design: elements %d   ta %d   ie %d   ts %d\n",
               nrow(x$elements), nrow(x$ta), nrow(x$ie), nrow(x$ts)))
   invisible(x)

@@ -112,6 +112,7 @@ importFrom(stringr,
   str_length,
   str_pad,
   str_remove,
+  str_split,
   str_squish,
   str_sub,
   str_to_lower,
@@ -128,6 +129,7 @@ importFrom(tibble,
 )
 importFrom(tidyr,
   pivot_wider,
-  unite
+  unite,
+  unnest
 )
 importFrom(utils,modifyList)
