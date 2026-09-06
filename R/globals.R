@@ -68,6 +68,7 @@ utils::globalVariables(c(
   "anrlo", "contactdtc", "conv_factor", "conv_from", "conv_to", "ct",
   "domain", "dsstdtc", "exendtc", "expect", "exstdtc", "n", "paramcd",
   "paramn", "qeval", "qlabel", "qnam", "qorig", "rave_decode", "rdomain",
-  "recordposition", "ref", "src", "testcd", "trtedtc", "trtsdtc", "usubjid",
+  "recordposition", "ref", "src", "src_item", "src_items", "testcd",
+  "trtedtc", "trtsdtc", "usubjid",
   "vd"
 ))
