@@ -1,4 +1,4 @@
-# edc2cdisc 0.4.6.9000
+# edc2cdisc 0.5.0
 
 ## Added
 
