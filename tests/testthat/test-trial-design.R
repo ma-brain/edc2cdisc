@@ -138,11 +138,7 @@ test_that("build_all returns the trial design domains for both studies", {
 # Meta-tests: corrupt a trial design domain, assert the validator trips ---
 
 td_fixture <- function() {
-  out <- file.path(tempdir(), "td-meta")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  build_all(ext)
+  built_suite()
 }
 
 test_that("a TA element missing from TE trips ta-etcd-not-in-te", {

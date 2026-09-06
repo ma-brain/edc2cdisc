@@ -215,11 +215,7 @@ test_that("screen failures appear only at screening, with no study day", {
 # Meta-tests: corrupt PE/EG/SUPPPE, assert the validator trips --------------
 
 pe_eg_built <- function() {
-  out <- file.path(tempdir(), "pe-eg-meta")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  suppressMessages(build_all(ext))
+  built_suite()
 }
 
 test_that("a PEORRES outside NORMAL/ABNORMAL trips peorres-bad-value", {

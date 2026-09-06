@@ -1,30 +1,24 @@
 # SUPP qualifiers: SUPPMH (MHSPECD) and SUPPVS (VSCOMTL) ---------------------
 # The seeded qualifiers: one MH log line carries MHSPEC = "Autoimmune
 # thyroiditis", one VS TEMP record carries VSCOMT = "Repeated after arm
-# reposition" - exactly one SUPP row per study each. build_all() does not
-# wire map_suppmh()/map_suppvs() yet (Task 5 does), so the fixture calls
-# the mappers directly on the built parents - the intended usage.
+# reposition" - exactly one SUPP row per study each. build_all() wires
+# map_suppmh()/map_suppvs() into its output, so the fixture takes the built
+# parents from the shared session build (helper-edc2cdisc.R) but still calls
+# the mappers directly on them: these tests pin the mappers themselves, not
+# the build_all() wiring around them.
 
 supp_q_fixture <- function(study = c("SYNTH01", "SYNTH02")) {
   study <- match.arg(study)
-  out <- file.path(tempdir(), paste0("supp-q-", study))
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) {
-    suppressMessages(generate_rave_extract(out = ext, study = study))
-  }
+  built <- built_suite(study)
   spec  <- switch(study, SYNTH01 = spec_synth01, SYNTH02 = spec_synth02)
+  ext   <- file.path(tempdir(), "edc2cdisc-suite", study)
   forms <- suppressMessages(read_rave_extract(dir = ext))
-  dm   <- map_dm(forms$DM, forms$EX, forms$DS, spec)
-  refs <- subject_ref(dm)
-  mh   <- map_mh(forms$MH, spec, refs)
-  vs   <- map_vs(forms$VS, spec, refs)
   list(forms    = forms,
        spec     = spec,
-       mh_built = mh,
-       vs_built = vs,
-       suppmh   = map_suppmh(forms$MH, mh, spec),
-       suppvs   = map_suppvs(forms$VS, vs, spec))
+       mh_built = built$sdtm$MH,
+       vs_built = built$sdtm$VS,
+       suppmh   = map_suppmh(forms$MH, built$sdtm$MH, spec),
+       suppvs   = map_suppvs(forms$VS, built$sdtm$VS, spec))
 }
 
 # the one raw row the generator seeded, as (USUBJID, key) on the built parent

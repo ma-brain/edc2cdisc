@@ -7,11 +7,7 @@
 # dates via the stated day rule, never from the implementation.
 
 adeg_fixture <- function() {
-  out <- file.path(tempdir(), "adeg-fix")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  built <- suppressMessages(build_all(ext))
+  built <- built_suite()
   list(eg = built$sdtm$EG, adsl = built$adam$ADSL)
 }
 

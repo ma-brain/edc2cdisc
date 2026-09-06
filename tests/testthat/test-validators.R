@@ -3,12 +3,11 @@
 # a green run, break the data on purpose and check the right check trips.
 
 build_fixtures <- function() {
-  out <- file.path(tempdir(), "edc2cdisc-meta")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  built <- build_all(ext)
-  list(built = built, ext = ext)
+  # the build is the session-cached one (helper-edc2cdisc.R); the extract
+  # directory it read stays in the return shape because one meta-test
+  # re-reads a raw AE form from it
+  list(built = built_suite(),
+       ext = file.path(tempdir(), "edc2cdisc-suite", "SYNTH01"))
 }
 
 test_that("a flipped SAFFL trips the SAFFL/TRTSDT coherence check", {

@@ -1,14 +1,12 @@
 # QS: the scheduled event questionnaire -------------------------------------
 # The QS form is one row per subject-visit with the item answers side by side
 # (MOS01_RAW...). map_qs() pivots it to one row per item; the fixture
-# generates the extract once and reuses it, like td_fixture().
+# recomputes the mapper standalone on top of the session-cached build
+# (helper-edc2cdisc.R), like the other mapper fixtures.
 
 qs_fixture <- function() {
-  out <- file.path(tempdir(), "qs-fix")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  built <- suppressMessages(build_all(ext))
+  built <- built_suite()
+  ext <- file.path(tempdir(), "edc2cdisc-suite", "SYNTH01")
   forms <- suppressMessages(read_rave_extract(dir = ext))
   qs <- map_qs(forms$QS, spec_synth01, subject_ref(built$sdtm$DM))
   list(qs = qs, dm = built$sdtm$DM, vs = built$sdtm$VS)
@@ -37,6 +35,16 @@ test_that("map_qs pivots one row per spec item for every VS subject-visit", {
     summarise(ok = all(QSTESTCD == sort(QSTESTCD)),
               .by = c(USUBJID, VISITNUM))
   expect_true(all(item_order$ok))
+})
+
+test_that("the standalone map_qs output equals the QS domain build_all ships", {
+  # these fixtures recompute map_qs() so the assertions exercise the mapper
+  # directly; pin the recomputation against the built domain (labels aside -
+  # both paths label their own columns) so the two can never drift
+  f <- qs_fixture()
+  expect_length(waldo::compare(f$qs, built_suite()$sdtm$QS,
+                               ignore_attr = "label"),
+                0L)
 })
 
 test_that("map_qs returns the interface columns in order, labelled", {
@@ -133,11 +141,7 @@ test_that("screen failures appear only at screening, with no study day", {
 # Meta-tests: corrupt QS, assert the validator trips -----------------------
 
 qs_built <- function() {
-  out <- file.path(tempdir(), "qs-meta")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  suppressMessages(build_all(ext))
+  built_suite()
 }
 
 test_that("a QSCAT not in spec$tests trips qscat-not-in-spec", {

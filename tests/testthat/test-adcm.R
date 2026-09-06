@@ -9,11 +9,7 @@
 # implementation.
 
 adcm_fixture <- function() {
-  out <- file.path(tempdir(), "adcm-fix")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  built <- suppressMessages(build_all(ext))
+  built <- built_suite()
   list(cm = built$sdtm$CM, adsl = built$adam$ADSL)
 }
 

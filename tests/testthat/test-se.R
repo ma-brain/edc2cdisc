@@ -6,11 +6,7 @@
 # meta-tests at the bottom corrupt the full build_all() output.
 
 se_fixture <- function() {
-  out <- file.path(tempdir(), "se-fix")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  built <- suppressMessages(build_all(ext))
+  built <- built_suite()
   list(se = map_se(built$sdtm$DM, spec_synth01),
        dm = built$sdtm$DM)
 }
@@ -99,11 +95,7 @@ test_that("ETCD/ELEMENT values come from spec$elements", {
 # exactly what the pipeline ships.
 
 se_val_fixture <- function() {
-  out <- file.path(tempdir(), "se-meta")
-  dir.create(out, showWarnings = FALSE)
-  ext <- file.path(out, "rave")
-  if (!dir.exists(ext)) suppressMessages(generate_rave_extract(out = ext))
-  suppressMessages(build_all(ext))$sdtm
+  built_suite()$sdtm
 }
 
 test_that("a clean build has zero SE and SUPP qualifier findings", {
