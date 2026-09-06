@@ -9,9 +9,9 @@
 
 utils::globalVariables(c(
   ".any_na", ".base", ".bnrind", ".chg", ".conv", ".diff", ".eg_bl", ".eligible",
-  ".expect", ".factor",
+  ".exp_aval", ".expect", ".factor",
   ".key", ".lb_bl", ".lb_hi", ".lb_ind", ".lb_lo", ".n", ".n_items", ".orres_n",
-  ".pchg", ".rank", ".rave_n", ".ref_trtsdt", ".ref_trtedt", ".unit", ".vs_bl",
+  ".pchg", ".qs_bl", ".rank", ".rave_n", ".ref_trtsdt", ".ref_trtedt", ".unit", ".vs_bl",
   "ABLFL", "ADT", "ADY",
   "AEACN", "AEBODSYS", "AECOMNT", "AEDECOD", "AEDISCON", "AEDISCON.x",
   "AEDISCON.y", "AEENDTC", "AEENDY", "AEENRF", "AEENRTPT", "AENDT", "AENDTF",

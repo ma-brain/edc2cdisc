@@ -19,9 +19,9 @@ test_that("build_all writes the full output tree", {
                     "ts.rds", "tv.rds", "vs.rds"))
   expect_setequal(list.files(file.path(out, "adam"), pattern = "[.]rds$"),
                   c("adcm.rds", "adae.rds", "adeg.rds", "adlb.rds",
-                    "adsl.rds", "advs.rds"))
+                    "adqs.rds", "adsl.rds", "advs.rds"))
   expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 26)
-  expect_equal(length(list.files(file.path(out, "adam", "xpt"))), 6)
+  expect_equal(length(list.files(file.path(out, "adam", "xpt"))), 7)
 
   expect_true(file.exists(file.path(out, "sdtm", "define.xml")))
 })

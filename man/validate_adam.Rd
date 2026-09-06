@@ -11,11 +11,13 @@ validate_adam(
   advs,
   adeg,
   adlb,
+  adqs,
   dm,
   ds,
   ae,
   cm,
   vs,
+  qs,
   eg,
   lb,
   suppae,
@@ -23,9 +25,9 @@ validate_adam(
 )
 }
 \arguments{
-\item{adsl, adae, adcm, advs, adeg, adlb}{The mapped ADaM datasets}
+\item{adsl, adae, adcm, advs, adeg, adlb, adqs}{The mapped ADaM datasets}
 
-\item{dm, ds, ae, cm, vs, eg, lb, suppae}{The SDTM source datasets the ADaM layer
+\item{dm, ds, ae, cm, vs, qs, eg, lb, suppae}{The SDTM source datasets the ADaM layer
 was built from}
 
 \item{spec}{A \code{study_spec}; the ADVS rows of \code{spec$bds} declare the
@@ -33,8 +35,10 @@ reference ranges the built ADVS is checked against and the ADEG rows
 the ECG interval ranges the built ADEG is checked against - a silent
 change on either side (in \code{spec$bds} or in \code{\link[=derive_advs]{derive_advs()}} /
 \code{\link[=derive_adeg]{derive_adeg()}}) trips the range-drift check, and a parameter missing
-from \code{spec$bds} trips the coverage check. The study's \code{age_min} /
-\code{age_max} bound the AGE check.}
+from \code{spec$bds} trips the coverage check. The \code{spec$totals} rows
+declare the derived totals the built ADQS is recomputed against - a
+silent change there or in \code{\link[=derive_adqs]{derive_adqs()}} trips the total-recompute
+check. The study's \code{age_min} / \code{age_max} bound the AGE check.}
 }
 \value{
 An issue tibble: domain, severity ("ERROR" / "WARN"), check,
@@ -53,7 +57,12 @@ analysis-timing coherence on ADCM, and for the BDS datasets
 ANRIND against the row's own range, and coverage against the SDTM
 source records. ADEG is the ADVS situation exactly: EG collects no
 reference ranges of its own, so the ADEG rows of \code{spec$bds} are the
-SAP stand-in the built ANRIND is checked against.
+SAP stand-in the built ANRIND is checked against. ADQS joins the same
+contract with the package's first derived analysis parameter: the
+instrument total is recomputed from the SDTM QS items through the
+same \code{spec$totals} rows and the same all-required rule the builder
+applies (\code{adqs-total-wrong}), and a total may exist only where the
+complete item set exists (\code{adqs-total-coverage}).
 }
 \examples{
 ext <- file.path(tempdir(), "extract-adam")
@@ -63,8 +72,10 @@ suppressMessages(generate_rave_extract(out = ext))
 built <- build_all(ext)
 issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
                         built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
+                        built$adam$ADQS,
                         built$sdtm$DM, built$sdtm$DS, built$sdtm$AE,
-                        built$sdtm$CM, built$sdtm$VS, built$sdtm$EG,
-                        built$sdtm$LB, built$sdtm$SUPPAE, spec_synth01)
+                        built$sdtm$CM, built$sdtm$VS, built$sdtm$QS,
+                        built$sdtm$EG, built$sdtm$LB, built$sdtm$SUPPAE,
+                        spec_synth01)
 issues                                  # empty: the build is clean
 }

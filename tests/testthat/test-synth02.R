@@ -56,10 +56,10 @@ test_that("SYNTH02 runs end-to-end through build_all with its own spec", {
   expect_equal(nrow(validate_sdtm(built$sdtm, spec_synth02)), 0)
   expect_equal(nrow(validate_adam(built$adam$ADSL, built$adam$ADAE,
                                   built$adam$ADCM, built$adam$ADVS,
-                                  built$adam$ADEG, built$adam$ADLB,
+                                  built$adam$ADEG, built$adam$ADLB, built$adam$ADQS,
                                   built$sdtm$DM, built$sdtm$DS,
                                   built$sdtm$AE, built$sdtm$CM,
-                                  built$sdtm$VS, built$sdtm$EG,
+                                  built$sdtm$VS, built$sdtm$QS, built$sdtm$EG,
                                   built$sdtm$LB, built$sdtm$SUPPAE,
                                   spec_synth02)), 0)
 
@@ -112,7 +112,7 @@ test_that("SYNTH02 runs end-to-end through build_all with its own spec", {
   # deliverables written like any study's
   expect_true(file.exists(file.path(out, "sdtm", "define.xml")))
   expect_equal(length(list.files(file.path(out, "sdtm", "xpt"))), 26L)
-  expect_equal(length(list.files(file.path(out, "adam", "xpt"))), 6L)
+  expect_equal(length(list.files(file.path(out, "adam", "xpt"))), 7L)
 })
 
 test_that("the SYNTH02 extract fails loudly under the SYNTH01 spec", {

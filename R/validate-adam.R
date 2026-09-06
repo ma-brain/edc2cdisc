@@ -21,18 +21,25 @@
 #' ANRIND against the row's own range, and coverage against the SDTM
 #' source records. ADEG is the ADVS situation exactly: EG collects no
 #' reference ranges of its own, so the ADEG rows of `spec$bds` are the
-#' SAP stand-in the built ANRIND is checked against.
+#' SAP stand-in the built ANRIND is checked against. ADQS joins the same
+#' contract with the package's first derived analysis parameter: the
+#' instrument total is recomputed from the SDTM QS items through the
+#' same `spec$totals` rows and the same all-required rule the builder
+#' applies (`adqs-total-wrong`), and a total may exist only where the
+#' complete item set exists (`adqs-total-coverage`).
 #'
-#' @param adsl,adae,adcm,advs,adeg,adlb The mapped ADaM datasets
-#' @param dm,ds,ae,cm,vs,eg,lb,suppae The SDTM source datasets the ADaM layer
+#' @param adsl,adae,adcm,advs,adeg,adlb,adqs The mapped ADaM datasets
+#' @param dm,ds,ae,cm,vs,qs,eg,lb,suppae The SDTM source datasets the ADaM layer
 #'   was built from
 #' @param spec A `study_spec`; the ADVS rows of `spec$bds` declare the
 #'   reference ranges the built ADVS is checked against and the ADEG rows
 #'   the ECG interval ranges the built ADEG is checked against - a silent
 #'   change on either side (in `spec$bds` or in [derive_advs()] /
 #'   [derive_adeg()]) trips the range-drift check, and a parameter missing
-#'   from `spec$bds` trips the coverage check. The study's `age_min` /
-#'   `age_max` bound the AGE check.
+#'   from `spec$bds` trips the coverage check. The `spec$totals` rows
+#'   declare the derived totals the built ADQS is recomputed against - a
+#'   silent change there or in [derive_adqs()] trips the total-recompute
+#'   check. The study's `age_min` / `age_max` bound the AGE check.
 #' @return An issue tibble: domain, severity ("ERROR" / "WARN"), check,
 #'   detail. Empty when everything passes.
 #' @export
@@ -44,12 +51,14 @@
 #' built <- build_all(ext)
 #' issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
 #'                         built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
+#'                         built$adam$ADQS,
 #'                         built$sdtm$DM, built$sdtm$DS, built$sdtm$AE,
-#'                         built$sdtm$CM, built$sdtm$VS, built$sdtm$EG,
-#'                         built$sdtm$LB, built$sdtm$SUPPAE, spec_synth01)
+#'                         built$sdtm$CM, built$sdtm$VS, built$sdtm$QS,
+#'                         built$sdtm$EG, built$sdtm$LB, built$sdtm$SUPPAE,
+#'                         spec_synth01)
 #' issues                                  # empty: the build is clean
-validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb,
-                          dm, ds, ae, cm, vs, eg, lb, suppae,
+validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs,
+                          dm, ds, ae, cm, vs, qs, eg, lb, suppae,
                           spec = spec_synth01) {
   issues <- list()
   add <- function(domain, severity, check, detail) {
@@ -929,6 +938,214 @@ validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb,
   if (length(adlb_undeclared) > 0) {
     add("ADLB", "ERROR", "adlb-param-not-in-spec",
         str_flatten_comma(adlb_undeclared))
+  }
+
+  # ADQS: structure -------------------------------------------------------------
+  .req_adqs <- c(
+    "STUDYID", "USUBJID", "PARAMCD", "PARAM", "PARAMN", "AVAL", "AVALU",
+    "ABLFL", "BASE", "CHG", "PCHG", "ANRIND", "ANRLO", "ANRHI",
+    "AVISIT", "AVISITN", "ADT", "ADY"
+  )
+  miss <- setdiff(.req_adqs, names(adqs))
+  if (length(miss) > 0) {
+    add("ADQS", "ERROR", "adqs-required-vars", str_flatten_comma(miss))
+  }
+
+  # One analysis record per subject / parameter / visit
+  adqs_dup <- adqs |>
+    count(USUBJID, PARAMCD, AVISITN, name = ".n") |>
+    filter(.n > 1)
+  if (nrow(adqs_dup) > 0) {
+    add("ADQS", "ERROR", "adqs-key-not-unique",
+        sprintf(paste("%d duplicated USUBJID/PARAMCD/AVISITN key(s) - a visit",
+                      "with two answers for one item?"), nrow(adqs_dup)))
+  }
+
+  # The spec declares both sides: the item parameters (spec$bds) and the
+  # derived totals (spec$totals). The record-level checks against SDTM
+  # are items only - a derived parameter has no QS record to be orphaned
+  # against; the totals are owned by the recomputes that close the block.
+  qs_items_spec <- spec$bds$paramcd[spec$bds$domain == "ADQS"]
+  tot_spec <- filter(spec$totals, domain == "ADQS")
+  adqs_items <- adqs |> filter(PARAMCD %in% qs_items_spec)
+  adqs_tot <- adqs |> filter(PARAMCD %in% tot_spec$paramcd)
+
+  # Coverage: exactly the performed QS records the spec carries - NOT DONE
+  # rows document a missed form and stay an SDTM-only fact (the ADEG rule)
+  qs_results <- qs |>
+    filter(!QSSTAT %in% "NOT DONE", QSTESTCD %in% qs_items_spec)
+  if (nrow(adqs_items) != nrow(qs_results)) {
+    add("ADQS", "ERROR", "adqs-coverage",
+        sprintf("ADQS has %d item row(s) but QS carries %d performed result(s)",
+                nrow(adqs_items), nrow(qs_results)))
+  }
+  adqs_orphan <- adqs_items |>
+    anti_join(qs_results,
+              by = c("USUBJID", PARAMCD = "QSTESTCD", AVISITN = "VISITNUM",
+                     AVAL = "QSSTRESN"))
+  if (nrow(adqs_orphan) > 0) {
+    add("ADQS", "ERROR", "adqs-orphan-record",
+        sprintf("%d ADQS item row(s) with no matching QS result",
+                nrow(adqs_orphan)))
+  }
+
+  # Baseline: exactly one per randomized subject per parameter, none for
+  # screen failures; for the items it must be the record SDTM flagged. The
+  # total's baseline is derived (QS has no QSBLFL for a parameter absent
+  # from SDTM), so it is anchored by the builder and held to account
+  # through BASE/CHG below, not against SDTM.
+  bl_multi <- adqs |>
+    filter(ABLFL == "Y") |>
+    count(USUBJID, PARAMCD, name = ".n") |>
+    filter(.n > 1)
+  if (nrow(bl_multi) > 0) {
+    add("ADQS", "ERROR", "adqs-ablfl-multi",
+        sprintf("%d subject/parameter(s) with >1 ABLFL='Y'", nrow(bl_multi)))
+  }
+  bl_missing <- adqs |>
+    filter(USUBJID %in% itt_ids, !is.na(AVAL)) |>
+    count(USUBJID, PARAMCD, ABLFL) |>
+    filter(!any(ABLFL %in% "Y"), .by = c("USUBJID", "PARAMCD"))
+  if (nrow(bl_missing) > 0) {
+    add("ADQS", "ERROR", "adqs-ablfl-missing",
+        sprintf(paste("%d randomized subject/parameter(s) with no baseline",
+                      "record"), nrow(bl_missing)))
+  }
+  bl_sf <- adqs |> filter(USUBJID %in% sf_ids, ABLFL == "Y")
+  if (nrow(bl_sf) > 0) {
+    add("ADQS", "ERROR", "adqs-ablfl-screenfail",
+        "screen-failure subject with a baseline flag")
+  }
+  qs_bl <- qs_results |>
+    filter(QSBLFL == "Y") |>
+    select(USUBJID, PARAMCD = QSTESTCD, .qs_bl = QSSTRESN)
+  bad_bl <- adqs_items |>
+    filter(ABLFL == "Y") |>
+    left_join(qs_bl, by = c("USUBJID", "PARAMCD")) |>
+    filter(is.na(.qs_bl) | AVAL != .qs_bl)
+  if (nrow(bad_bl) > 0) {
+    add("ADQS", "ERROR", "adqs-ablfl-not-from-qs",
+        "ABLFL='Y' AVAL disagrees with the SDTM QSBLFL record")
+  }
+
+  # BASE/CHG/PCHG arithmetic, recomputed from the analysis values
+  base_chk <- adqs |>
+    filter(ABLFL == "Y") |>
+    select(USUBJID, PARAMCD, .base = AVAL)
+  bad_base <- adqs |>
+    left_join(base_chk, by = c("USUBJID", "PARAMCD")) |>
+    filter(xor(is.na(BASE), is.na(.base)) |
+             (!is.na(BASE) & !is.na(.base) & BASE != .base))
+  if (nrow(bad_base) > 0) {
+    add("ADQS", "ERROR", "adqs-base-wrong",
+        "BASE disagrees with the ABLFL='Y' AVAL")
+  }
+  bad_base_sf <- adqs |> filter(USUBJID %in% sf_ids, !is.na(BASE))
+  if (nrow(bad_base_sf) > 0) {
+    add("ADQS", "ERROR", "adqs-base-screenfail",
+        "screen-failure row with a BASE value")
+  }
+  bad_base_itt <- adqs |>
+    filter(USUBJID %in% itt_ids, !is.na(AVAL), is.na(BASE))
+  if (nrow(bad_base_itt) > 0) {
+    add("ADQS", "ERROR", "adqs-base-missing",
+        sprintf("%d randomized row(s) with no BASE", nrow(bad_base_itt)))
+  }
+  bad_chg <- adqs |>
+    filter(!is.na(BASE)) |>
+    mutate(.chg  = .rule_chg(AVAL, BASE, ABLFL),
+           .pchg = .rule_pchg(.chg, BASE)) |>
+    filter(xor(is.na(CHG), is.na(.chg)) | xor(is.na(PCHG), is.na(.pchg)) |
+             (!is.na(CHG) & CHG != .chg) | (!is.na(PCHG) & PCHG != .pchg))
+  if (nrow(bad_chg) > 0) {
+    add("ADQS", "ERROR", "adqs-chg-wrong",
+        "CHG/PCHG disagree with AVAL - BASE (or populated on the baseline row)")
+  }
+
+  # ANRIND: recomputed from the row's own range - the spec-declared range
+  # for a total, none for the ordinal items (ANRIND stays missing there by
+  # design, the WEIGHT/HEIGHT precedent)
+  bad_anrind <- adqs |>
+    mutate(.expect = .rule_anrind(AVAL, ANRLO, ANRHI)) |>
+    filter(xor(is.na(ANRIND), is.na(.expect)) |
+             (!is.na(ANRIND) & !is.na(.expect) & ANRIND != .expect))
+  if (nrow(bad_anrind) > 0) {
+    add("ADQS", "ERROR", "adqs-anrind-wrong",
+        "ANRIND disagrees with the AVAL vs ANRLO/ANRHI comparison")
+  }
+
+  # Analysis day: anchored on ADSL TRTSDT
+  bad_ady <- adqs |>
+    left_join(adsl_ref, by = "USUBJID") |>
+    mutate(.expect = derive_dy_d(ADT, .ref_trtsdt)) |>
+    filter(xor(is.na(ADY), is.na(.expect)) |
+             (!is.na(ADY) & !is.na(.expect) & ADY != .expect))
+  if (nrow(bad_ady) > 0) {
+    add("ADQS", "ERROR", "adqs-ady-wrong",
+        "ADY disagrees with ADT vs ADSL TRTSDT")
+  }
+  if (any(adqs$ADY == 0, na.rm = TRUE)) {
+    add("ADQS", "ERROR", "adqs-study-day-zero", "ADY equals zero")
+  }
+
+  # Spec coverage: every built parameter must be declared - the items in
+  # spec$bds, the totals in spec$totals - so a questionnaire item collected
+  # on the CRF without an ADaM spec row shows up here instead of silently
+  # corrupting the totals' all-required count
+  adqs_undeclared <- setdiff(unique(adqs$PARAMCD),
+                             c(qs_items_spec, tot_spec$paramcd))
+  if (length(adqs_undeclared) > 0) {
+    add("ADQS", "ERROR", "adqs-param-not-in-spec",
+        str_flatten_comma(adqs_undeclared))
+  }
+
+  # The recompute-don't-trust centrepiece: the total is derived, so the
+  # validator derives it too - the same spec$totals rows, the same
+  # performed-items frame and the same all-required rule the builder
+  # applies, straight off the SDTM QS the build started from
+  if (nrow(tot_spec) > 0) {
+    expected_totals <- pmap(tot_spec, \(domain, paramcd, param, paramn, anrlo, anrhi, src_items) {
+      items <- str_split_1(src_items, ";")
+      qs |>
+        filter(!QSSTAT %in% "NOT DONE", QSTESTCD %in% items) |>
+        summarise(
+          .n_items = n(),
+          .any_na  = anyNA(QSSTRESN),
+          AVAL     = sum(QSSTRESN),
+          .by = c(USUBJID, VISITNUM)
+        ) |>
+        filter(.n_items == length(items), !.any_na) |>
+        transmute(USUBJID, PARAMCD = paramcd, AVISITN = VISITNUM,
+                  .exp_aval = AVAL)
+    }) |>
+      bind_rows()
+
+    bad_tot <- adqs_tot |>
+      select(USUBJID, PARAMCD, AVISITN, AVAL) |>
+      inner_join(expected_totals, by = c("USUBJID", "PARAMCD", "AVISITN")) |>
+      filter(xor(is.na(AVAL), is.na(.exp_aval)) |
+               (!is.na(AVAL) & !is.na(.exp_aval) & AVAL != .exp_aval))
+    if (nrow(bad_tot) > 0) {
+      add("ADQS", "ERROR", "adqs-total-wrong",
+          sprintf(paste("%d total row(s) whose AVAL is not the sum of their",
+                        "SDTM QS items"), nrow(bad_tot)))
+    }
+
+    # Coverage (totals), both directions: a visit with every item present
+    # must have its total, and a total may not exist where an item is
+    # missing or unparseable - no proration to hide behind
+    lost_tot <- anti_join(expected_totals,
+                          select(adqs_tot, USUBJID, PARAMCD, AVISITN),
+                          by = c("USUBJID", "PARAMCD", "AVISITN"))
+    extra_tot <- anti_join(select(adqs_tot, USUBJID, PARAMCD, AVISITN),
+                           expected_totals,
+                           by = c("USUBJID", "PARAMCD", "AVISITN"))
+    if (nrow(lost_tot) + nrow(extra_tot) > 0) {
+      add("ADQS", "ERROR", "adqs-total-coverage",
+          sprintf(paste("%d subject/visit(s) where the total and the complete",
+                        "set of QS items disagree about existing"),
+                  nrow(lost_tot) + nrow(extra_tot)))
+    }
   }
 
   report <- bind_rows(issues)
