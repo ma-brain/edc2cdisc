@@ -1,3 +1,17 @@
+# edc2cdisc 0.4.6.9000
+
+## Added
+
+* ADQS, the questionnaire analysis dataset (BDS) and the package's first
+  derived analysis parameter. `derive_adqs()` maps the QS items on the
+  ADVS/ADEG pattern and adds the instrument total (MOSTOT), driven by a new
+  optional `spec$totals` table — code, name, order, declared range and the
+  `src_items` to sum — emitted only where every source item is present (the
+  all-required rule; no proration). `validate_adam()` recomputes each total
+  from the SDTM QS items (`adqs-total-wrong`) and enforces the all-required
+  coverage in both directions (`adqs-total-coverage`). `build_all()` returns
+  7 ADaM datasets.
+
 # edc2cdisc 0.4.6
 
 ## Added

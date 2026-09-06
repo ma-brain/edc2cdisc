@@ -110,7 +110,7 @@ test_that("the define.xml stub is well-formed and complete", {
   ))
   qs_spec <- spec_synth01$tests[spec_synth01$tests$domain == "QS", ]
   expect_length(qs_vlm_desc, nrow(qs_spec))
-  expect_false(any(str_detect(qs_vlm_desc, "NA")))
+  expect_false(any(str_detect(qs_vlm_desc, "\\(NA\\)")))
   expect_equal(qs_vlm_desc, qs_spec$test[order(qs_spec$testcd)])
 })
 

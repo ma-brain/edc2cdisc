@@ -50,12 +50,13 @@ Fields (wide, per subject per visit): `QSDAT_*` (date parts), `QSPERF`,
 ### SDTM QS (pragmatic subset)
 
 STUDYID, DOMAIN, USUBJID, QSSEQ, QSCAT, QSTESTCD, QSTEST, QSORRES, QSSTAT,
-QSREASND, QSBLFL, VISITNUM, VISIT, QSDTC, QSDY.
+QSREASND, QSSTRESC, QSSTRESN, QSSTRESU, QSBLFL, VISITNUM, VISIT, QSDTC, QSDY.
 
-- QSORRES from `MOS0x_RAW`; QSSTRESN exists only as a mapper-internal
-  intermediate for the baseline rank (it is not an output column of the
-  subset above); QSSTRESU empty (omitted); blank item → row dropped
-  (map_vs idiom).
+- QSORRES from `MOS0x_RAW`; blank item → row dropped (map_vs idiom).
+  Amended by the conformance completion: the standardized results are output
+  columns too (QSSTRESC/QSSTRESN/QSSTRESU, after the QSSTAT/QSREASND pair).
+  QSSTRESN began as the mapper-internal intermediate for the baseline rank;
+  QSSTRESU is an explicit all-NA column — ordinal items have no unit.
 - Not-done visit → one row per item with QSSTAT "NOT DONE", QSREASND populated,
   blank results.
 - QSBLFL: the VS baseline-rank block over numeric results.
