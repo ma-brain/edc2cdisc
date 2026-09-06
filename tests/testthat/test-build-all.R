@@ -63,6 +63,15 @@ test_that("the define.xml stub is well-formed and complete", {
   eg_ref <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='EG']/d1:ItemRef[@ItemOID='IT.EG.EGSEQ']", ns)
   expect_equal(xml2::xml_attr(eg_ref, "KeySequence"), "3")
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef[@Name='SUPPPE']", ns)), 1)
+  # SE and the remaining SUPP qualifiers are documented like the rest: SE is
+  # keyed on the subject + SESEQ, the SUPP sets on the six SUPP columns
+  igd_se <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='SE']", ns)
+  expect_equal(xml2::xml_attr(igd_se, "def:Structure", ns = ns),
+               "One record per subject per element")
+  se_ref <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='SE']/d1:ItemRef[@ItemOID='IT.SE.SESEQ']", ns)
+  expect_equal(xml2::xml_attr(se_ref, "KeySequence"), "3")
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef[@Name='SUPPMH']", ns)), 1)
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef[@Name='SUPPVS']", ns)), 1)
   # PE's observed NORMAL/ABNORMAL values become a curated codelist
   pe_items <- xml2::xml_find_all(doc, "//d1:CodeList[@OID='CL.PEORRES']/d1:EnumeratedItem", ns)
   expect_equal(xml2::xml_attr(pe_items, "CodedValue"), c("ABNORMAL", "NORMAL"))
