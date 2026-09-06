@@ -350,7 +350,8 @@ form_write <- function(e, outdir) {
   "PULSE", "PULSE_RAW", "PULSE_UN",
   "TEMP", "TEMP_RAW", "TEMP_UN", "TEMP_STD", "TEMP_STD_UN",
   "WEIGHT", "WEIGHT_RAW", "WEIGHT_UN", "WEIGHT_STD", "WEIGHT_STD_UN",
-  "HEIGHT", "HEIGHT_RAW", "HEIGHT_UN", "HEIGHT_STD", "HEIGHT_STD_UN"
+  "HEIGHT", "HEIGHT_RAW", "HEIGHT_UN", "HEIGHT_STD", "HEIGHT_STD_UN",
+  "VSCOMT"                                       # non-standard, carried in SUPPVS
 )
 
 .AE_FIELDS <- c(
@@ -385,7 +386,8 @@ form_write <- function(e, outdir) {
   "MHCOD_PT", "MHCOD_SOC",
   "MHSTDAT", "MHSTDAT_RAW", "MHSTDAT_YYYY", "MHSTDAT_MM", "MHSTDAT_DD",
   "MHENDAT", "MHENDAT_RAW", "MHENDAT_YYYY", "MHENDAT_MM", "MHENDAT_DD",
-  "MHONG", "MHONG_RAW", "MHONG_DECODE"
+  "MHONG", "MHONG_RAW", "MHONG_DECODE",
+  "MHSPEC"                                       # non-standard, carried in SUPPMH
 )
 
 .EX_FIELDS <- c(
@@ -593,6 +595,7 @@ populate <- function(subjects, cfg) {
     for (folder in cfg$visit_folders) {
       if (is.null(vdates[[folder]])) next
       vdate <- vdates[[folder]]
+      vpos  <- match(folder, cfg$visit_folders)
 
       # one visit not performed
       if (idx == cfg$idx$vs_np && folder == cfg$idx$vs_np_folder) {
@@ -662,6 +665,16 @@ populate <- function(subjects, cfg) {
           f[["HEIGHT_UN"]] <- "cm"
         }
         f[["HEIGHT_STD"]] <- d1(sub$height); f[["HEIGHT_STD_UN"]] <- "cm"
+      }
+
+      # one visit's temperature re-measured after an arm reposition, per the
+      # investigator comment SUPPVS carries (VSCOMT itself stays unmapped raw).
+      # A literal write on a config-driven condition: no extra draws from the
+      # main stream this block runs on and no extra form_add, so every other
+      # row's bytes stay frozen. The seeded visit must be a performed one - the
+      # not-performed early return above writes no TEMP row to hang it on.
+      if (idx == cfg$idx$vs_comment[1] && vpos == cfg$idx$vs_comment[2]) {
+        f[["VSCOMT"]] <- "Repeated after arm reposition"
       }
 
       form_add(vs, sub, folder, vdate, f)
@@ -1010,6 +1023,7 @@ populate <- function(subjects, cfg) {
   DIABP = "Diastolic Blood Pressure",
   PULSE = "Pulse Rate", TEMP = "Temperature",
   WEIGHT = "Weight", HEIGHT = "Height",
+  VSCOMT = "Comment",
   AETERM = "Adverse Event Verbatim Term",
   AECOD_PT = "AE Coded Preferred Term",
   AECOD_SOC = "AE Coded System Organ Class",
@@ -1031,6 +1045,7 @@ populate <- function(subjects, cfg) {
   MHCOD_SOC = "Medical History Coded System Organ Class",
   MHSTDAT = "Medical History Start Date", MHENDAT = "Medical History End Date",
   MHONG = "Medical History Ongoing",
+  MHSPEC = "If Related, Specify",
   EXOCCUR = "Study Drug Administered", EXTRT = "Study Drug Name",
   EXDOSE = "Dose Administered", EXDOSU = "Dose Unit",
   EXROUTE = "Route of Administration",
@@ -1335,6 +1350,15 @@ apply_mh <- function(forms, subjects, cfg) {
         date_cols("MHENDAT", en, if (ongoing) "all" else "none"),
         coded_cols(cfg, "MHONG", "YN", if (ongoing) "1" else "0")
       )
+      # One log line carries the "if related, specify" free text that SUPPMH
+      # later carries as MHSPECD (MHSPEC itself stays unmapped raw). A literal
+      # write on a config-driven condition: no extra draws from this subject's
+      # private stream and no extra form_add, so only the seeded row moves.
+      # RNG-stream note: this sits inside the per-subject hold/restore wrapper
+      # apply_mh() already provides, so no new stream work is needed.
+      if (idx == cfg$idx$mh_spec[1] && pos == cfg$idx$mh_spec[2]) {
+        f[["MHSPEC"]] <- "Autoimmune thyroiditis"
+      }
       form_add(mh, sub, "LOG", NA, f, record_position = pos)
     }
 

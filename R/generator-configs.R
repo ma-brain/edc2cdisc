@@ -92,6 +92,18 @@
                         value = 40 * 3.1),
       deaths = c(7L, 15L),
       qs_not_done = c(7L, 4L),
+      # mh_spec: idx 22 is COMPLETED with exactly one MH log line, its
+      # Hypothyroidism ("Underactive thyroid") at recordposition 1 - the row
+      # the SUPPMH qualifier MHSPEC = "Autoimmune thyroiditis" seeds on.
+      # (Probed against the built extract; MH log lines are numbered from 1.)
+      mh_spec = c(22L, 1L),
+      # vs_comment: idx 2 is COMPLETED with the full six-visit schedule (and
+      # clear of the vs_np/vs_dup subjects), so Week 4 (position 4) exists as
+      # a performed visit - where VSCOMT = "Repeated after arm reposition"
+      # seeds on the TEMP record. Must not point at the not-performed visit
+      # (its row carries no TEMP) or the vs_dup subject's BASE (the
+      # soft-deleted duplicate would inherit the comment).
+      vs_comment = c(2L, 4L, "TEMP"),
       pe_not_done = c(12L, 2L), pe_abnormal = c(3L, 2L),
       eg_not_done = c(9L, 5L), eg_late_time = c(2L, 3L)
     )
@@ -260,6 +272,19 @@
       # eg_not_done: the briefed idx 9 is an ET subject in this study
       # (et = c(2L, 9L)), so its Week 12 visit (position 5) does not exist;
       # idx 7 is COMPLETED with the full schedule.
+      # mh_spec: idx 14 is this study's only Hypothyroidism row - a screen
+      # failure with exactly one MH log line (history is a screening
+      # collection), at recordposition 1, where the SUPPMH qualifier
+      # MHSPEC = "Autoimmune thyroiditis" seeds. (Probed against the built
+      # extract; MH log lines are numbered from 1.)
+      mh_spec = c(14L, 1L),
+      # vs_comment: idx 1 is COMPLETED with the full six-visit schedule (and
+      # clear of the vs_np/vs_dup subjects), so Week 8 (position 4) exists as
+      # a performed visit - where VSCOMT = "Repeated after arm reposition"
+      # seeds on the TEMP record. Must not point at the not-performed visit
+      # (its row carries no TEMP) or the vs_dup subject's BASE (the
+      # soft-deleted duplicate would inherit the comment).
+      vs_comment = c(1L, 4L, "TEMP"),
       pe_not_done = c(12L, 2L), pe_abnormal = c(3L, 2L),
       eg_not_done = c(7L, 5L), eg_late_time = c(2L, 3L)
     )
