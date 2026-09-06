@@ -29,6 +29,9 @@ Status: Proposed — awaiting evening skim, then overnight execution
    for SYNTH01 (4 items × 0–3; below 4 = concerning), 4 / 15 for SYNTH02
    (5 items) — and the deterministic data classifies both LOW and NORMAL
    rows, so ANRIND is genuinely exercised with zero generator changes.
+   Amended by the ADQS completion: the built totals all classify NORMAL
+   under the declared ranges (SYNTH01 sums to 6 at every visit; SYNTH02
+   spans 6–9); the LOW branch is exercised by hand-built tests only.
 4. **The total's baseline is derived, not carried.** QS has no QSBLFL for a
    parameter that does not exist in SDTM. ADEL-style: after totals are
    computed per visit, the total row at the subject's item-baseline visit
