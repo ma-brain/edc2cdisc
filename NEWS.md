@@ -1,4 +1,4 @@
-# edc2cdisc 0.4.0.9000
+# edc2cdisc 0.4.5
 
 ## Added
 
@@ -20,7 +20,6 @@
   CM keys both ways, imputation flags, anchored study days, the
   full-precision CMSTDY cross-check, date ordering) and now takes `adcm`
   and `cm` explicitly. `build_all()` returns 5 ADaM datasets.
->>>>>>> adcm-occds
 * The QS (Questionnaires) domain. A deterministic scheduled `QS` CRF form
   (MOOD SCALE ordinal items) feeds `map_qs()`, a `map_vs()`-style findings
   mapper with NOT DONE rows and baseline flags. `build_all()` returns 20
@@ -35,6 +34,13 @@
   missing. `validate_sdtm()` gains `peorres-bad-value`, `peclsig-coherence`
   and `egstresu-fixed`, and the reusable `stat-reason` check now covers PE
   and EG. `build_all()` returns 23 SDTM domains.
+
+## Changed
+
+* A cleanup pass: the no-day-0 planned-day rule lives in one shared
+  `planned_dy()` helper (map_sv, map_tv and the validator), mapper tests
+  pin sequence numbers across all subjects and label texts exactly, and
+  dead generator config is gone.
 
 # edc2cdisc 0.4.0
 
