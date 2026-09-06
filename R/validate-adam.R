@@ -593,8 +593,7 @@ validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs,
     select(PARAMCD, ANRLO, ANRHI) |>
     distinct() |>
     full_join(advs_spec, by = "PARAMCD") |>
-    filter(is.na(PARAMCD) |
-             xor(is.na(ANRLO.x), is.na(ANRLO.y)) |
+    filter(xor(is.na(ANRLO.x), is.na(ANRLO.y)) |
              (!is.na(ANRLO.x) & !is.na(ANRLO.y) & ANRLO.x != ANRLO.y) |
              (!is.na(ANRHI.x) & !is.na(ANRHI.y) & ANRHI.x != ANRHI.y))
   if (nrow(bad_range) > 0) {
@@ -754,8 +753,7 @@ validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs,
     select(PARAMCD, ANRLO, ANRHI) |>
     distinct() |>
     full_join(adeg_spec, by = "PARAMCD") |>
-    filter(is.na(PARAMCD) |
-             xor(is.na(ANRLO.x), is.na(ANRLO.y)) |
+    filter(xor(is.na(ANRLO.x), is.na(ANRLO.y)) |
              (!is.na(ANRLO.x) & !is.na(ANRLO.y) & ANRLO.x != ANRLO.y) |
              (!is.na(ANRHI.x) & !is.na(ANRHI.y) & ANRHI.x != ANRHI.y))
   if (nrow(bad_range) > 0) {
