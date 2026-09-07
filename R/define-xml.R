@@ -11,6 +11,14 @@
 #          full CDISC CT instead.
 # ============================================================================
 
+# The canonical CDISC Define-XML 2.0 schema set, vendored under
+# inst/schema/ (xml.xsd carries one patched schemaLocation so validation
+# never touches the network). The tests validate the built document
+# against it - the schema is the oracle for this builder.
+.define_schema_path <- function() {
+  system.file("schema/define/2.0/define2-0-0.xsd", package = "edc2cdisc")
+}
+
 #' Build a define.xml stub for the mapped SDTM domains
 #'
 #' @param domains Named list of mapped SDTM datasets
