@@ -1,3 +1,26 @@
+# edc2cdisc 0.5.1
+
+## Fixed
+
+* Validation survives hand-crafted malformed input instead of crashing.
+  Cross-checks that read another domain's columns now defer to the
+  required-vars check that owns a missing column: `ta-etcd-not-in-te`,
+  `se-etcd-not-in-te` and `te-etcd-not-unique` on an empty or column-less
+  TE, the SV uniqueness/reconciliation block on USUBJID/VISITNUM/VISIT,
+  the VS visit-window check on SVSTDTC/SVENDTC, and the screen-failure
+  study-day sweep on DM's USUBJID/ARMCD — a domain the caller did not
+  supply is skipped, not dereferenced.
+
+## Changed
+
+* The new-study vignette covers the whole spec surface: the inventory
+  names the six optional tables, and a new section walks a `spec$totals`
+  row with its all-required rule.
+* NEWS refers to the code reviews by date rather than by internal report
+  filename, and the implementation plans, runbooks, design specs and
+  review reports are no longer part of the published repository — the
+  public record of what changed is this file and the vignettes.
+
 # edc2cdisc 0.5.0
 
 ## Added
