@@ -8,7 +8,7 @@
 # ============================================================================
 
 utils::globalVariables(c(
-  ".any_na", ".base", ".bnrind", ".chg", ".conv", ".diff", ".eg_bl", ".eligible",
+  ".ae_adt", ".ae_seq", ".any_na", ".base", ".bnrind", ".chg", ".conv", ".diff", ".eg_bl", ".eligible",
   ".exp_aval", ".expect", ".factor",
   ".key", ".lb_bl", ".lb_hi", ".lb_ind", ".lb_lo", ".n", ".n_items", ".orres_n",
   ".pchg", ".qs_bl", ".rank", ".rave_n", ".ref_trtedt", ".ref_trtsdt", ".unit", ".vs_bl",

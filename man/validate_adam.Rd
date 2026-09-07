@@ -81,7 +81,7 @@ suppressMessages(generate_rave_extract(out = ext))
 built <- build_all(ext)
 issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
                         built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
-                        built$adam$ADQS,
+                        built$adam$ADQS, built$adam$ADTTE,
                         built$sdtm$DM, built$sdtm$DS, built$sdtm$AE,
                         built$sdtm$CM, built$sdtm$VS, built$sdtm$QS,
                         built$sdtm$EG, built$sdtm$LB, built$sdtm$SUPPAE,
