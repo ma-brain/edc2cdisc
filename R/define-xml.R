@@ -19,6 +19,14 @@
   system.file("schema/define/2.0/define2-0-0.xsd", package = "edc2cdisc")
 }
 
+# NCI codelist codes for the spec-backed codelists, sourced from the CDISC
+# SDTM controlled terminology (NCI EVS Explore / EBI OLS, 2026-09-07).
+# DSDECOD has no single CT codelist behind it and stays unaliased.
+.nci_codelists <- c(
+  AESEV = "C66769", AEREL = "C66728", AEACN = "C66767",
+  AEOUT = "C66768", SEX = "C66731"
+)
+
 #' Build a define.xml (Define-XML 2.0) for the mapped SDTM domains
 #'
 #' @param domains Named list of mapped SDTM datasets
@@ -188,7 +196,7 @@ build_define_xml <- function(domains, spec, path) {
   # variable.
   codelist_vars <- c("AESEV", "AEREL", "AEACN", "AEOUT", "LBNRIND", "DTHFL",
                      "QNAM", "RDOMAIN", "RELTYPE", "DSDECOD", "IECAT",
-                     "PEORRES")
+                     "PEORRES", "SEX")
   codelist_values <- map(set_names(codelist_vars), \(v) {
     vals <- unlist(imap(domains, \(df, d) if (v %in% names(df)) unique(df[[v]])),
                    use.names = FALSE)
@@ -429,11 +437,13 @@ build_define_xml <- function(domains, spec, path) {
   }
   for (f in findings) {
     d <- f$domain
-    # the value-level items describe the parameter column itself, so they
-    # inherit its datatype and length attributes
-    attrs <- item_type_attrs(f$var, domains[[d]][[f$var]])
     for (i in seq_along(f$codes)) {
       code <- f$codes[[i]]
+      # each value-level item describes its own code's data: the type,
+      # length and significant digits come from that code's subset, not
+      # from the parameter column at large
+      attrs <- item_type_attrs(f$var,
+                               domains[[d]][[f$var]][domains[[d]][[f$codevar]] == code])
       it <- rlang::exec(xml2::xml_add_child, mdv, "ItemDef",
                         OID = str_c("IT.", d, ".", f$var, ".", code),
                         Name = f$var, SASFieldName = f$var, !!!attrs)
@@ -446,10 +456,34 @@ build_define_xml <- function(domains, spec, path) {
   for (v in names(codelist_values)) {
     cl <- xml2::xml_add_child(mdv, "CodeList", OID = str_c("CL.", v), Name = v,
                               DataType = "text")
-    for (i in seq_along(codelist_values[[v]])) {
-      xml2::xml_add_child(cl, "EnumeratedItem",
-                          CodedValue = codelist_values[[v]][i],
-                          OrderNumber = as.character(i))
+    spec_rows <- spec$codelists[spec$codelists$ct == v, ]
+    # several collected decodes can map to one submission value: the first
+    # spec row wins, or the codelist would duplicate a CodedValue
+    spec_rows <- spec_rows[!duplicated(spec_rows$cdisc_term), ]
+    if (nrow(spec_rows) > 0) {
+      # spec-backed: the observed subset of the spec-declared terms, in
+      # spec order, decoded to the collected values, aliased to the NCI
+      # codelist where one is sourced
+      for (i in which(spec_rows$cdisc_term %in% codelist_values[[v]])) {
+        cli <- xml2::xml_add_child(cl, "CodeListItem",
+                                   CodedValue = spec_rows$cdisc_term[i],
+                                   OrderNumber = as.character(i))
+        dec <- xml2::xml_add_child(cli, "Decode")
+        xml2::xml_add_child(dec, "TranslatedText", spec_rows$rave_decode[i],
+                            `xml:lang` = "en")
+      }
+      # the NCI alias is ODM's trailing element inside CodeList - after
+      # the items, not before them
+      if (v %in% names(.nci_codelists)) {
+        xml2::xml_add_child(cl, "Alias", Context = "ncim:CodeList",
+                            Name = unname(.nci_codelists[[v]]))
+      }
+    } else {
+      for (i in seq_along(codelist_values[[v]])) {
+        xml2::xml_add_child(cl, "EnumeratedItem",
+                            CodedValue = codelist_values[[v]][i],
+                            OrderNumber = as.character(i))
+      }
     }
   }
 

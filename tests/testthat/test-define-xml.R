@@ -24,6 +24,56 @@ test_that("the built define.xml validates against Define-XML 2.0", {
   expect_true(res, paste(collapse = "\n", describe_schema_errors(res)))
 })
 
+test_that("spec codelists decode and carry their NCI codelist aliases", {
+  built <- built_suite()
+  doc <- xml2::read_xml(build_define_xml(built$sdtm, spec_synth01,
+                                         file.path(tempdir(), "define-ct.xml")))
+  ns <- xml2::xml_ns(doc)
+  aeout <- xml2::xml_find_first(doc, "//d1:CodeList[@OID='CL.AEOUT']", ns)
+  expect_equal(xml2::xml_attr(aeout, "Name"), "AEOUT")
+  alias <- xml2::xml_find_first(aeout, "d1:Alias", ns)
+  expect_equal(xml2::xml_attr(alias, "Context"), "ncim:CodeList")
+  expect_equal(xml2::xml_attr(alias, "Name"), "C66768")
+  items <- xml2::xml_find_all(aeout, "d1:CodeListItem", ns)
+  aeout_spec <- spec_synth01$codelists[spec_synth01$codelists$ct == "AEOUT", ]
+  observed <- unique(built$sdtm$AE$AEOUT)
+  kept <- aeout_spec[aeout_spec$cdisc_term %in% observed, ]
+  expect_equal(xml2::xml_attr(items, "CodedValue"), kept$cdisc_term)
+  expect_equal(xml2::xml_text(xml2::xml_find_all(items, "d1:Decode/d1:TranslatedText",
+                                                 ns)), kept$rave_decode)
+
+  sex <- xml2::xml_find_first(doc, "//d1:CodeList[@OID='CL.SEX']", ns)
+  expect_equal(xml2::xml_attr(xml2::xml_find_first(sex, "d1:Alias", ns),
+                              "Name"), "C66731")
+
+  # a curated observed-value codelist with no spec backing stays
+  # enumerated and unaliased
+  peorres <- xml2::xml_find_first(doc, "//d1:CodeList[@OID='CL.PEORRES']", ns)
+  expect_equal(length(xml2::xml_find_all(peorres, "d1:CodeListItem", ns)), 0)
+  expect_equal(length(xml2::xml_find_all(peorres, "d1:Alias", ns)), 0)
+  expect_true(length(xml2::xml_find_all(peorres, "d1:EnumeratedItem", ns)) > 0)
+})
+
+test_that("value-level ItemDefs type their own code's data", {
+  built <- built_suite()
+  doc <- xml2::read_xml(build_define_xml(built$sdtm, spec_synth01,
+                                         file.path(tempdir(), "define-vlm.xml")))
+  ns <- xml2::xml_ns(doc)
+  vs <- built$sdtm$VS
+  for (cd in c("HEIGHT", "TEMP")) {
+    oid <- sprintf("//d1:ItemDef[@OID='IT.VS.VSSTRESN.%s']", cd)
+    it <- xml2::xml_find_first(doc, oid, ns)
+    x <- vs$VSSTRESN[vs$VSTESTCD == cd & !is.na(vs$VSSTRESN)]
+    expect_equal(xml2::xml_attr(it, "Length"),
+                 as.character(max(nchar(as.character(x)))),
+                 label = paste("length of", cd))
+    dec <- max(nchar(sub("^[^.]*\\.?", "", as.character(x))))
+    expect_equal(xml2::xml_attr(it, "SignificantDigits"),
+                 if (dec > 0) as.character(dec) else NA_character_,
+                 label = paste("sig digits of", cd))
+  }
+})
+
 test_that("the document carries the 2.0 submission contract", {
   built <- built_suite()
   doc <- xml2::read_xml(build_define_xml(built$sdtm, spec_synth01,

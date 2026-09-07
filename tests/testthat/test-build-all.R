@@ -38,9 +38,9 @@ test_that("the define.xml stub is well-formed and complete", {
   doc <- xml2::read_xml(path)
   ns <- xml2::xml_ns(doc)
   expect_equal(length(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)), 26)
-  # 12 curated value codelists, minus RELTYPE: its values are all blank on
+  # 13 curated value codelists, minus RELTYPE: its values are all blank on
   # record-level links, and an empty codelist is not emitted
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 11)
+  expect_equal(length(xml2::xml_find_all(doc, "//d1:CodeList", ns)), 12)
   # the trial design domains carry keys and structures like the rest
   igd_ta <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='TA']", ns)
   expect_equal(xml2::xml_attr(igd_ta, "Domain"), "TA")
