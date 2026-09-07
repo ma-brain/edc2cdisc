@@ -34,15 +34,12 @@ test_that("the document carries the 2.0 submission contract", {
   expect_equal(xml2::xml_attr(mdv, "def:StandardVersion", ns = ns), "3.1.2")
   expect_equal(xml2::xml_attr(mdv, "def:DefineVersion", ns = ns), "2.0.0")
   # every dataset is classed, and the class is the SDTM class
-  classes <- xml2::xml_attr(xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns),
-                            "def:Class", ns = ns)
+  igds <- xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns)
+  igd_names <- xml2::xml_attr(igds, "Name")
+  classes <- xml2::xml_attr(igds, "def:Class", ns = ns)
   expect_true(all(!is.na(classes)))
-  expect_equal(unique(classes[xml2::xml_attr(
-    xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns), "Name") == "AE"]),
-    "EVENTS")
-  expect_equal(unique(classes[xml2::xml_attr(
-    xml2::xml_find_all(doc, "//d1:ItemGroupDef", ns), "Name") == "VS"]),
-    "FINDINGS")
+  expect_equal(unique(classes[igd_names == "AE"]), "EVENTS")
+  expect_equal(unique(classes[igd_names == "VS"]), "FINDINGS")
   # -DTC columns collect a time part where the data carries one and are
   # dates otherwise; VSSTRESN is a float with observed SignificantDigits
   dtc <- xml2::xml_find_first(doc, "//d1:ItemDef[@Name='VSDTC']", ns)
@@ -55,10 +52,18 @@ test_that("the document carries the 2.0 submission contract", {
   expect_true(!is.na(xml2::xml_attr(vsn, "SignificantDigits")))
   # the value list hangs off the parameter variable's ItemDef - that is
   # where the 2.0 schema puts it, not on the ItemGroupDef's ItemRef
-  expect_equal(length(xml2::xml_find_all(
-    doc, "//d1:ItemDef[@OID='IT.VS.VSSTRESN']/def:ValueListRef", ns)), 1)
-  expect_equal(length(xml2::xml_find_all(
-    doc, "//d1:ItemRef[@ItemOID='IT.VS.VSSTRESN']/def:ValueListRef", ns)), 0)
+  vlr <- "//d1:ItemDef[@OID='IT.VS.VSSTRESN']/def:ValueListRef"
+  expect_equal(length(xml2::xml_find_all(doc, vlr, ns)), 1)
+  expect_equal(length(xml2::xml_find_all(doc, gsub("ItemDef", "ItemRef", vlr),
+                                         ns)), 0)
+  # derived variables carry MethodOIDs that the emitted MethodDefs resolve,
+  # and the SUPP family shares one CommentDef explaining the linkage
+  expect_true(length(xml2::xml_find_all(doc, "//d1:MethodDef", ns)) > 20)
+  lb_ref <- xml2::xml_find_first(doc, "//d1:ItemRef[@ItemOID='IT.LB.LBNRIND']", ns)
+  expect_equal(xml2::xml_attr(lb_ref, "MethodOID"), "MT.LB.LBNRIND")
+  expect_equal(length(xml2::xml_find_all(doc, "//def:CommentDef", ns)), 3)
+  suppdm <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='SUPPDM']", ns)
+  expect_equal(xml2::xml_attr(suppdm, "def:CommentOID", ns = ns), "COM.SP")
   # the archive leaf follows the ItemRefs inside its ItemGroupDef
   igd_vs <- xml2::xml_find_first(doc, "//d1:ItemGroupDef[@Name='VS']", ns)
   kids <- xml2::xml_name(xml2::xml_children(igd_vs))

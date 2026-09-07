@@ -36,8 +36,9 @@ reference outputs without any network access.
 - **Validates** both layers with checks that catch the mistakes this kind of
   project makes — recomputing derivations instead of trusting the build:
   `validate_sdtm()`, `validate_adam()`, `stop_on_error()`.
-- **Writes** RDS + SAS v5 XPT and a define.xml stub with value-level
-  metadata: `write_sdtm()`, `build_define_xml()`.
+- **Writes** RDS + SAS v5 XPT and a Define-XML 2.0 define.xml - schema-validated
+  in the test suite, with origins, methods, codelists and value-level metadata:
+  `write_sdtm()`, `build_define_xml()`.
 - **Orchestrates** all of the above in one call — the run order lives here,
   not in script file names: `build_all()`.
 

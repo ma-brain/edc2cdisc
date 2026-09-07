@@ -326,6 +326,43 @@ build_define_xml <- function(domains, spec, path) {
     }
   }
 
+  # Derived-origin variables get a MethodDef whose description comes from
+  # the spec's derivation registry where it can, else from the family rule;
+  # the ItemRefs carry the MethodOID. Dataset families whose shape invites
+  # reviewer questions get one shared CommentDef each.
+  method_desc_families <- c(
+    DY    = "Study day derived from the collected date and the reference start date",
+    SEQ   = "Record sequence number, assigned by the build",
+    NRIND = "Reference range indicator derived from the result against the collected reference ranges",
+    BLFL  = "Baseline flag: the last result on or before first dose per subject and test"
+  )
+  method_info <- function(var, domain) {
+    if (var_origin(var, domain) != "Derived") return(NULL)
+    spec_hit <- spec$variables$ref[spec$variables$domain == domain &
+                                     spec$variables$variable == var]
+    desc <- if (length(spec_hit) == 1 && !is.na(spec_hit)) {
+      str_c("Derived by the edc2cdisc '", spec_hit, "' derivation")
+    } else {
+      fam <- method_desc_families[str_ends(var, names(method_desc_families))]
+      if (length(fam) > 0) unname(fam[[1]]) else "Derived by the edc2cdisc build"
+    }
+    list(oid = str_c("MT.", domain, ".", var), desc = desc)
+  }
+  comment_keys <- c(RELREC = "RR", TA = "TD", TE = "TD",
+                    TI = "TD", TV = "TD", TS = "TD")
+  comment_of_domain <- function(d) {
+    if (startsWith(d, "SUPP")) return("SP")
+    unname(comment_keys[d])
+  }
+  comment_texts <- c(
+    SP = paste("One SUPP-- row per selected parent record: QVAL carries the",
+               "collected detail and IDVAR/IDVARVAL point back at the parent"),
+    RR = "Related records are linked through the shared RELID; record-level links carry a blank RELTYPE",
+    TD = "Derived entirely from the study specification - no collected CRF data"
+  )
+
+  needed_comments <- character()
+
   # ---- ItemGroupDefs: Description, ItemRefs, then the archive leaf -------
   for (d in names(domains)) {
     df  <- domains[[d]]
@@ -352,10 +389,17 @@ build_define_xml <- function(domains, spec, path) {
       if (var %in% keys) {
         xml2::xml_set_attr(ref, "KeySequence", as.character(which(keys == var)))
       }
+      mi <- method_info(var, d)
+      if (!is.null(mi)) xml2::xml_set_attr(ref, "MethodOID", mi$oid)
     }
     leaf <- xml2::xml_add_child(igd, "def:leaf", ID = str_c("LF.", d),
                                 `xlink:href` = str_c("xpt/", low, ".xpt"))
     xml2::xml_add_child(leaf, "def:title", str_c(low, ".xpt"))
+    ckey <- comment_of_domain(d)
+    if (!is.na(ckey)) {
+      xml2::xml_set_attr(igd, "def:CommentOID", str_c("COM.", ckey))
+      needed_comments <- union(needed_comments, ckey)
+    }
   }
 
   # ---- ItemDefs: the per-domain variables, then the value-level ones -----
@@ -369,8 +413,8 @@ build_define_xml <- function(domains, spec, path) {
       x   <- df[[var]]
       oid <- str_c("IT.", d, ".", var)
       attrs <- item_type_attrs(var, x)
-      it <- rlang::exec(xml2::xml_add_child, mdv, "ItemDef",
-                  OID = oid, Name = var, SASFieldName = var, !!!attrs)
+      it <- rlang::exec(xml2::xml_add_child, mdv, "ItemDef", OID = oid,
+                        Name = var, SASFieldName = var, !!!attrs)
       lbl <- var_label(df)[[var]]
       add_text(it, "Description", if (is.null(lbl)) var else lbl)
       if (var %in% names(codelist_values)) {
@@ -391,8 +435,8 @@ build_define_xml <- function(domains, spec, path) {
     for (i in seq_along(f$codes)) {
       code <- f$codes[[i]]
       it <- rlang::exec(xml2::xml_add_child, mdv, "ItemDef",
-                  OID = str_c("IT.", d, ".", f$var, ".", code),
-                  Name = f$var, SASFieldName = f$var, !!!attrs)
+                        OID = str_c("IT.", d, ".", f$var, ".", code),
+                        Name = f$var, SASFieldName = f$var, !!!attrs)
       add_text(it, "Description", vlm_description(f, code))
       xml2::xml_add_child(it, "def:Origin", Type = "CRF")
     }
@@ -407,6 +451,22 @@ build_define_xml <- function(domains, spec, path) {
                           CodedValue = codelist_values[[v]][i],
                           OrderNumber = as.character(i))
     }
+  }
+
+  # ---- MethodDefs, then the CommentDefs the ItemGroupDefs reference ------
+  for (d in names(domains)) {
+    for (var in names(domains[[d]])) {
+      mi <- method_info(var, d)
+      if (is.null(mi)) next
+      mdef <- xml2::xml_add_child(mdv, "MethodDef", OID = mi$oid,
+                                  Name = str_c(d, ".", var), Type = "Computation")
+      add_text(mdef, "Description", mi$desc)
+    }
+  }
+  for (key in c("SP", "RR", "TD")) {
+    if (!key %in% needed_comments) next
+    cdef <- xml2::xml_add_child(mdv, "def:CommentDef", OID = str_c("COM.", key))
+    add_text(cdef, "Description", unname(comment_texts[[key]]))
   }
 
   xml2::write_xml(doc, path)

@@ -1,3 +1,18 @@
+# edc2cdisc 0.6.0
+
+## Added
+
+* `build_define_xml()` now emits a Define-XML 2.0.0 document validated in
+  the test suite against the canonical CDISC 2.0 schema (vendored under
+  `inst/schema/`, validation fully offline). The define carries the
+  submission contract the schema asks for: `def:StandardName`/
+  `def:StandardVersion` on the MetaDataVersion, `def:Class` per dataset
+  from the SDTM class table, real datatypes (`-DTC` as datetime only
+  where the values carry a time part, `date` otherwise; float lengths
+  with observed `SignificantDigits`), value lists on the parameter
+  variables' ItemDefs, MethodDefs for every derived variable, CommentDefs
+  for the SUPP/RELREC/trial-design families, and the archive leaves.
+
 # edc2cdisc 0.5.1
 
 ## Fixed
