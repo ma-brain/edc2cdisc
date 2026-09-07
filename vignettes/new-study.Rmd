@@ -40,7 +40,11 @@ Each table carries one kind of configuration: `study` (constants),
 `supp` (SUPP-- qualifiers), `units` (LB conventional-to-SI factors),
 `forms` (event vs log typing), `tests` (per-test pivot specs for VS/LB/QS/PE/EG)
 and `variables` (one row per SDTM variable per domain: source CRF field,
-transform, derivation reference).
+transform, derivation reference). Six further tables are optional and
+appear only where the study needs them: the trial design quartet
+(`elements`, `ta`, `ie`, `ts` — covered below), `bds` (the analysis
+parameters the BDS datasets build — also below) and `totals` (derived
+analysis parameters, such as a questionnaire total).
 
 ## Trial design (TA, TE, TI, TV, TS)
 
@@ -139,6 +143,25 @@ spec5$bds <- rbind(
 ```
 
 ## Building with your spec
+
+A derived analysis parameter — a total computed from other analysis
+parameters rather than collected anywhere — is a `spec$totals` row: code,
+name, order, declared reference range and the semicolon-delimited
+`src_items` to sum. The shipped MOOD SCALE total is one such row:
+
+```{r, eval = FALSE}
+spec5$totals <- rbind(
+  spec5$totals,
+  tibble::tribble(
+    ~domain, ~paramcd, ~param,             ~paramn, ~anrlo, ~anrhi, ~src_items,
+    "ADQS",  "MOSTOT", "MOOD SCALE Total", 5,       4,      12,     "MOS01;MOS02;MOS03;MOS04"
+  )
+)
+```
+
+The total is emitted only where every source item carries a value — the
+all-required rule, no proration — and `validate_adam()` recomputes each
+total from the SDTM QS items rather than trusting the build.
 
 Any spec variant runs through the same pipeline:
 

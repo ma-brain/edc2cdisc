@@ -86,7 +86,7 @@
 
 # edc2cdisc 0.3.1
 
-Closes REVIEW-2026-09-05.
+Closes out the 2026-09-05 code review.
 
 ## Fixed
 
@@ -118,7 +118,7 @@ Closes REVIEW-2026-09-05.
 
 # edc2cdisc 0.3.0
 
-Closes out the first code review (REVIEW-2026-09-03): all fifteen findings
+Closes out the first code review (2026-09-03): all fifteen findings
 actioned. Every fix carries a hand-built edge-case test, because the seeded
 generator cannot produce any of these inputs. Findings 1-10 are the Fixed
 list below, 11-13 are the Breaking list, and 14 plus the two derivation
