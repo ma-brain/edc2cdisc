@@ -2,7 +2,7 @@
 % Please edit documentation in R/define-xml.R
 \name{build_define_xml}
 \alias{build_define_xml}
-\title{Build a define.xml stub for the mapped SDTM domains}
+\title{Build a define.xml (Define-XML 2.0) for the mapped SDTM domains}
 \usage{
 build_define_xml(domains, spec, path)
 }
@@ -17,5 +17,5 @@ build_define_xml(domains, spec, path)
 \code{path}, invisibly.
 }
 \description{
-Build a define.xml stub for the mapped SDTM domains
+Build a define.xml (Define-XML 2.0) for the mapped SDTM domains
 }
