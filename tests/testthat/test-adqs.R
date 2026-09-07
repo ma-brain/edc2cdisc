@@ -309,7 +309,17 @@ test_that("hand-built input: partial and NA-item visits produce no total", {
     "S",      "S2",     "MOS01",  "Mood: Cheerful",  NA,      NA,      1,         "SCREENING", "2024-01-05", 0,         NA,
     "S",      "S2",     "MOS02",  "Mood: Down",      NA,      NA,      1,         "SCREENING", "2024-01-05", 1,         NA,
     "S",      "S2",     "MOS03",  "Sleep Quality",   NA,      NA,      1,         "SCREENING", "2024-01-05", 0,         NA,
-    "S",      "S2",     "MOS04",  "Energy Level",    NA,      NA,      1,         "SCREENING", "2024-01-05", 1,         NA
+    "S",      "S2",     "MOS04",  "Energy Level",    NA,      NA,      1,         "SCREENING", "2024-01-05", 1,         NA,
+    # S3: the all-zero form - the total sums to 0 and is a real total, the
+    # zero-base case the shared PCHG rule leaves unguarded on purpose
+    "S",      "S3",     "MOS01",  "Mood: Cheerful",  NA,      "Y",     2,         "BASELINE",  "2024-01-10", 0,         NA,
+    "S",      "S3",     "MOS02",  "Mood: Down",      NA,      "Y",     2,         "BASELINE",  "2024-01-10", 0,         NA,
+    "S",      "S3",     "MOS03",  "Sleep Quality",   NA,      "Y",     2,         "BASELINE",  "2024-01-10", 0,         NA,
+    "S",      "S3",     "MOS04",  "Energy Level",    NA,      "Y",     2,         "BASELINE",  "2024-01-10", 0,         NA,
+    "S",      "S3",     "MOS01",  "Mood: Cheerful",  NA,      NA,      3,         "WEEK 2",    "2024-01-24", 0,         NA,
+    "S",      "S3",     "MOS02",  "Mood: Down",      NA,      NA,      3,         "WEEK 2",    "2024-01-24", 0,         NA,
+    "S",      "S3",     "MOS03",  "Sleep Quality",   NA,      NA,      3,         "WEEK 2",    "2024-01-24", 0,         NA,
+    "S",      "S3",     "MOS04",  "Energy Level",    NA,      NA,      3,         "WEEK 2",    "2024-01-24", 0,         NA
   )
   adsl_hand <- tribble(
     ~STUDYID, ~USUBJID, ~TRTSDT,
@@ -320,9 +330,10 @@ test_that("hand-built input: partial and NA-item visits produce no total", {
 
   totals <- adqs |> filter(PARAMCD == "MOSTOT")
   # totals only where all four items carry a value: visits 2 and 3 for S1,
-  # the screening visit for S2 - never the 3-item or NA-item visit
+  # the screening visit for S2, both S3 visits - never the 3-item or
+  # NA-item visit
   expect_setequal(paste(totals$USUBJID, totals$AVISITN),
-                  c("S1 2", "S1 3", "S2 1"))
+                  c("S1 2", "S1 3", "S2 1", "S3 2", "S3 3"))
   # S1 baseline total 2 (1+0+1+0): below the declared 4 - LOW, no change
   bl <- totals |> filter(USUBJID == "S1", AVISITN == 2)
   expect_equal(as.vector(bl$AVAL), 2)
@@ -342,4 +353,22 @@ test_that("hand-built input: partial and NA-item visits produce no total", {
   expect_true(all(is.na(s2$BASE) & is.na(s2$CHG) & is.na(s2$PCHG)))
   expect_equal(as.vector(s2$ANRIND), "LOW")
   expect_true(is.na(s2$ADY))
+
+  # S3: an all-zero total is emitted like any other - flagged at its visit
+  # and classified LOW (0 < the declared 4) - and its zero baseline makes
+  # PCHG NaN by the shared rule's deliberate no-guard, the dataset-level
+  # face of the .rule_pchg comment's contract (test-adam-rules.R pins the
+  # rule itself)
+  s3 <- totals |> filter(USUBJID == "S3")
+  expect_setequal(s3$AVISITN, c(2, 3))
+  expect_true(all(s3$AVAL == 0))
+  expect_equal(as.vector(s3$ANRIND), c("LOW", "LOW"))
+  expect_equal(as.vector(s3$ABLFL[s3$AVISITN == 2]), "Y")
+  expect_equal(as.vector(s3$BASE[s3$AVISITN == 3]), 0)
+  expect_equal(as.vector(s3$CHG[s3$AVISITN == 3]), 0)
+  expect_true(is.nan(s3$PCHG[s3$AVISITN == 3]))
+  # the same zero-base NaN through the shared rules on the items
+  item_w2 <- adqs |> filter(USUBJID == "S3", AVISITN == 3, PARAMCD == "MOS01")
+  expect_equal(as.vector(item_w2$CHG), 0)
+  expect_true(is.nan(item_w2$PCHG))
 })

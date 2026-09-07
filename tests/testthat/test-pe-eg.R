@@ -104,12 +104,9 @@ test_that("the seeded abnormal PE finding is CV ABNORMAL with PECLSIG Y, exactly
 })
 
 test_that("SUPPPE carries exactly the seeded abnormality detail, linked to its PE record", {
-  out <- file.path(tempdir(), "pe-eg-supppe")
-  on.exit(unlink(out, recursive = TRUE, force = TRUE), add = TRUE)
-  ext <- file.path(out, "rave")
-  suppressMessages(generate_rave_extract(out = ext))
-
-  built <- suppressMessages(build_all(ext))
+  # the shared session-cached build - this test rebuilt the whole pipeline
+  # itself and was the suite's dominant remaining one-off cost
+  built <- built_suite()
   supppe <- built$sdtm$SUPPPE
   parent <- built$sdtm$PE |> filter(PECLSIG == "Y")
 

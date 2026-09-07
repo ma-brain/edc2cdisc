@@ -1146,7 +1146,10 @@ validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs,
   # The recompute-don't-trust centrepiece: the total is derived, so the
   # validator derives it too - the same spec$totals rows, the same
   # performed-items frame and the same all-required rule the builder
-  # applies, straight off the SDTM QS the build started from
+  # applies, straight off the SDTM QS the build started from. The nrow
+  # guard is load-bearing, not redundant: a totals-less spec makes pmap
+  # return an empty list whose bind_rows() carries no join columns, and
+  # the joins below would error on a spec that declares no totals at all.
   if (nrow(tot_spec) > 0) {
     expected_totals <- pmap(tot_spec, \(domain, paramcd, param, paramn, anrlo, anrhi, src_items) {
       items <- str_split_1(src_items, ";")

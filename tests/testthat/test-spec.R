@@ -393,6 +393,19 @@ test_that("totals constructor checks fire at construction", {
                                        anrlo = 4, anrhi = 12,
                                        src_items = "MOS01;MOS99")),
                "not a bds paramcd")
+  # the split paths the happy path never produces: an NA src_items and a
+  # trailing semicolon each split to a non-member, named as such - ADQS/NA
+  # and the empty string - at construction, not halfway through a build
+  expect_error(td_spec(totals = tibble(domain = "ADQS", paramcd = "MOSTOT",
+                                       param = "t", paramn = 5,
+                                       anrlo = 4, anrhi = 12,
+                                       src_items = NA_character_)),
+               "src_item not a bds paramcd of the domain: ADQS/NA")
+  expect_error(td_spec(totals = tibble(domain = "ADQS", paramcd = "MOSTOT",
+                                       param = "t", paramn = 5,
+                                       anrlo = 4, anrhi = 12,
+                                       src_items = "MOS01;MOS02;MOS03;MOS04;")),
+               "src_item not a bds paramcd of the domain: ADQS/$")
   # duplicated (domain, paramcd)
   expect_error(td_spec(totals = tibble(domain = c("ADQS", "ADQS"),
                                        paramcd = c("MOSTOT", "MOSTOT"),
