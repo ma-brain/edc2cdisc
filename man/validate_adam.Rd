@@ -26,7 +26,7 @@ validate_adam(
 )
 }
 \arguments{
-\item{adsl, adae, adcm, advs, adeg, adlb, adqs}{The mapped ADaM datasets}
+\item{adsl, adae, adcm, advs, adeg, adlb, adqs, adtte}{The mapped ADaM datasets}
 
 \item{dm, ds, ae, cm, vs, qs, eg, lb, suppae}{The SDTM source datasets the ADaM layer
 was built from}

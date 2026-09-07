@@ -33,7 +33,7 @@
 #' missing from `spec$bds`, which the builder silently drops, trips
 #' `adqs-item-not-in-spec`.
 #'
-#' @param adsl,adae,adcm,advs,adeg,adlb,adqs The mapped ADaM datasets
+#' @param adsl,adae,adcm,advs,adeg,adlb,adqs,adtte The mapped ADaM datasets
 #' @param dm,ds,ae,cm,vs,qs,eg,lb,suppae The SDTM source datasets the ADaM layer
 #'   was built from
 #' @param spec A `study_spec`; the ADVS rows of `spec$bds` declare the
