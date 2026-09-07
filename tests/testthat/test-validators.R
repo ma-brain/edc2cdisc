@@ -229,10 +229,13 @@ test_that("an ADEG value moved outside its range cannot stay NORMAL", {
 
 # ADQS: the derived total is recomputed from SDTM QS, never trusted ------
 
-test_that("a MOSTOT AVAL that is not the sum of its QS items is flagged", {
+test_that("a MOSTOT AVAL that is not the sum of its QS items is flagged, alone", {
   built <- build_fixtures()$built
   adqs <- built$adam$ADQS
-  i <- which(adqs$PARAMCD == "MOSTOT")[1]
+  # fabricate on a screen-failure total row: no BASE, so the CHG recompute
+  # has nothing to co-fire on and the fabrication is owned by the total
+  # recompute and nothing else
+  i <- which(adqs$PARAMCD == "MOSTOT" & is.na(adqs$BASE))[1]
   adqs$AVAL[i] <- adqs$AVAL[i] + 1    # the total no longer sums its items
 
   issues <- validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
@@ -241,7 +244,34 @@ test_that("a MOSTOT AVAL that is not the sum of its QS items is flagged", {
                           built$sdtm$CM, built$sdtm$VS, built$sdtm$QS,
                           built$sdtm$EG, built$sdtm$LB, built$sdtm$SUPPAE,
                           spec_synth01)
-  expect_true("adqs-total-wrong" %in% issues$check)
+  expect_setequal(issues$check, "adqs-total-wrong")
+})
+
+test_that("a duplicated SDTM baseline flag fans the join out and is caught", {
+  # the CRF never flags two baselines, but a hand-edited QS can: the
+  # item_base join fans every flagged item's rows out and the total inherits
+  # a second anchor. The builder does not defend against it (that would be
+  # a cross-dataset redesign); the validator owns it - five checks trip.
+  built <- build_fixtures()$built
+  qs2 <- built$sdtm$QS
+  hit <- qs2$USUBJID == "3021-102-014" & qs2$QSTESTCD == "MOS01" &
+    qs2$VISITNUM == 3
+  qs2$QSBLFL[hit] <- "Y"
+  # dplyr announces the fan-out as many-to-many warnings at the baseline
+  # joins - the announcement IS the corruption, so it is silenced here and
+  # the row count and the fired checks below are the loud part
+  adqs <- suppressWarnings(derive_adqs(qs2, built$adam$ADSL, spec_synth01))
+  expect_equal(nrow(adqs), 662)       # probed: 650 clean rows fan out by 12
+
+  issues <- suppressWarnings(validate_adam(built$adam$ADSL, built$adam$ADAE, built$adam$ADCM,
+                                           built$adam$ADVS, built$adam$ADEG, built$adam$ADLB,
+                                           adqs, built$sdtm$DM, built$sdtm$DS, built$sdtm$AE,
+                                           built$sdtm$CM, built$sdtm$VS, built$sdtm$QS,
+                                           built$sdtm$EG, built$sdtm$LB, built$sdtm$SUPPAE,
+                                           spec_synth01))
+  expect_setequal(unique(issues$check),
+                  c("adqs-key-not-unique", "adqs-coverage", "adqs-ablfl-multi",
+                    "adqs-ablfl-not-from-qs", "adqs-base-wrong"))
 })
 
 test_that("total coverage is checked in both directions", {
@@ -418,6 +448,25 @@ test_that("dropping a required column fires required-vars", {
   issues <- validate_sdtm(domains, spec_synth01)
   expect_true("required-vars" %in% issues$check[issues$domain == "VS"])
 })
+
+test_that("a DM without ARMCD defers the screen-failure sweep to required-vars", {
+  # the sweep reads DM's ARMCD to find the screen-failure subjects - a
+  # hand-crafted DM without it must report required-vars, not crash
+  domains <- build_fixtures()$built$sdtm
+  domains$DM$ARMCD <- NULL
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_false("screenfail-has-study-day" %in% issues$check)
+  expect_true("required-vars" %in% issues$check[issues$domain == "DM"])
+})
+
+test_that("the screen-failure sweep skips a domain the caller did not supply", {
+  domains <- build_fixtures()$built$sdtm
+  domains$EG <- NULL
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_false("screenfail-has-study-day" %in% issues$check)
+  expect_false(any(issues$domain == "EG"))
+})
+
 
 test_that("a dropped dataset row breaks referential integrity loudly", {
   built <- build_fixtures()$built

@@ -318,10 +318,18 @@ validate_sdtm <- function(domains, spec = NULL) {
     }
   }
 
-  # Screen failures must have no study days anywhere (no RFSTDTC)
-  sf_ids <- domains$DM |> filter(ARMCD == "SCRNFAIL") |> pull(USUBJID)
+  # Screen failures must have no study days anywhere (no RFSTDTC). The
+  # sweep only runs once its inputs are there: required-vars owns a missing
+  # DM column, and a domain the caller did not supply is skipped - a NULL
+  # member here must not crash validation (the ta-etcd / SV gating class).
+  sf_ids <- character()
+  if (!is.null(domains$DM) &&
+        all(c("USUBJID", "ARMCD") %in% names(domains$DM))) {
+    sf_ids <- domains$DM |> filter(ARMCD == "SCRNFAIL") |> pull(USUBJID)
+  }
   for (d in c("VS", "AE", "CM", "DS", "SV", "LB", "MH", "QS", "PE", "EG")) {
     df <- domains[[d]]
+    if (is.null(df) || !"USUBJID" %in% names(df)) next
     # VISITDY is a protocol-planned day, not anchored to RFSTDTC - exclude it.
     dy_vars <- setdiff(names(df)[str_ends(names(df), "DY")], "VISITDY")
     leaked <- df |>
