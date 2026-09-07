@@ -11,5 +11,7 @@
 ^tests/update_reference\.R$
 ^REVIEW-.*\.md$
 ^docs$
+^doc$
+^Meta$
 ^\.worktrees$
 ^\.superpowers$
