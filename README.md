@@ -30,9 +30,9 @@ reference outputs without any network access.
   TI, TV, TS) through a study spec: `map_dm()`, `map_ex()`, … ,
   `map_relrec()`, plus the trial design and findings builders (`map_ta()` …
   `map_ts()`, `map_qs()`, `map_pe()`, `map_eg()`).
-- **Derives** the seven ADaM datasets: `derive_adsl()`, `derive_adae()`,
+- **Derives** the eight ADaM datasets: `derive_adsl()`, `derive_adae()`,
   `derive_adcm()`, `derive_adeg()`, `derive_advs()`, `derive_adlb()`,
-  `derive_adqs()`.
+  `derive_adqs()`, `derive_adtte()`.
 - **Validates** both layers with checks that catch the mistakes this kind of
   project makes — recomputing derivations instead of trusting the build:
   `validate_sdtm()`, `validate_adam()`, `stop_on_error()`.
@@ -71,7 +71,7 @@ built <- build_all(tempdir())
 
 built$sdtm$DM      # 26 SDTM domains, validated
 built$adam$ADSL    # ADSL / ADAE / ADCM / ADEG / ADVS / ADLB / ADQS —
-                   # 7 ADaM datasets, validated
+                   # 8 ADaM datasets, validated
 
 # or step by step, mapping only what you need
 forms <- read_rave_extract(dir = tempdir())

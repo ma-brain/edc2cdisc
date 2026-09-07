@@ -1,3 +1,19 @@
+# edc2cdisc 0.7.0
+
+## Added
+
+* ADTTE, the time-to-event analysis dataset: one record per subject per
+  parameter for Overall Survival and Time to First Treatment-Emergent
+  Adverse Event. OS anchors on death (the fact ADSL carries three ways),
+  TTAE on the first TE AE in ADAE (earliest `ASTDT`, ties to the lowest
+  `ASEQ`, traced back through SRCDOM/SRCVAR/SRCSEQ); everything treated
+  and unevented is censored at the last known alive date, and unanchored
+  screen-failure records carry no dates rather than invented ones. `AVAL`
+  runs through the shared day rule. `validate_adam()` gains the ADTTE
+  contract (coverage against ADSL, the AVAL recompute, the OS-vs-ADSL
+  death read-back, the TTAE-vs-ADAE first-event check in both directions)
+  and now takes `adtte` explicitly. `build_all()` returns 8 ADaM datasets.
+
 # edc2cdisc 0.6.0
 
 ## Added

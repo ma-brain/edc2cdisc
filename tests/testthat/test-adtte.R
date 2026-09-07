@@ -48,9 +48,9 @@ test_that("OS: the deaths are events, everyone else is censored alive", {
   # censored: the treated survivors carry the last known alive date
   censored <- os |> filter(!is.na(CNSDTDSC))
   expect_equal(nrow(censored), 20) # 22 treated - 2 deaths
-  expect_true(all(censored$EVNTDESC %in% NA))
-  expect_true(all(censored$ADT == f$adsl$EOSDT[match(
-    censored$USUBJID, f$adsl$USUBJID)]))
+  expect_true(all(is.na(censored$EVNTDESC)))
+  expect_true(all(censored$ADT ==
+                    f$adsl$EOSDT[match(censored$USUBJID, f$adsl$USUBJID)]))
   c1 <- censored |> filter(USUBJID == "3021-102-014")
   expect_equal(as.vector(c1$CNSDTDSC), "Last known alive date")
   expect_equal(as.vector(c1$SRCVAR), "EOSDT")
@@ -79,7 +79,7 @@ test_that("TTAE: first treatment-emergent AE or censoring, with traceability", {
   # treated subjects without a TE AE are censored at the same alive date
   no_ae <- ttae |> filter(!is.na(CNSDTDSC))
   expect_equal(nrow(no_ae), 22 - nrow(first_ae)) # treated minus events
-  expect_true(all(no_ae$EVNTDESC %in% NA))
+  expect_true(all(is.na(no_ae$EVNTDESC)))
 })
 
 test_that("screen failures carry records without anchors, not zeros", {

@@ -12,6 +12,7 @@ validate_adam(
   adeg,
   adlb,
   adqs,
+  adtte,
   dm,
   ds,
   ae,

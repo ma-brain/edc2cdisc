@@ -65,7 +65,7 @@
 #'                         built$sdtm$EG, built$sdtm$LB, built$sdtm$SUPPAE,
 #'                         spec_synth01)
 #' issues                                  # empty: the build is clean
-validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs,
+validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs, adtte,
                           dm, ds, ae, cm, vs, qs, eg, lb, suppae,
                           spec = spec_synth01) {
   issues <- list()
@@ -1193,6 +1193,104 @@ validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs,
                         "set of QS items disagree about existing"),
                   nrow(lost_tot) + nrow(extra_tot)))
     }
+  }
+
+  # ADTTE: structure -------------------------------------------------------------
+  .req_adtte <- c(
+    "STUDYID", "USUBJID", "PARAMCD", "PARAM", "PARAMN", "AVAL", "AVALU",
+    "STARTDT", "ADT", "EVNTDESC", "CNSDTDSC", "SRCDOM", "SRCVAR", "SRCSEQ"
+  )
+  miss <- setdiff(.req_adtte, names(adtte))
+  if (length(miss) > 0) {
+    add("ADTTE", "ERROR", "adtte-required-vars", str_flatten_comma(miss))
+  }
+  adtte_dup <- adtte |>
+    count(USUBJID, PARAMCD, name = ".n") |>
+    filter(.n > 1)
+  if (nrow(adtte_dup) > 0) {
+    add("ADTTE", "ERROR", "adtte-key-not-unique",
+        sprintf("%d duplicated USUBJID/PARAMCD key(s)", nrow(adtte_dup)))
+  }
+  bad_param <- setdiff(unique(adtte$PARAMCD), c("OS", "TTAE"))
+  if (length(bad_param) > 0) {
+    add("ADTTE", "ERROR", "adtte-param-unexpected",
+        str_flatten_comma(bad_param))
+  }
+
+  # Coverage: exactly one record per ADSL subject per parameter - a
+  # subject the TTE drops is a safety population that vanished
+  expect_pairs <- merge(adsl["USUBJID"], data.frame(PARAMCD = c("OS", "TTAE")))
+  missing_pairs <- anti_join(expect_pairs, adtte,
+                             by = c("USUBJID", "PARAMCD"))
+  if (nrow(missing_pairs) > 0) {
+    add("ADTTE", "ERROR", "adtte-coverage",
+        sprintf("%d subject/parameter pair(s) missing", nrow(missing_pairs)))
+  }
+
+  # AVAL recomputes through the shared day rule; the traceability pair
+  # (SRCDOM/SRCVAR) must be present wherever a date is
+  bad_aval <- adtte |>
+    mutate(.expect = derive_dy_d(ADT, STARTDT)) |>
+    filter(xor(is.na(AVAL), is.na(.expect)) |
+             (!is.na(AVAL) & !is.na(.expect) & AVAL != .expect))
+  if (nrow(bad_aval) > 0) {
+    add("ADTTE", "ERROR", "adtte-aval-wrong",
+        "AVAL disagrees with ADT vs STARTDT through the shared day rule")
+  }
+  bad_trace <- adtte |> filter(!is.na(ADT) & (is.na(SRCDOM) | is.na(SRCVAR)))
+  if (nrow(bad_trace) > 0) {
+    add("ADTTE", "ERROR", "adtte-source-missing",
+        sprintf("%d dated row(s) without SRCDOM/SRCVAR", nrow(bad_trace)))
+  }
+
+  # OS is the ADSL death story read back: the deaths are events dated at
+  # DTHDT, everyone treated and alive is censored at EOSDT
+  os <- adtte |> filter(PARAMCD == "OS")
+  os_bad_death <- os |>
+    left_join(select(adsl, USUBJID, .dthdt = DTHDT, .dthfl = DTHFL,
+                     .eosdt = EOSDT, .trtsdt = TRTSDT), by = "USUBJID") |>
+    filter((.dthfl %in% "Y") != (EVNTDESC %in% "Death") |
+             (EVNTDESC %in% "Death" & !is.na(ADT) & ADT != .dthdt) |
+             (!EVNTDESC %in% "Death" & !is.na(ADT) & ADT != .eosdt))
+  if (nrow(os_bad_death) > 0) {
+    add("ADTTE", "ERROR", "adtte-os-not-from-adsl",
+        "OS dates/events disagree with ADSL DTHFL/DTHDT/EOSDT")
+  }
+
+  # TTAE is the first treatment-emergent AE recomputed from ADAE, both
+  # directions: an event row must match it, a censored row must have none
+  ttae <- adtte |> filter(PARAMCD == "TTAE")
+  first_ae <- adae |>
+    filter(TRTEMFL %in% "Y") |>
+    arrange(USUBJID, ASTDT, ASEQ) |>
+    distinct(USUBJID, .keep_all = TRUE) |>
+    select(USUBJID, .fae_adt = ASTDT, .fae_seq = ASEQ)
+  ttae_chk <- ttae |>
+    left_join(first_ae, by = "USUBJID") |>
+    mutate(.is_event = EVNTDESC %in% "First treatment-emergent adverse event")
+  ttae_bad_event <- ttae_chk |>
+    filter(.is_event & (is.na(.fae_adt) |
+                          (!is.na(ADT) & ADT != .fae_adt) |
+                          (!is.na(SRCSEQ) & SRCSEQ != .fae_seq)))
+  ttae_bad_censor <- ttae_chk |>
+    filter(!.is_event & !is.na(.fae_adt))
+  if (nrow(ttae_bad_event) + nrow(ttae_bad_censor) > 0) {
+    add("ADTTE", "ERROR", "adtte-ttae-not-first-te-ae",
+        "TTAE events/censoring disagree with the first TE AE in ADAE")
+  }
+
+  # event/censor description coherence: exactly one description per row,
+  # and only where a date exists
+  # unanchored screen-failure rows legitimately carry neither description;
+  # any dated row must carry exactly one, matching event vs censor
+  desc_bad <- adtte |>
+    filter((!is.na(EVNTDESC) & !is.na(CNSDTDSC)) |
+             (!is.na(EVNTDESC) & is.na(ADT)) |
+             (!is.na(CNSDTDSC) & is.na(ADT)) |
+             (is.na(EVNTDESC) & is.na(CNSDTDSC) & !is.na(ADT)))
+  if (nrow(desc_bad) > 0) {
+    add("ADTTE", "ERROR", "adtte-eventdesc-coherence",
+        "EVNTDESC/CNSDTDSC disagree with each other or with ADT")
   }
 
   report <- bind_rows(issues)
