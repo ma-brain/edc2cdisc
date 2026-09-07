@@ -80,9 +80,10 @@ test_that("the define.xml stub is well-formed and complete", {
   # value-level metadata for the four findings domains that expose a
   # --STRESN column: VS, LB, EG and QS (whose standardized results now leave
   # the mapper) - PE reports character PEORRES instead
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef", ns)), 4)
-  # ...and hooked ONTO the parent ItemRefs: a ValueListDef that no
-  # ItemRef references is metadata emitted and then orphaned
+  expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListDef", ns)), 4)
+  # ...and hooked ONTO the parameter variables' ItemDefs (the 2.0 schema
+  # location for def:ValueListRef): a ValueListDef nothing references is
+  # metadata emitted and then orphaned
   expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListRef", ns)), 4)
   # every EG value-level description carries the msec unit: map_eg() binds
   # answered rows before NOT DONE, and the VLM's first-occurrence-per-test
@@ -94,11 +95,11 @@ test_that("the define.xml stub is well-formed and complete", {
   expect_length(eg_vlm_desc, 5)
   expect_true(all(str_detect(eg_vlm_desc, "\\(msec\\)$")))
   # QS value-level metadata: VL.QS.QSSTRESN exists and hangs off the parent
-  # IT.QS.QSSTRESN ItemRef like the other findings domains
-  expect_equal(length(xml2::xml_find_all(doc, "//d1:ValueListDef[@OID='VL.QS.QSSTRESN']", ns)), 1)
+  # IT.QS.QSSTRESN ItemDef like the other findings domains
+  expect_equal(length(xml2::xml_find_all(doc, "//def:ValueListDef[@OID='VL.QS.QSSTRESN']", ns)), 1)
   qs_vlr <- xml2::xml_find_first(
     doc,
-    "//d1:ItemGroupDef[@Name='QS']/d1:ItemRef[@ItemOID='IT.QS.QSSTRESN']/def:ValueListRef",
+    "//d1:ItemDef[@OID='IT.QS.QSSTRESN']/def:ValueListRef",
     ns
   )
   expect_equal(xml2::xml_attr(qs_vlr, "ValueListOID"), "VL.QS.QSSTRESN")
@@ -127,7 +128,7 @@ test_that("XPT output round-trips", {
   expect_equal(xpt$USUBJID, built$sdtm$DM$USUBJID)
 })
 
-test_that("build_define_xml errors when the ValueList parent ItemRef is missing", {
+test_that("build_define_xml errors when a findings column is missing", {
   out <- file.path(tempdir(), "edc2cdisc-define-missing-ref")
   on.exit(unlink(out, recursive = TRUE, force = TRUE), add = TRUE)
   ext <- file.path(out, "rave")
@@ -138,6 +139,6 @@ test_that("build_define_xml errors when the ValueList parent ItemRef is missing"
   domains$VS$VSSTRESN <- NULL
   expect_error(
     build_define_xml(domains, spec_synth01, file.path(out, "define.xml")),
-    "IT.VS.VSSTRESN"
+    "VS carries no VSSTRESN column"
   )
 })
