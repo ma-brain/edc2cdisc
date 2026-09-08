@@ -276,8 +276,8 @@ validate_adam <- function(adsl, adae, adcm, advs, adeg, adlb, adqs, adtte,
 
   bad_dth3 <- adsl |>
     filter(DTHFL == "Y") |>
-    filter(EOSSTT != "DISCONTINUED" | DCSREAS != "DEATH" |
-             is.na(TRTSDT) | DTHDT < TRTSDT |
+    filter(!EOSSTT %in% "DISCONTINUED" | !DCSREAS %in% "DEATH" |
+             is.na(TRTSDT) | is.na(DTHDT) | DTHDT < TRTSDT |
              is.na(LSTALVDT) | LSTALVDT != DTHDT)
   if (nrow(bad_dth3) > 0) {
     add("ADSL", "ERROR", "dth-derivation-inconsistent",

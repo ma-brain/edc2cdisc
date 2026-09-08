@@ -24,6 +24,30 @@ test_that("a flipped SAFFL trips the SAFFL/TRTSDT coherence check", {
   expect_error(stop_on_error(issues, "meta"), "1 validation error")
 })
 
+test_that("a blanked EOSSTT or DCSREAS on a death subject is still flagged", {
+  built <- build_fixtures()$built
+  adsl <- built$adam$ADSL
+  death <- which(adsl$DTHFL == "Y")[1]
+  expect_gte(length(which(adsl$DTHFL == "Y")), 1)
+
+  adsl$EOSSTT[death] <- NA_character_
+  issues <- validate_adam(adsl, built$adam$ADAE, built$adam$ADCM, built$adam$ADVS,
+                          built$adam$ADEG, built$adam$ADLB, built$adam$ADQS, built$adam$ADTTE,
+                          built$sdtm$DM, built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                          built$sdtm$VS, built$sdtm$QS, built$sdtm$EG, built$sdtm$LB,
+                          built$sdtm$SUPPAE, spec_synth01)
+  expect_true("dth-derivation-inconsistent" %in% issues$check)
+
+  adsl2 <- built$adam$ADSL
+  adsl2$DCSREAS[death] <- NA_character_
+  issues2 <- validate_adam(adsl2, built$adam$ADAE, built$adam$ADCM, built$adam$ADVS,
+                           built$adam$ADEG, built$adam$ADLB, built$adam$ADQS, built$adam$ADTTE,
+                           built$sdtm$DM, built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                           built$sdtm$VS, built$sdtm$QS, built$sdtm$EG, built$sdtm$LB,
+                           built$sdtm$SUPPAE, spec_synth01)
+  expect_true("dth-derivation-inconsistent" %in% issues2$check)
+})
+
 test_that("a flipped TRTEMFL is recomputed and flagged", {
   built <- build_fixtures()$built
   adae <- built$adam$ADAE
