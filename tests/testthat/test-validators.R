@@ -24,7 +24,7 @@ test_that("a flipped SAFFL trips the SAFFL/TRTSDT coherence check", {
   expect_error(stop_on_error(issues, "meta"), "1 validation error")
 })
 
-test_that("a blanked EOSSTT or DCSREAS on a death subject is still flagged", {
+test_that("a blanked EOSSTT, DCSREAS or DTHDT on a death subject is still flagged", {
   built <- build_fixtures()$built
   adsl <- built$adam$ADSL
   death <- which(adsl$DTHFL == "Y")[1]
@@ -46,6 +46,15 @@ test_that("a blanked EOSSTT or DCSREAS on a death subject is still flagged", {
                            built$sdtm$VS, built$sdtm$QS, built$sdtm$EG, built$sdtm$LB,
                            built$sdtm$SUPPAE, spec_synth01)
   expect_true("dth-derivation-inconsistent" %in% issues2$check)
+
+  adsl3 <- built$adam$ADSL
+  adsl3$DTHDT[death] <- as.Date(NA)
+  issues3 <- validate_adam(adsl3, built$adam$ADAE, built$adam$ADCM, built$adam$ADVS,
+                           built$adam$ADEG, built$adam$ADLB, built$adam$ADQS, built$adam$ADTTE,
+                           built$sdtm$DM, built$sdtm$DS, built$sdtm$AE, built$sdtm$CM,
+                           built$sdtm$VS, built$sdtm$QS, built$sdtm$EG, built$sdtm$LB,
+                           built$sdtm$SUPPAE, spec_synth01)
+  expect_true("dth-derivation-inconsistent" %in% issues3$check)
 })
 
 test_that("a VISIT decode present on one side only trips visitnum-decode-mismatch", {
