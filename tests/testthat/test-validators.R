@@ -48,6 +48,15 @@ test_that("a blanked EOSSTT or DCSREAS on a death subject is still flagged", {
   expect_true("dth-derivation-inconsistent" %in% issues2$check)
 })
 
+test_that("a VISIT decode present on one side only trips visitnum-decode-mismatch", {
+  built <- build_fixtures()$built
+  domains <- built$sdtm
+  domains$VS$VISIT[3] <- NA_character_
+
+  issues <- validate_sdtm(domains, spec_synth01)
+  expect_true("visitnum-decode-mismatch" %in% issues$check)
+})
+
 test_that("a flipped TRTEMFL is recomputed and flagged", {
   built <- build_fixtures()$built
   adae <- built$adam$ADAE

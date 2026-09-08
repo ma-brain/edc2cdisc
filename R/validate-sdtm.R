@@ -288,7 +288,8 @@ validate_sdtm <- function(domains, spec = NULL) {
       clash <- df |>
         distinct(VISITNUM, VISIT) |>
         inner_join(sv_visit_map, by = "VISITNUM", suffix = c("", "_SV")) |>
-        filter(VISIT != VISIT_SV)
+        filter(xor(is.na(VISIT), is.na(VISIT_SV)) |
+                 (!is.na(VISIT) & !is.na(VISIT_SV) & VISIT != VISIT_SV))
       if (nrow(clash) > 0) {
         add(d, "ERROR", "visitnum-decode-mismatch",
             str_flatten_comma(sprintf("%s '%s' vs SV '%s'",
