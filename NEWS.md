@@ -1,3 +1,24 @@
+# edc2cdisc 0.6.7
+
+Closes out the 2026-09-08 code review.
+
+## Fixed
+
+* `validate_adam()`'s `dth-derivation-inconsistent` check is NA-safe: a
+  death subject whose EOSSTT or DCSREAS was blanked — or whose DTHDT went
+  missing — is flagged instead of silently passing an NA comparison.
+* `validate_sdtm()`'s `visitnum-decode-mismatch` check treats a VISIT
+  decode present on one side only as a mismatch; an NA against a value no
+  longer drops the row.
+* `R CMD check` is back to zero notes: the ADTTE data-masked names
+  (STARTDT, SRCDOM/SRCVAR/SRCSEQ, EVNTDESC/CNSDTDSC and their helpers)
+  are declared in globals.R.
+
+## Changed
+
+* NEWS lost the duplicated 0.6.6 heading, and the README quick-start
+  comment enumerates all eight ADaM datasets including ADTTE.
+
 # edc2cdisc 0.6.6
 
 ## Added
