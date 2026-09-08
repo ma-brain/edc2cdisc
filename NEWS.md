@@ -7,29 +7,15 @@
   spec order, each decoded to the collected value, with the NCI codelist
   alias where CDISC CT provides one (AESEV C66769, AEACN C66767, AEOUT
   C66768, AEREL C66728, SEX C66731; DSDECOD has no single codelist and
-  stays unaliased). SEX joins the curated codelist variables.
+  stays unaliased). SEX joins the curated codelist variables. Several
+  collected decodes mapping to one submission value keep the first spec
+  row, or the codelist would duplicate a CodedValue.
 
 ## Changed
 
 * Value-level ItemDefs type their own code's data: datatype, length and
   significant digits come from the per-code subset, not the parameter
   column at large.
-
-# edc2cdisc 0.6.6
-
-## Changed
-
-* The define.xml codelists backed by `spec$codelists` (AESEV, AEREL,
-  AEACN, AEOUT, DSDECOD, SEX) now emit decoded items - the observed
-  subset of the spec-declared terms, in spec order, decoded to the
-  collected values - with the NCI codelist alias where one is sourced
-  from CDISC CT (AESEV C66769, AEACN C66767, AEOUT C66768, AEREL
-  C66728, SEX C66731; DSDECOD has no single codelist and stays
-  unaliased). SEX joins the curated codelist variables, so the define
-  gains the CL.SEX codelist.
-* Value-level metadata ItemDefs type their own code's data: datatype,
-  length and significant digits come from the code's subset of the
-  parameter column, not from the column at large.
 
 # edc2cdisc 0.6.5
 

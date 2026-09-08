@@ -37,9 +37,7 @@ derive_adtte <- function(adsl, adae) {
     select(STUDYID, USUBJID, TRTSDT, EOSDT, DTHDT, DTHFL)
 
   # the first treatment-emergent AE per subject: earliest ASTDT, ties to
-  # the lowest ASEQ, so the pick is deterministic under reordering
-  # earliest ASTDT per subject, ties to the lowest ASEQ: the pre-sorted
-  # frame makes the first occurrence the pick
+  # the lowest ASEQ - the pre-sorted frame makes the first row the pick
   first_te_ae <- adae |>
     filter(TRTEMFL %in% "Y") |>
     arrange(USUBJID, ASTDT, ASEQ) |>

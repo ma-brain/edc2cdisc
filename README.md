@@ -70,7 +70,7 @@ generate_rave_extract(out = tempdir())
 built <- build_all(tempdir())
 
 built$sdtm$DM      # 26 SDTM domains, validated
-built$adam$ADSL    # ADSL / ADAE / ADCM / ADEG / ADVS / ADLB / ADQS —
+built$adam$ADSL    # ADSL / ADAE / ADCM / ADEG / ADVS / ADLB / ADQS / ADTTE —
                    # 8 ADaM datasets, validated
 
 # or step by step, mapping only what you need
